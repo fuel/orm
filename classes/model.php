@@ -312,7 +312,7 @@ class Model implements \ArrayAccess, \Iterator {
 
 			foreach(static::primary_key() as $pk)
 			{
-				$query->order($pk, $id == 'first' ? 'ASC' : 'DESC');
+				$query->order_by($pk, $id == 'first' ? 'ASC' : 'DESC');
 			}
 
 			return $query->get_one();

@@ -297,7 +297,7 @@ class Query {
 	 * @param  string|array
 	 * @param  string|null
 	 */
-	public function order($property, $direction = 'ASC')
+	public function order_by($property, $direction = 'ASC')
 	{
 		if (is_array($property))
 		{
@@ -306,13 +306,13 @@ class Query {
 				// Simple array of keys
 				if (is_int($p))
 				{
-					$this->order($d, $direction);
+					$this->order_by($d, $direction);
 				}
 
 				// Assoc array of orders
 				else
 				{
-					$this->order($p, $d);
+					$this->order_by($p, $d);
 				}
 			}
 			return;
@@ -502,7 +502,7 @@ class Query {
 		{
 			foreach ($this->order_by as $column => $direction)
 			{
-				$query->order($column, $direction);
+				$query->order_by($column, $direction);
 			}
 		}
 
