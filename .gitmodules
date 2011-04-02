@@ -1,3 +1,0 @@
-[submodule "fuel/core"]
-	path = fuel/core
-	url = git://github.com/fuel/core.git
