@@ -77,6 +77,10 @@ class Observer_Typing {
 			{
 				continue;
 			}
+			if ($instance->{$p} === null) // add check if null is allowed
+			{
+				continue;
+			}
 
 			foreach (static::$type_methods as $match => $method)
 			{
@@ -128,28 +132,28 @@ class Observer_Typing {
 		{
 			if ($var < -32768 or $var > 32767)
 			{
-				throw new InvalidContentType('Integer value outside of range.');
+				throw new InvalidContentType('Tiny integer value outside of range: '.$var);
 			}
 		}
 		elseif (strtolower(substr($type, 0, strlen('smallint'))) == 'smallint')
 		{
 			if ($var < -8388608 or $var > 8388607)
 			{
-				throw new InvalidContentType('Integer value outside of range.');
+				throw new InvalidContentType('Small integer value outside of range: '.$var);
 			}
 		}
 		elseif (strtolower(substr($type, 0, strlen('bigint'))) == 'bigint')
 		{
 			if ($var < intval('-9223372036854775808') or $var > intval('9223372036854775807'))
 			{
-				throw new InvalidContentType('Integer value outside of range.');
+				throw new InvalidContentType('Big integer value outside of range: '.$var);
 			}
 		}
 		else // assume int/integer
 		{
 			if ($var < intval('-2147483648') or $var > intval('2147483647'))
 			{
-				throw new InvalidContentType('Integer value outside of range.');
+				throw new InvalidContentType('Integer value outside of range: '.$var);
 			}
 		}
 
