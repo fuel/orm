@@ -500,7 +500,7 @@ class Model implements \ArrayAccess, \Iterator {
 	 * @param  array
 	 * @param  bool
 	 */
-	public function __construct(array $data, $new = true)
+	public function __construct(array $data = array(), $new = true)
 	{
 		$this->_update_original($data);
 		foreach ($data as $key => $val)
