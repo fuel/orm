@@ -298,17 +298,17 @@ class Model implements \ArrayAccess, \Iterator {
 		// Return Query object
 		if (is_null($id))
 		{
-			return Query::factory(get_called_class());
+			return static::query();
 		}
 		// Return all that match $options array
 		elseif ($id == 'all')
 		{
-			return Query::factory(get_called_class(), $options)->get();
+			return static::query($options)->get();
 		}
 		// Return first or last row that matches $options array
 		elseif ($id == 'first' or $id == 'last')
 		{
-			$query = Query::factory(get_called_class(), $options);
+			$query = static::query($options);
 
 			foreach(static::primary_key() as $pk)
 			{
@@ -337,8 +337,19 @@ class Model implements \ArrayAccess, \Iterator {
 
 			array_key_exists('where', $options) and $where = array_merge($options['where'], $where);
 			$options['where'] = $where;
-			return Query::factory(get_called_class(), $options)->get_one();
+			return static::query($options)->get_one();
 		}
+	}
+
+	/**
+	 * Creates a new query with optional settings up front
+	 *
+	 * @param   array
+	 * @return  Query
+	 */
+	public static function query($options = array())
+	{
+		return Query::factory(get_called_class(), $options);
 	}
 
 	/**
