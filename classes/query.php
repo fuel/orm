@@ -315,7 +315,7 @@ class Query {
 					$this->order_by($p, $d);
 				}
 			}
-			return;
+			return $this;
 		}
 
 		strpos($property, '.') === false and $property = $this->alias.'.'.$property;
