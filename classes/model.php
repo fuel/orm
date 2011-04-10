@@ -184,8 +184,18 @@ class Model implements \ArrayAccess, \Iterator {
 			{
 				if (is_string($p))
 				{
-					unset($properties[$key]);
-					$properties[$p] = array();
+					// if the $key is an integer proceed normally
+					if (is_int($key))
+					{
+						unset($properties[$key]);
+						$properties[$p] = array();
+					}
+					// this allows you to set $_properties of the model with the property as the key
+					else
+					{
+						unset($properties[$key]);
+						$properties[$key] = array();
+					}
 				}
 			}
 		}
