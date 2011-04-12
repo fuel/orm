@@ -175,12 +175,18 @@ class HasOne extends Relation {
 		}
 
 		// break current relations
+		$model_from->unfreeze();
 		$rels = $model_from->_relate();
 		$rels[$this->name] = null;
 		$model_from->_relate($rels);
-		foreach ($this->key_to as $fk)
+		$model_from->freeze();
+
+		if ( ! $model_to->frozen())
 		{
-			$model_to->{$fk} = null;
+			foreach ($this->key_to as $fk)
+			{
+				$model_to->{$fk} = null;
+			}
 		}
 
 		$cascade = is_null($cascade) ? $this->cascade_save : (bool) $cascade;

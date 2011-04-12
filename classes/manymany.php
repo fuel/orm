@@ -267,9 +267,11 @@ class ManyMany extends Relation {
 		}
 
 		// Remove relations
+		$model_from->unfreeze();
 		$rels = $model_from->_relate();
 		$rels[$this->name] = array();
 		$model_from->_relate($rels);
+		$model_from->freeze();
 
 		// Delete all relationship entries for the model_from
 		$query = \DB::delete($this->table_through);

@@ -165,6 +165,7 @@ class BelongsTo extends Relation {
 		}
 
 		// break current relations
+		$model_from->unfreeze();
 		$rels = $model_from->_relate();
 		$rels[$this->name] = null;
 		$model_from->_relate($rels);
@@ -172,6 +173,7 @@ class BelongsTo extends Relation {
 		{
 			$model_from->{$fk} = null;
 		}
+		$model_from->freeze();
 
 		$cascade = is_null($cascade) ? $this->cascade_save : (bool) $cascade;
 		if ($cascade and ! empty($model_to))
