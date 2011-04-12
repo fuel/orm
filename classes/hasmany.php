@@ -191,14 +191,20 @@ class HasMany extends Relation {
 		}
 
 		// break current relations
+		$model_from->unfreeze();
 		$rels = $model_from->_relate();
 		$rels[$this->name] = array();
 		$model_from->_relate($rels);
+		$model_from->freeze();
+
 		foreach ($models_to as $model_to)
 		{
-			foreach ($this->key_to as $fk)
+			if ( ! $model_to->frozen())
 			{
-				$model_to->{$fk} = null;
+				foreach ($this->key_to as $fk)
+				{
+					$model_to->{$fk} = null;
+				}
 			}
 		}
 

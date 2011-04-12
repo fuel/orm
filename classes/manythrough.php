@@ -183,9 +183,11 @@ class ManyThrough extends Relation {
 		}
 
 		// break all existing relations
+		$model_from->unfreeze();
 		$rels = $model_from->_relate();
 		$rels[$this->name] = array();
 		$model_from->_relate($rels);
+		$model_from->freeze();
 
 		// TODO:
 		// May need to delete all through models as well, but could also be considered desirable cascading behavior
