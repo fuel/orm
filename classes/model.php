@@ -661,6 +661,43 @@ class Model implements \ArrayAccess, \Iterator {
 	}
 
 	/**
+	 * Check whether a property exists, only return true for table columns and relations
+	 *
+	 * @param   string  $property
+	 * @return  bool
+	 */
+	public function __isset($property)
+	{
+		if (array_key_exists($property, static::properties()))
+		{
+			return true;
+		}
+		elseif (static::relations($property))
+		{
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Empty a property or relation
+	 *
+	 * @param   string  $property
+	 */
+	public function __unset($property)
+	{
+		if (array_key_exists($property, static::properties()))
+		{
+			$this->_data[$property] = null;
+		}
+		elseif ($rel = static::relations($property))
+		{
+			$this->_data_relations[$property] = $rel->singular ? null : array();
+		}
+	}
+
+	/**
 	 * Save the object and it's relations, create when necessary
 	 *
 	 * @param  mixed  $cascade
