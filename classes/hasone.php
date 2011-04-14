@@ -28,6 +28,11 @@ class HasOne extends Relation {
 
 		$this->cascade_save    = array_key_exists('cascade_save', $config) ? $config['cascade_save'] : $this->cascade_save;
 		$this->cascade_delete  = array_key_exists('cascade_save', $config) ? $config['cascade_save'] : $this->cascade_delete;
+
+		if ( ! class_exists($this->model_to))
+		{
+			throw new Exception('Related model not found by Has_One relation "'.$this->name.'": '.$this->model_to);
+		}
 	}
 
 	public function get(Model $from)
