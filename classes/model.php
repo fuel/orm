@@ -1021,13 +1021,20 @@ class Model implements \ArrayAccess, \Iterator {
 
 		// This is a new object
 		$this->_is_new = true;
+		$this->_original = array();
+		$this->_original_relations = array();
+
+		// Cleanup relations
+		foreach ($this->relations() as $name => $rel)
+		{
+			// singular relations (hasone, belongsto) can't be copied, neither can HasMany
+			if ($rel->singular or $rel instanceof HasMany)
+			{
+				unset($this->_data_relations[$name]);
+			}
+		}
 
 		$this->observe('after_clone');
-
-		// TODO
-		// hasone-belongsto cant be copied and has to be emptied
-		// hasmany-belongsto can be copied, ie no change
-		// many-many relationships should be copied, ie no change
 	}
 
 
@@ -1049,53 +1056,63 @@ class Model implements \ArrayAccess, \Iterator {
 
 	public function offsetSet($offset, $value)
 	{
-		if (is_null($offset))
+		try
+		{
+			$this->__set($offset, $value);
+		}
+		catch (\Exception $e)
 		{
 			return false;
-		}
-		else
-		{
-			$this->_data[$offset] = $value;
 		}
 	}
 
 	public function offsetExists($offset)
 	{
-		return isset($this->_data[$offset]);
+		$this->__isset($offset);
 	}
 
 	public function offsetUnset($offset)
 	{
-		unset($this->_data[$offset]);
+		$this->__unset($offset);
 	}
 
 	public function offsetGet($offset)
 	{
-		return isset($this->_data[$offset]) ? $this->_data[$offset] : null;
+		try
+		{
+			$this->__get($offset);
+		}
+		catch (\Exception $e)
+		{
+			return false;
+		}
 	}
 
 	/**
 	 * Implementation of Iterable
 	 */
 
+	protected $_iterable = array();
+
 	public function rewind()
 	{
-		reset($this->_data);
+		$this->_iterable = $this->to_array();
+		reset($this->_iterable);
 	}
 
 	public function current()
 	{
-		return current($this->_data);
+		return current($this->_iterable);
 	}
 
 	public function key()
 	{
-		return key($this->_data);
+		return key($this->_iterable);
 	}
 
 	public function next()
 	{
-		return next($this->_data);
+		return next($this->_iterable);
 	}
 
 	public function valid()
@@ -1103,6 +1120,51 @@ class Model implements \ArrayAccess, \Iterator {
 		return $this->current() !== false;
 	}
 
+	/**
+	 * Allow converting this object to an array
+	 *
+	 * @return  array
+	 */
+	public function to_array()
+	{
+		$array = array();
+
+		// make sure all data is scalar or array
+		foreach ($this->_data as $key => $val)
+		{
+			if (is_object($val))
+			{
+				if (method_exists($val, '__toString'))
+				{
+					$val = (string) $val;
+				}
+				else
+				{
+					$val = get_object_vars($val);
+				}
+			}
+			$array[$key] = $val;
+		}
+
+		// convert relations
+		foreach ($this->_data_relations as $name => $rel)
+		{
+			if (is_array($rel))
+			{
+				$array[$name] = array();
+				foreach ($rel as $id => $r)
+				{
+					$array[$name][$id] = $r->to_array();
+				}
+			}
+			else
+			{
+				$array[$name] = $rel->to_array();
+			}
+		}
+
+		return array();
+	}
 }
 
 /* End of file model.php */
