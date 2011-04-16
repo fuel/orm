@@ -194,7 +194,7 @@ class HasOne extends Relation {
 			}
 		}
 
-		$cascade = is_null($cascade) ? $this->cascade_save : (bool) $cascade;
+		$cascade = is_null($cascade) ? $this->cascade_delete : (bool) $cascade;
 		if ($cascade and ! empty($model_to))
 		{
 			$model_to->delete();

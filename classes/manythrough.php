@@ -197,7 +197,7 @@ class ManyThrough extends Relation {
 		// TODO:
 		// May need to delete all through models as well, but could also be considered desirable cascading behavior
 
-		$cascade = is_null($cascade) ? $this->cascade_save : (bool) $cascade;
+		$cascade = is_null($cascade) ? $this->cascade_delete : (bool) $cascade;
 		if ($cascade and ! empty($models_to))
 		{
 			foreach ($models_to as $m)
@@ -208,4 +208,4 @@ class ManyThrough extends Relation {
 	}
 }
 
-/* End of file manymany.php */
+///* End of file manymany.php */
