@@ -1163,7 +1163,7 @@ class Model implements \ArrayAccess, \Iterator {
 			}
 		}
 
-		return array();
+		return $array;
 	}
 }
 
