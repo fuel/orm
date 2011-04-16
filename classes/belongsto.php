@@ -180,7 +180,7 @@ class BelongsTo extends Relation {
 		}
 		$model_from->freeze();
 
-		$cascade = is_null($cascade) ? $this->cascade_save : (bool) $cascade;
+		$cascade = is_null($cascade) ? $this->cascade_delete : (bool) $cascade;
 		if ($cascade and ! empty($model_to))
 		{
 			$model_to->delete();
