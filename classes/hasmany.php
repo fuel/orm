@@ -26,6 +26,11 @@ class HasMany extends Relation {
 
 		$this->cascade_save    = array_key_exists('cascade_save', $config) ? $config['cascade_save'] : $this->cascade_save;
 		$this->cascade_delete  = array_key_exists('cascade_save', $config) ? $config['cascade_save'] : $this->cascade_delete;
+
+		if ( ! class_exists($this->model_to))
+		{
+			throw new Exception('Related model not found by Has_Many relation "'.$this->name.'": '.$this->model_to);
+		}
 	}
 
 	public function get(Model $from)
@@ -191,14 +196,20 @@ class HasMany extends Relation {
 		}
 
 		// break current relations
+		$model_from->unfreeze();
 		$rels = $model_from->_relate();
 		$rels[$this->name] = array();
 		$model_from->_relate($rels);
+		$model_from->freeze();
+
 		foreach ($models_to as $model_to)
 		{
-			foreach ($this->key_to as $fk)
+			if ( ! $model_to->frozen())
 			{
-				$model_to->{$fk} = null;
+				foreach ($this->key_to as $fk)
+				{
+					$model_to->{$fk} = null;
+				}
 			}
 		}
 

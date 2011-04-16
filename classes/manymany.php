@@ -66,6 +66,11 @@ class ManyMany extends Relation {
 
 		$this->cascade_save    = array_key_exists('cascade_save', $config) ? $config['cascade_save'] : $this->cascade_save;
 		$this->cascade_delete  = array_key_exists('cascade_save', $config) ? $config['cascade_save'] : $this->cascade_delete;
+
+		if ( ! class_exists($this->model_to))
+		{
+			throw new Exception('Related model not found by Many_Many relation "'.$this->name.'": '.$this->model_to);
+		}
 	}
 
 	public function get(Model $from)
@@ -267,9 +272,11 @@ class ManyMany extends Relation {
 		}
 
 		// Remove relations
+		$model_from->unfreeze();
 		$rels = $model_from->_relate();
 		$rels[$this->name] = array();
 		$model_from->_relate($rels);
+		$model_from->freeze();
 
 		// Delete all relationship entries for the model_from
 		$query = \DB::delete($this->table_through);

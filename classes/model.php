@@ -298,17 +298,17 @@ class Model implements \ArrayAccess, \Iterator {
 		// Return Query object
 		if (is_null($id))
 		{
-			return Query::factory(get_called_class());
+			return static::query();
 		}
 		// Return all that match $options array
 		elseif ($id == 'all')
 		{
-			return Query::factory(get_called_class(), $options)->get();
+			return static::query($options)->get();
 		}
 		// Return first or last row that matches $options array
 		elseif ($id == 'first' or $id == 'last')
 		{
-			$query = Query::factory(get_called_class(), $options);
+			$query = static::query($options);
 
 			foreach(static::primary_key() as $pk)
 			{
@@ -337,8 +337,19 @@ class Model implements \ArrayAccess, \Iterator {
 
 			array_key_exists('where', $options) and $where = array_merge($options['where'], $where);
 			$options['where'] = $where;
-			return Query::factory(get_called_class(), $options)->get_one();
+			return static::query($options)->get_one();
 		}
+	}
+
+	/**
+	 * Creates a new query with optional settings up front
+	 *
+	 * @param   array
+	 * @return  Query
+	 */
+	public static function query($options = array())
+	{
+		return Query::factory(get_called_class(), $options);
 	}
 
 	/**
@@ -646,6 +657,43 @@ class Model implements \ArrayAccess, \Iterator {
 		else
 		{
 			throw new UndefinedProperty('Property "'.$property.'" not found for '.get_called_class().'.');
+		}
+	}
+
+	/**
+	 * Check whether a property exists, only return true for table columns and relations
+	 *
+	 * @param   string  $property
+	 * @return  bool
+	 */
+	public function __isset($property)
+	{
+		if (array_key_exists($property, static::properties()))
+		{
+			return true;
+		}
+		elseif (static::relations($property))
+		{
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Empty a property or relation
+	 *
+	 * @param   string  $property
+	 */
+	public function __unset($property)
+	{
+		if (array_key_exists($property, static::properties()))
+		{
+			$this->_data[$property] = null;
+		}
+		elseif ($rel = static::relations($property))
+		{
+			$this->_data_relations[$property] = $rel->singular ? null : array();
 		}
 	}
 
@@ -973,13 +1021,20 @@ class Model implements \ArrayAccess, \Iterator {
 
 		// This is a new object
 		$this->_is_new = true;
+		$this->_original = array();
+		$this->_original_relations = array();
+
+		// Cleanup relations
+		foreach ($this->relations() as $name => $rel)
+		{
+			// singular relations (hasone, belongsto) can't be copied, neither can HasMany
+			if ($rel->singular or $rel instanceof HasMany)
+			{
+				unset($this->_data_relations[$name]);
+			}
+		}
 
 		$this->observe('after_clone');
-
-		// TODO
-		// hasone-belongsto cant be copied and has to be emptied
-		// hasmany-belongsto can be copied, ie no change
-		// many-many relationships should be copied, ie no change
 	}
 
 
@@ -1001,53 +1056,63 @@ class Model implements \ArrayAccess, \Iterator {
 
 	public function offsetSet($offset, $value)
 	{
-		if (is_null($offset))
+		try
+		{
+			$this->__set($offset, $value);
+		}
+		catch (\Exception $e)
 		{
 			return false;
-		}
-		else
-		{
-			$this->_data[$offset] = $value;
 		}
 	}
 
 	public function offsetExists($offset)
 	{
-		return isset($this->_data[$offset]);
+		$this->__isset($offset);
 	}
 
 	public function offsetUnset($offset)
 	{
-		unset($this->_data[$offset]);
+		$this->__unset($offset);
 	}
 
 	public function offsetGet($offset)
 	{
-		return isset($this->_data[$offset]) ? $this->_data[$offset] : null;
+		try
+		{
+			$this->__get($offset);
+		}
+		catch (\Exception $e)
+		{
+			return false;
+		}
 	}
 
 	/**
 	 * Implementation of Iterable
 	 */
 
+	protected $_iterable = array();
+
 	public function rewind()
 	{
-		reset($this->_data);
+		$this->_iterable = $this->to_array();
+		reset($this->_iterable);
 	}
 
 	public function current()
 	{
-		return current($this->_data);
+		return current($this->_iterable);
 	}
 
 	public function key()
 	{
-		return key($this->_data);
+		return key($this->_iterable);
 	}
 
 	public function next()
 	{
-		return next($this->_data);
+		return next($this->_iterable);
 	}
 
 	public function valid()
@@ -1055,6 +1120,51 @@ class Model implements \ArrayAccess, \Iterator {
 		return $this->current() !== false;
 	}
 
+	/**
+	 * Allow converting this object to an array
+	 *
+	 * @return  array
+	 */
+	public function to_array()
+	{
+		$array = array();
+
+		// make sure all data is scalar or array
+		foreach ($this->_data as $key => $val)
+		{
+			if (is_object($val))
+			{
+				if (method_exists($val, '__toString'))
+				{
+					$val = (string) $val;
+				}
+				else
+				{
+					$val = get_object_vars($val);
+				}
+			}
+			$array[$key] = $val;
+		}
+
+		// convert relations
+		foreach ($this->_data_relations as $name => $rel)
+		{
+			if (is_array($rel))
+			{
+				$array[$name] = array();
+				foreach ($rel as $id => $r)
+				{
+					$array[$name][$id] = $r->to_array();
+				}
+			}
+			else
+			{
+				$array[$name] = $rel->to_array();
+			}
+		}
+
+		return array();
+	}
 }
 
 /* End of file model.php */
