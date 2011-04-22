@@ -1096,7 +1096,7 @@ class Model implements \ArrayAccess, \Iterator {
 
 	public function rewind()
 	{
-		$this->_iterable = $this->to_array();
+		$this->_iterable = array_merge($this->_data, $this->_data_relations);
 		reset($this->_iterable);
 	}
 
