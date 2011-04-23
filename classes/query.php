@@ -712,10 +712,11 @@ class Query {
 	 */
 	public function count($distinct = false)
 	{
-		$this->select or $this->select = 'id';
+		$this->select or $this->select = call_user_func($this->model.'::primary_key');
+		$select = reset($this->select);
 
 		// Get the columns
-		$columns = \DB::expr('COUNT('.($distinct ? 'DISTINCT ' : '').\Database_Connection::instance()->table_prefix().$this->alias.'.'.($distinct ?: $this->select).') AS count_result');
+		$columns = \DB::expr('COUNT('.($distinct ? 'DISTINCT ' : '').\Database_Connection::instance()->table_prefix().$this->alias.'.'.($distinct ?: $select).') AS count_result');
 
 		// Remove the current select and
 		$query = call_user_func('DB::select', $columns);
