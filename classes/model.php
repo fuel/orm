@@ -513,10 +513,28 @@ class Model implements \ArrayAccess, \Iterator {
 	 */
 	public function __construct(array $data = array(), $new = true)
 	{
-		$this->_update_original($data);
-		foreach ($data as $key => $val)
+		if ($new)
 		{
-			$this->{$key} = $val;
+			$properties = $this->properties();
+			foreach ($properties as $prop => $settings)
+			{
+				if (array_key_exists($prop, $data))
+				{
+					$this->{$prop} = $data[$prop];
+				}
+				elseif (array_key_exists('default', $settings))
+				{
+					$this->{$prop} = $settings['default'];
+				}
+			}
+		}
+		else
+		{
+			$this->_update_original($data);
+			foreach ($data as $key => $val)
+			{
+				$this->{$key} = $val;
+			}
 		}
 
 		if ($new === false)
