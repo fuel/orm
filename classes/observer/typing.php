@@ -77,6 +77,10 @@ class Observer_Typing {
 			}
 			if ($instance->{$p} === null) // add check if null is allowed
 			{
+				if (array_key_exists('is_nullable', $settings) and $settings['is_nullable'] === false)
+				{
+					throw new InvalidContentType('The property "'.$p.'" cannot be NULL.');
+				}
 				continue;
 			}
 
@@ -137,11 +141,6 @@ class Observer_Typing {
 		if (is_array($var) or is_object($var))
 		{
 			throw new InvalidContentType('Array or object could not be converted to float.');
-		}
-
-		if ($var < floatval($settings['min']) or $var > floatval($settings['max']))
-		{
-			throw new InvalidContentType('Float value outside of range: '.$var);
 		}
 
 		return floatval($var);
