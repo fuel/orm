@@ -30,19 +30,19 @@ class Observer_Typing {
 	 */
 	public static $type_methods = array(
 		'/^varchar/uiD' => array(
-			'before' => 'Orm\\Observer_Typing::type_varchar'
-			),
+			'before' => 'Orm\\Observer_Typing::type_string'
+		),
 		'/^(tiny|small|medium|big)?int(eger)?/uiD'
 			=> 'Orm\\Observer_Typing::type_integer',
 		'/^(float|double|decimal)/uiD'
 			=> 'Orm\\Observer_Typing::type_float',
 		'/^(tiny|medium|long)?text/' => array(
-			'before' => 'Orm\\Observer_Typing::type_text'
+			'before' => 'Orm\\Observer_Typing::type_string'
 		),
-		'/^set\\(/uiD' => array(
+		'/^set/uiD' => array(
 			'before' => 'Orm\\Observer_Typing::type_set'
 		),
-		'/^enum\\(/uiD' => array(
+		'/^enum/uiD' => array(
 			'before' => 'Orm\\Observer_Typing::type_set'
 		),
 		'/^serialize$/uiD' => array(
@@ -73,7 +73,7 @@ class Observer_Typing {
 
 		foreach ($properties as $p => $settings)
 		{
-			if (empty($settings['type']) || in_array($p, $instance->primary_key()))
+			if (empty($settings['data_type']) || in_array($p, $instance->primary_key()))
 			{
 				continue;
 			}
@@ -88,91 +88,70 @@ class Observer_Typing {
 				{
 					$method = ! empty($method[$event_type]) ? $method[$event_type] : false;
 				}
-
-				if ($method and preg_match($match, $settings['type']) > 0)
+				if ($method === false)
 				{
-					$instance->{$p} = call_user_func($method, $instance->{$p}, $settings['type']);
+					continue;
+				}
+
+				if ($method and preg_match($match, $settings['data_type']) > 0)
+				{
+					$instance->{$p} = call_user_func($method, $instance->{$p}, $settings);
+					continue;
 				}
 			}
 		}
 	}
 
-	public static function type_varchar($var, $type)
+	public static function type_string($var, $settings)
 	{
 		if (is_array($var) or (is_object($var) and ! method_exists($var, '__toString')))
 		{
 			throw new InvalidContentType('Array or object could not be converted to varchar.');
 		}
 
-		$var = strval($var);
-		$length = intval(substr($type, 8, -1));
-		strlen($var) > $length and $var = substr($var, 0, $length);
+		$var     = strval($var);
+		$length  = intval($settings['character_maximum_length']);
+		if ($length > 0 and strlen($var) > $length)
+		{
+			$var = substr($var, 0, $length);
+		}
 
 		return $var;
 	}
 
-	public static function type_text($var, $type)
-	{
-		if (is_array($var) or (is_object($var) and ! method_exists($var, '__toString')))
-		{
-			throw new InvalidContentType('Array or object could not be converted to text.');
-		}
-
-		return strval($var);
-	}
-
-	public static function type_integer($var, $type)
+	public static function type_integer($var, $settings)
 	{
 		if (is_array($var) or is_object($var))
 		{
 			throw new InvalidContentType('Array or object could not be converted to integer.');
 		}
 
-		if (strtolower(substr($type, 0, strlen('tinyint'))) == 'tinyint')
+		if ($var < intval($settings['min']) or $var > intval($settings['max']))
 		{
-			if ($var < -32768 or $var > 32767)
-			{
-				throw new InvalidContentType('Tiny integer value outside of range: '.$var);
-			}
-		}
-		elseif (strtolower(substr($type, 0, strlen('smallint'))) == 'smallint')
-		{
-			if ($var < -8388608 or $var > 8388607)
-			{
-				throw new InvalidContentType('Small integer value outside of range: '.$var);
-			}
-		}
-		elseif (strtolower(substr($type, 0, strlen('bigint'))) == 'bigint')
-		{
-			if ($var < intval('-9223372036854775808') or $var > intval('9223372036854775807'))
-			{
-				throw new InvalidContentType('Big integer value outside of range: '.$var);
-			}
-		}
-		else // assume int/integer
-		{
-			if ($var < intval('-2147483648') or $var > intval('2147483647'))
-			{
-				throw new InvalidContentType('Integer value outside of range: '.$var);
-			}
+			throw new InvalidContentType('Integer value outside of range: '.$var);
 		}
 
 		return intval($var);
 	}
 
-	public static function type_float($var)
+	public static function type_float($var, $settings)
 	{
 		if (is_array($var) or is_object($var))
 		{
 			throw new InvalidContentType('Array or object could not be converted to float.');
 		}
 
+		if ($var < floatval($settings['min']) or $var > floatval($settings['max']))
+		{
+			throw new InvalidContentType('Float value outside of range: '.$var);
+		}
+
 		return floatval($var);
 	}
 
-	public static function type_serialize($var)
+	public static function type_serialize($var, $settings)
 	{
-		return serialize($var);
+		return static::type_string(serialize($var), $settings);
 	}
 
 	public static function type_unserialize($var)
@@ -180,9 +159,9 @@ class Observer_Typing {
 		return unserialize($var);
 	}
 
-	public static function type_json_encode($var)
+	public static function type_json_encode($var, $settings)
 	{
-		return json_encode($var);
+		return static::type_string(json_encode($var), $settings);
 	}
 
 	public static function type_json_decode($var)
