@@ -92,27 +92,30 @@ class Query {
 					break;
 				case 'where':
 					$obj = $this;
-					$where = function (array $val, $or = false) use ($where, $obj)
+					$where_func = null;
+					$where = function (array $val, $or = false) use (&$where_func, $obj)
 					{
-						$or ? $this->or_where_open() : $this->where_open();
+						$or ? $obj->or_where_open() : $obj->where_open();
 						foreach ($val as $k_w => $v_w)
 						{
 							if (is_array($v_w) and ! empty($v_w[0]) and is_string($v_w[0]))
 							{
-								call_user_func_array(array($this, 'where'), $v_w);
+								exit(\Debug::dump(1, $v_w));
+								call_user_func_array(array($obj, 'where'), $v_w);
 							}
 							elseif (is_int($k_w) or $k_w == 'or')
 							{
+								exit(\Debug::dump(2, $v_w, $k_w));
 								$where($v_w, $k_w == 'or');
 							}
 							else
 							{
-								$this->where($k_w, $v_w);
+								$obj->where($k_w, $v_w);
 							}
 						}
-						$or ? $this->or_where_close() : $this->where_close();
+						$or ? $obj->or_where_close() : $obj->where_close();
 					};
-
+					$where_func = $where;
 					$where($val);
 					break;
 				case 'order_by':
@@ -125,10 +128,6 @@ class Query {
 				case 'offset':
 					$this->offset($val);
 					break;
-			}
-			if (method_exists($this, $opt))
-			{
-				call_user_func_array(array($this, $opt), array($val));
 			}
 		}
 	}
@@ -389,18 +388,18 @@ class Query {
 			}
 		}
 
+		$this->relations[$relation] = array($rel, $conditions);
+
 		if ( ! empty($conditions['related']))
 		{
 			$conditions['related'] = (array) $conditions['related'];
 			foreach ($conditions['related'] as $k_r => $v_r)
 			{
-				is_array($v_r) ? $this->related($relation.'.'.$k_r, $v_r) : $this->related($relation.'.'.$k_r);
+				is_array($v_r) ? $this->related($relation.'.'.$k_r, $v_r) : $this->related($relation.'.'.$v_r);
 			}
 
 			unset($conditions['related']);
 		}
-
-		$this->relations[$relation] = array($rel, $conditions);
 
 		return $this;
 	}
@@ -481,9 +480,18 @@ class Query {
 
 		if ( ! empty($this->where))
 		{
+			$open_nests = 0;
 			foreach ($this->where as $key => $where)
 			{
 				list($method, $conditional) = $where;
+
+				if (empty($conditional) or $open_nests > 0)
+				{
+					strpos($method, '_open') and $open_nests++;
+					strpos($method, '_close') and $open_nests--;
+					continue;
+				}
+
 				if (strpos($conditional[0], $this->alias.'.') === 0)
 				{
 					$type != 'select' and $conditional[0] = substr($conditional[0], strlen($this->alias.'.'));
@@ -617,11 +625,14 @@ class Query {
 				list($method, $conditional) = $where;
 
 				// try to rewrite conditions on the relations to their table alias
-				$dotpos = strrpos($conditional[0], '.');
-				$relation = substr($conditional[0], 0, $dotpos);
-				if ($dotpos > 0 and array_key_exists($relation, $models))
+				if ( ! empty($conditional))
 				{
-					$conditional[0] = $models[$relation]['table'][1].substr($conditional[0], $dotpos);
+					$dotpos = strrpos($conditional[0], '.');
+					$relation = substr($conditional[0], 0, $dotpos);
+					if ($dotpos > 0 and array_key_exists($relation, $models))
+					{
+						$conditional[0] = $models[$relation]['table'][1].substr($conditional[0], $dotpos);
+					}
 				}
 
 				call_user_func_array(array($query, $method), $conditional);
