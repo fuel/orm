@@ -104,6 +104,14 @@ class Observer_Typing {
 		}
 	}
 
+	/**
+	 * Casts to string when necessary and checks if within max length
+	 *
+	 * @throws  InvalidContentType
+	 * @param   mixed  value
+	 * @param   array
+	 * @return  string
+	 */
 	public static function type_string($var, $settings)
 	{
 		if (is_array($var) or (is_object($var) and ! method_exists($var, '__toString')))
@@ -111,16 +119,28 @@ class Observer_Typing {
 			throw new InvalidContentType('Array or object could not be converted to varchar.');
 		}
 
-		$var     = strval($var);
-		$length  = intval($settings['character_maximum_length']);
-		if ($length > 0 and strlen($var) > $length)
+		$var = strval($var);
+
+		if (array_key_exists('character_maximum_length', $settings))
 		{
-			$var = substr($var, 0, $length);
+			$length  = intval($settings['character_maximum_length']);
+			if ($length > 0 and strlen($var) > $length)
+			{
+				$var = substr($var, 0, $length);
+			}
 		}
 
 		return $var;
 	}
 
+	/**
+	 * Casts to int when necessary and checks if within max values
+	 *
+	 * @throws  InvalidContentType
+	 * @param   mixed  value
+	 * @param   array
+	 * @return  int
+	 */
 	public static function type_integer($var, $settings)
 	{
 		if (is_array($var) or is_object($var))
@@ -136,6 +156,14 @@ class Observer_Typing {
 		return intval($var);
 	}
 
+	/**
+	 * Casts to float when necessary
+	 *
+	 * @throws  InvalidContentType
+	 * @param   mixed  value
+	 * @param   array
+	 * @return  float
+	 */
 	public static function type_float($var, $settings)
 	{
 		if (is_array($var) or is_object($var))
@@ -146,21 +174,101 @@ class Observer_Typing {
 		return floatval($var);
 	}
 
-	public static function type_serialize($var, $settings)
+	/**
+	 * Casts to string when necessary and checks if it's a valid value
+	 *
+	 * @throws  InvalidContentType
+	 * @param   mixed  value
+	 * @param   array
+	 * @return  string
+	 */
+	public static function type_set($var, $settings)
 	{
-		return static::type_string(serialize($var), $settings);
+		$var    = strval($var);
+		$values = array_filter(explode(',', trim($var)));
+
+		if ($settings['data_type'] == 'enum' and count($values) > 1)
+		{
+			throw new InvalidContentType('Enum cannot have more than 1 value.');
+		}
+
+		foreach ($values as $val)
+		{
+			if ( ! in_array($val, $settings['options']))
+			{
+				throw new InvalidContentType('Invalid value given for '.ucfirst($settings['data_type']).
+					', value "'.$var.'" not in available options: "'.implode(', ', $settings['options']).'".');
+			}
+		}
+
+		return $var;
 	}
 
+	/**
+	 * Returns the serialized input
+	 *
+	 * @throws  InvalidContentType
+	 * @param   mixed  value
+	 * @param   array
+	 * @return  string
+	 */
+	public static function type_serialize($var, $settings)
+	{
+		$var = serialize($var);
+
+		if (array_key_exists('character_maximum_length', $settings))
+		{
+			$length  = intval($settings['character_maximum_length']);
+			if ($length > 0 and strlen($var) > $length)
+			{
+				throw new InvalidContentType('Value could not be serialized, exceeds max string length for field.');
+			}
+		}
+
+		return $var;
+	}
+
+	/**
+	 * Unserializes the input
+	 *
+	 * @param   string
+	 * @return  mixed
+	 */
 	public static function type_unserialize($var)
 	{
 		return unserialize($var);
 	}
 
+	/**
+	 * JSON encodes the input
+	 *
+	 * @throws  InvalidContentType
+	 * @param   mixed  value
+	 * @param   array
+	 * @return  string
+	 */
 	public static function type_json_encode($var, $settings)
 	{
-		return static::type_string(json_encode($var), $settings);
+		$var = json_encode($var);
+
+		if (array_key_exists('character_maximum_length', $settings))
+		{
+			$length  = intval($settings['character_maximum_length']);
+			if ($length > 0 and strlen($var) > $length)
+			{
+				throw new InvalidContentType('Value could not be JSON encoded, exceeds max string length for field.');
+			}
+		}
+
+		return $var;
 	}
 
+	/**
+	 * Decodes the JSON
+	 *
+	 * @param   string
+	 * @return  mixed
+	 */
 	public static function type_json_decode($var)
 	{
 		return json_decode($var);
