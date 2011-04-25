@@ -130,7 +130,9 @@ class ManyThrough extends Relation {
 				'join_on'    => array(),
 				'columns'    => $this->select_through($alias_to.'_through'),
 				'rel_name'   => $this->model_through,
-				'relation'   => $this
+				'relation'   => $this,
+				'where'      => array_key_exists('where_through', $conditions)    ? $conditions['where_through']    : array(),
+				'order_by'   => array_key_exists('order_by_through', $conditions) ? $conditions['order_by_through'] : array(),
 			),
 			$rel_name => array(
 				'model'      => $this->model_to,
