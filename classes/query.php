@@ -447,7 +447,7 @@ class Query {
 			foreach ($this->where as $key => $where)
 			{
 				list($method, $conditional) = $where;
-				if (empty($conditional) or strpos($conditional[0], $this->alias.'.') === 0)
+				if (strpos($conditional[0], $this->alias.'.') === 0)
 				{
 					$type != 'select' and $conditional[0] = substr($conditional[0], strlen($this->alias.'.'));
 					call_user_func_array(array($query, $method), $conditional);
