@@ -529,7 +529,7 @@ class Query {
 			}
 		}
 
-		// Add any additional order_by clauses from the relation
+		// Add any additional order_by and where clauses from the relations
 		foreach ($models as $m)
 		{
 			if ( ! empty($m['order_by']))
@@ -539,27 +539,6 @@ class Query {
 					is_int($k_ob) ? $this->order_by($m['table'][1].'.'.$v_ob) : $this->order_by($m['table'][1].'.'.$k_ob, $v_ob);
 				}
 			}
-		}
-		// Get the order
-		if ( ! empty($this->order_by))
-		{
-			foreach ($this->order_by as $column => $direction)
-			{
-				// try to rewrite conditions on the relations to their table alias
-				$dotpos = strpos($column, '.');
-				$relation = substr($column, 0, $dotpos);
-				if ($dotpos > 0 and array_key_exists($relation, $models))
-				{
-					$column = $models[$relation]['table'][1].substr($column, $dotpos);
-				}
-
-				$query->order_by($column, $direction);
-			}
-		}
-
-		// Add any additional where clauses from the relation
-		foreach ($models as $m)
-		{
 			if ( ! empty($m['where']))
 			{
 				foreach ((array) $m['where'] as $k_w => $v_w)
@@ -576,6 +555,22 @@ class Query {
 				}
 			}
 		}
+		// Get the order
+		if ( ! empty($this->order_by))
+		{
+			foreach ($this->order_by as $column => $direction)
+			{
+				// try to rewrite conditions on the relations to their table alias
+				$dotpos = strrpos($column, '.');
+				$relation = substr($column, 0, $dotpos);
+				if ($dotpos > 0 and array_key_exists($relation, $models))
+				{
+					$column = $models[$relation]['table'][1].substr($column, $dotpos);
+				}
+
+				$query->order_by($column, $direction);
+			}
+		}
 
 		// put omitted where conditions back
 		if ( ! empty($this->where))
@@ -585,7 +580,7 @@ class Query {
 				list($method, $conditional) = $where;
 
 				// try to rewrite conditions on the relations to their table alias
-				$dotpos = strpos($conditional[0], '.');
+				$dotpos = strrpos($conditional[0], '.');
 				$relation = substr($conditional[0], 0, $dotpos);
 				if ($dotpos > 0 and array_key_exists($relation, $models))
 				{
