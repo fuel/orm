@@ -23,6 +23,7 @@ class HasOne extends Relation {
 		$this->model_to    = array_key_exists('model_to', $config) ? $config['model_to'] : \Inflector::get_namespace($from).'Model_'.\Inflector::classify($name);
 		$this->key_from    = array_key_exists('key_from', $config) ? (array) $config['key_from'] : $this->key_from;
 		$this->key_to      = array_key_exists('key_to', $config) ? (array) $config['key_to'] : (array) \Inflector::foreign_key($this->model_from);
+		$this->conditions  = array_key_exists('conditions', $config) ? (array) $config['conditions'] : array();
 
 		$this->cascade_save    = array_key_exists('cascade_save', $config) ? $config['cascade_save'] : $this->cascade_save;
 		$this->cascade_delete  = array_key_exists('cascade_save', $config) ? $config['cascade_save'] : $this->cascade_delete;
@@ -45,8 +46,10 @@ class HasOne extends Relation {
 		return $query->get_one();
 	}
 
-	public function join($alias_from, $rel_name, $alias_to_nr)
+	public function join($alias_from, $rel_name, $alias_to_nr, $conditions = array())
 	{
+		$conditions = array_merge($this->conditions, $conditions);
+
 		$alias_to = 't'.$alias_to_nr;
 		$model = array(
 			'model'      => $this->model_to,
@@ -55,7 +58,9 @@ class HasOne extends Relation {
 			'join_on'    => array(),
 			'columns'    => $this->select($alias_to),
 			'rel_name'   => $rel_name,
-			'relation'   => $this
+			'relation'   => $this,
+			'where'      => array_key_exists('where', $conditions)    ? $conditions['where']    : array(),
+			'order_by'   => array_key_exists('order_by', $conditions) ? $conditions['order_by'] : array(),
 		);
 
 		reset($this->key_to);
@@ -65,7 +70,7 @@ class HasOne extends Relation {
 			next($this->key_to);
 		}
 
-		return array($model);
+		return array($rel_name => $model);
 	}
 
 	public function save($model_from, $model_to, $original_model_id, $parent_saved, $cascade)

@@ -40,6 +40,11 @@ abstract class Relation {
 	protected $key_to = array();
 
 	/**
+	 * @var  array  where & order_by conditions for loading this relation
+	 */
+	protected $conditions = array();
+
+	/**
 	 * @var  bool  whether it's a single object or multiple
 	 */
 	protected $singular = false;

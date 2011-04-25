@@ -329,7 +329,7 @@ class Query {
 	 *
 	 * @param  string
 	 */
-	public function related($relation)
+	public function related($relation, $conditions = array())
 	{
 		if (is_array($relation))
 		{
@@ -346,7 +346,7 @@ class Query {
 			throw new UndefinedRelation('Relation "'.$relation.'" was not found in the model.');
 		}
 
-		$this->relations[$relation] = $rel;
+		$this->relations[$relation] = array($rel, $conditions);
 
 		return $this;
 	}
@@ -449,7 +449,7 @@ class Query {
 		$models = array();
 		foreach ($this->relations as $name => $rel)
 		{
-			$models = array_merge($models, $rel->join($this->alias, $name, $i++));
+			$models = array_merge($models, $rel[0]->join($this->alias, $name, $i++, $rel[1]));
 		}
 
 		if ($this->use_subquery())
@@ -497,12 +497,51 @@ class Query {
 			}
 		}
 
+		// Add any additional order_by clauses from the relation
+		foreach ($models as $m)
+		{
+			if ( ! empty($m['order_by']))
+			{
+				foreach ((array) $m['order_by'] as $k_ob => $v_ob)
+				{
+					is_int($k_ob) ? $this->order_by($m['table'][1].'.'.$v_ob) : $this->order_by($m['table'][1].'.'.$k_ob, $v_ob);
+				}
+			}
+		}
 		// Get the order
 		if ( ! empty($this->order_by))
 		{
 			foreach ($this->order_by as $column => $direction)
 			{
+				// try to rewrite conditions on the relations to their table alias
+				$dotpos = strpos($column, '.');
+				$relation = substr($column, 0, $dotpos);
+				if ($dotpos > 0 and array_key_exists($relation, $models))
+				{
+					$column = $models[$relation]['table'][1].substr($column, $dotpos);
+				}
+
 				$query->order_by($column, $direction);
+			}
+		}
+
+		// Add any additional where clauses from the relation
+		foreach ($models as $m)
+		{
+			if ( ! empty($m['where']))
+			{
+				foreach ((array) $m['where'] as $k_w => $v_w)
+				{
+					if (is_int($k_w))
+					{
+						$v_w[0] = $m['table'][1].'.'.$v_w[0];
+						call_user_func_array(array($this, 'where'), $v_w);
+					}
+					else
+					{
+						$this->where($m['table'][1].'.'.$k_w, $v_w);
+					}
+				}
 			}
 		}
 
@@ -512,6 +551,15 @@ class Query {
 			foreach ($this->where as $where)
 			{
 				list($method, $conditional) = $where;
+
+				// try to rewrite conditions on the relations to their table alias
+				$dotpos = strpos($conditional[0], '.');
+				$relation = substr($conditional[0], 0, $dotpos);
+				if ($dotpos > 0 and array_key_exists($relation, $models))
+				{
+					$conditional[0] = $models[$relation]['table'][1].substr($conditional[0], $dotpos);
+				}
+
 				call_user_func_array(array($query, $method), $conditional);
 			}
 		}

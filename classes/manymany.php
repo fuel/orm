@@ -45,6 +45,7 @@ class ManyMany extends Relation {
 		$this->model_to    = array_key_exists('model_to', $config) ? $config['model_to'] : \Inflector::get_namespace($from).'Model_'.\Inflector::classify($name);
 		$this->key_from    = array_key_exists('key_from', $config) ? (array) $config['key_from'] : $this->key_from;
 		$this->key_to      = array_key_exists('key_to', $config) ? (array) $config['key_to'] : $this->key_to;
+		$this->conditions  = array_key_exists('conditions', $config) ? (array) $config['conditions'] : array();
 
 		if ( ! empty($config['table_through']))
 		{
@@ -117,12 +118,14 @@ class ManyMany extends Relation {
 		return $properties;
 	}
 
-	public function join($alias_from, $rel_name, $alias_to_nr)
+	public function join($alias_from, $rel_name, $alias_to_nr, $conditions = array())
 	{
+		$conditions = array_merge($this->conditions, $conditions);
+
 		$alias_to = 't'.$alias_to_nr;
 
 		$models = array(
-			array(
+			$rel_name.'_through' => array(
 				'model'      => null,
 				'table'      => array($this->table_through, $alias_to.'_through'),
 				'join_type'  => 'left',
@@ -131,14 +134,16 @@ class ManyMany extends Relation {
 				'rel_name'   => $this->model_through,
 				'relation'   => $this
 			),
-			array(
+			$rel_name => array(
 				'model'      => $this->model_to,
 				'table'      => array(call_user_func(array($this->model_to, 'table')), $alias_to),
 				'join_type'  => 'left',
 				'join_on'    => array(),
 				'columns'    => $this->select($alias_to),
 				'rel_name'   => $rel_name,
-				'relation'   => $this
+				'relation'   => $this,
+				'where'      => array_key_exists('where', $conditions)    ? $conditions['where']    : array(),
+				'order_by'   => array_key_exists('order_by', $conditions) ? $conditions['order_by'] : array(),
 			)
 		);
 
@@ -284,7 +289,7 @@ class ManyMany extends Relation {
 			$query->where($key, '=', $model_from->{current($this->key_from)});
 			next($this->key_from);
 		}
-		$query->delete();
+		$query->execute();
 
 		$cascade = is_null($cascade) ? $this->cascade_delete : (bool) $cascade;
 		if ($cascade and ! empty($model_to))
