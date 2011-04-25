@@ -351,13 +351,12 @@ class Model implements \ArrayAccess, \Iterator {
 	}
 
 	/**
-	 * Find one or more entries
+	 * Count entries, optionally only those matching the $options
 	 *
-	 * @param   mixed
 	 * @param   array
-	 * @return  object|array
+	 * @return  int
 	 */
-	public static function count($id = null, array $options = array())
+	public static function count(array $options = array())
 	{
 		return Query::factory(get_called_class(), $options)->count();
 	}
