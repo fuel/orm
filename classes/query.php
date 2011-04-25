@@ -388,6 +388,17 @@ class Query {
 			}
 		}
 
+		if ( ! empty($conditions['related']))
+		{
+			$conditions['related'] = (array) $conditions['related'];
+			foreach ($conditions['related'] as $k_r => $v_r)
+			{
+				is_array($v_r) ? $this->related($relation.'.'.$k_r, $v_r) : $this->related($relation.'.'.$k_r);
+			}
+
+			unset($conditions['related']);
+		}
+
 		$this->relations[$relation] = array($rel, $conditions);
 
 		return $this;
