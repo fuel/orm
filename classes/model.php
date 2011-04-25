@@ -387,11 +387,6 @@ class Model implements \ArrayAccess, \Iterator {
 
 	public static function __callStatic($method, $args)
 	{
-		if ($method == '_init')
-		{
-			return;
-		}
-
 		// Start with count_by? Get counting!
 		if (strpos($method, 'count_by') === 0)
 		{
