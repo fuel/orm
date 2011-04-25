@@ -294,7 +294,7 @@ class Model implements \ArrayAccess, \Iterator {
 		// Return Query object
 		if (is_null($id))
 		{
-			return static::query();
+			return static::query($options);
 		}
 		// Return all that match $options array
 		elseif ($id == 'all')
