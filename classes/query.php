@@ -80,6 +80,51 @@ class Query {
 
 		foreach ($options as $opt => $val)
 		{
+			switch ($opt)
+			{
+				case 'select':
+					$val = (array) $val;
+					call_user_func_array(array($this, 'select'), $val);
+					break;
+				case 'related':
+					$val = (array) $val;
+					$this->related($val);
+					break;
+				case 'where':
+					$where = function (array $val, $or = false) use ($where, $this)
+					{
+						$or ? $this->or_where_open() : $this->where_open();
+						foreach ($val as $k_w => $v_w)
+						{
+							if (is_array($v_w) and ! empty($v_w[0]) and is_string($v_w[0]))
+							{
+								call_user_func_array(array($this, 'where'), $v_w);
+							}
+							elseif (is_int($k_w) or $k_w == 'or')
+							{
+								$where($v_w, $k_w == 'or');
+							}
+							else
+							{
+								$this->where($k_w, $v_w);
+							}
+						}
+						$or ? $this->or_where_close() : $this->where_close();
+					};
+
+					$where($val);
+					break;
+				case 'order_by':
+					$val = (array) $val;
+					$this->order_by($val);
+					break;
+				case 'limit':
+					$this->limit($val);
+					break;
+				case 'offset':
+					$this->offset($val);
+					break;
+			}
 			if (method_exists($this, $opt))
 			{
 				call_user_func_array(array($this, $opt), array($val));
@@ -165,6 +210,8 @@ class Query {
 	public function where()
 	{
 		$condition = func_get_args();
+		is_array(reset($condition)) and $condition = reset($condition);
+
 		return $this->_where($condition);
 	}
 
@@ -178,6 +225,8 @@ class Query {
 	public function or_where()
 	{
 		$condition = func_get_args();
+		is_array(reset($condition)) and $condition = reset($condition);
+
 		return $this->_where($condition, 'or_where');
 	}
 
@@ -190,30 +239,16 @@ class Query {
 	 */
 	public function _where($condition, $type = 'and_where')
 	{
-		if (empty($condition))
+		if (is_array(reset($condition)) or is_string(key($condition)))
 		{
-			return $this;
-		}
-
-		if (is_array(reset($condition)))
-		{
-			foreach ($condition as $c)
+			foreach ($condition as $k_c => $v_c)
 			{
-				$this->_where($c, $type);
+				is_string($k_c) and $v_c = array($k_c, $v_c);
+				$this->_where($v_c, $type);
 			}
 			return $this;
 		}
-		elseif (is_string(key($condition)))
-		{
-			foreach($condition as $k => $val)
-			{
-				unset($condition[$k]);
-				$condition[] = array($k, '=', $val);
-			}
-			return $this->_where($condition, $type);
-		}
 
-		// TODO: needs to work better, this will cause problems with WHERE IN
 		strpos($condition[0], '.') === false and $condition[0] = $this->alias.'.'.$condition[0];
 		if (count($condition) == 2)
 		{
@@ -303,17 +338,7 @@ class Query {
 		{
 			foreach ($property as $p => $d)
 			{
-				// Simple array of keys
-				if (is_int($p))
-				{
-					$this->order_by($d, $direction);
-				}
-
-				// Assoc array of orders
-				else
-				{
-					$this->order_by($p, $d);
-				}
+				is_int($p) ? $this->order_by($d, $direction) : $this->order_by($p, $d);
 			}
 			return $this;
 		}
@@ -333,9 +358,9 @@ class Query {
 	{
 		if (is_array($relation))
 		{
-			foreach ($relation as $r)
+			foreach ($relation as $k_r => $v_r)
 			{
-				$this->related($r);
+				is_array($v_r) ? $this->related($k_r, $v_r) : $this->related($v_r);
 			}
 			return $this;
 		}
