@@ -127,6 +127,8 @@ class Query {
 			strpos($val, '.') === false ? 't0.'.$val : $val;
 			$this->select[$this->alias.'_c'.$i++] = $this->alias.'.'.$val;
 		}
+		
+		return $this;
 	}
 
 	/**
