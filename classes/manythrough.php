@@ -130,9 +130,7 @@ class ManyThrough extends Relation {
 				'join_on'    => array(),
 				'columns'    => $this->select_through($alias_to.'_through'),
 				'rel_name'   => $this->model_through,
-				'relation'   => $this,
-				'where'      => array_key_exists('where_through', $conditions)    ? $conditions['where_through']    : array(),
-				'order_by'   => array_key_exists('order_by_through', $conditions) ? $conditions['order_by_through'] : array(),
+				'relation'   => $this
 			),
 			$rel_name => array(
 				'model'      => $this->model_to,
@@ -140,7 +138,7 @@ class ManyThrough extends Relation {
 				'join_type'  => 'left',
 				'join_on'    => array(),
 				'columns'    => $this->select($alias_to),
-				'rel_name'   => $rel_name,
+				'rel_name'   => strpos($rel_name, '.') ? substr($rel_name, strrpos($rel_name, '.') + 1) : $rel_name,
 				'relation'   => $this,
 				'where'      => array_key_exists('where', $conditions)    ? $conditions['where']    : array(),
 				'order_by'   => array_key_exists('order_by', $conditions) ? $conditions['order_by'] : array(),
@@ -150,14 +148,14 @@ class ManyThrough extends Relation {
 		reset($this->key_from);
 		foreach ($this->key_through_from as $key)
 		{
-			$models[0]['join_on'][] = array($alias_from.'.'.current($this->key_from), '=', $alias_to.'_through.'.$key);
+			$models[$rel_name.'_through']['join_on'][] = array($alias_from.'.'.current($this->key_from), '=', $alias_to.'_through.'.$key);
 			next($this->key_from);
 		}
 
 		reset($this->key_to);
 		foreach ($this->key_through_to as $key)
 		{
-			$models[1]['join_on'][] = array($alias_to.'_through.'.$key, '=', $alias_to.'.'.current($this->key_to));
+			$models[$rel_name]['join_on'][] = array($alias_to.'_through.'.$key, '=', $alias_to.'.'.current($this->key_to));
 			next($this->key_to);
 		}
 

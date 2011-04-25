@@ -55,7 +55,7 @@ class HasMany extends Relation {
 			'join_type'  => 'left',
 			'join_on'    => array(),
 			'columns'    => $this->select($alias_to),
-			'rel_name'   => $rel_name,
+			'rel_name'   => strpos($rel_name, '.') ? substr($rel_name, strrpos($rel_name, '.') + 1) : $rel_name,
 			'relation'   => $this,
 			'where'      => array_key_exists('where', $conditions)    ? $conditions['where']    : array(),
 			'order_by'   => array_key_exists('order_by', $conditions) ? $conditions['order_by'] : array(),

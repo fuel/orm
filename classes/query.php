@@ -127,7 +127,7 @@ class Query {
 			strpos($val, '.') === false ? 't0.'.$val : $val;
 			$this->select[$this->alias.'_c'.$i++] = $this->alias.'.'.$val;
 		}
-		
+
 		return $this;
 	}
 
@@ -340,10 +340,27 @@ class Query {
 			return $this;
 		}
 
-		$rel = call_user_func(array($this->model, 'relations'), $relation);
-		if (empty($rel))
+		if (strpos($relation, '.'))
 		{
-			throw new UndefinedRelation('Relation "'.$relation.'" was not found in the model.');
+			$rels = explode('.', $relation);
+			$model = $this->model;
+			foreach ($rels as $r)
+			{
+				$rel = call_user_func(array($model, 'relations'), $r);
+				if (empty($rel))
+				{
+					throw new UndefinedRelation('Relation "'.$r.'" was not found in the model "'.$model.'".');
+				}
+				$model = $rel->model_to;
+			}
+		}
+		else
+		{
+			$rel = call_user_func(array($this->model, 'relations'), $relation);
+			if (empty($rel))
+			{
+				throw new UndefinedRelation('Relation "'.$relation.'" was not found in the model.');
+			}
 		}
 
 		$this->relations[$relation] = array($rel, $conditions);
@@ -449,7 +466,22 @@ class Query {
 		$models = array();
 		foreach ($this->relations as $name => $rel)
 		{
-			$models = array_merge($models, $rel[0]->join($this->alias, $name, $i++, $rel[1]));
+			// when there's a dot it must be a nested relation
+			if ($pos = strrpos($name, '.'))
+			{
+				if (empty($models[substr($name, 0, $pos)]['table'][1]))
+				{
+					throw new UndefinedRelation('Trying to get the relation of an unloaded relation, make sure you load the parent relation before any of its children.');
+				}
+
+				$alias = $models[substr($name, 0, $pos)]['table'][1];
+			}
+			else
+			{
+				$alias = $this->alias;
+			}
+
+			$models = array_merge($models, $rel[0]->join($alias, $name, $i++, $rel[1]));
 		}
 
 		if ($this->use_subquery())
@@ -653,7 +685,7 @@ class Query {
 			if ((is_array($result) and ! in_array($model::implode_pk($obj), $result))
 				or ! is_array($result) and empty($result))
 			{
-				$this->hydrate($row, array(), $rel_objs[$m['rel_name']], $m['model'], $m['columns']);
+				$this->hydrate($row, ! empty($m['models']) ? $m['models'] : array(), $rel_objs[$m['rel_name']], $m['model'], $m['columns']);
 			}
 		}
 		$obj->_relate($rel_objs);
@@ -691,6 +723,26 @@ class Query {
 		$tmp     = $this->build_query($query, $columns);
 		$query   = $tmp['query'];
 		$models  = $tmp['models'];
+
+		// Make models hierarchical
+		foreach ($models as $name => $values)
+		{
+			if (strpos($name, '.'))
+			{
+				unset($models[$name]);
+				$rels = explode('.', $name);
+				$ref =& $models[array_shift($rels)];
+				foreach ($rels as $rel)
+				{
+					if (empty($ref['models']))
+					{
+						$ref['models'] = array($rel => array());
+					}
+					$ref =& $ref['models'][$rel];
+				}
+				$ref = $values;
+			}
+		}
 
 		$rows = $query->execute()->as_array();
 		$result = array();
