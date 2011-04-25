@@ -19,7 +19,6 @@ Autoloader::add_classes(array(
 	'Orm\\HasMany'      => __DIR__.'/classes/hasmany.php',
 	'Orm\\HasOne'       => __DIR__.'/classes/hasone.php',
 	'Orm\\ManyMany'     => __DIR__.'/classes/manymany.php',
-	'Orm\\ManyThrough'  => __DIR__.'/classes/manythrough.php',
 	'Orm\\Relation'     => __DIR__.'/classes/relation.php',
 
 	// Observers
