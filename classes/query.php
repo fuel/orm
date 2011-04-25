@@ -91,7 +91,8 @@ class Query {
 					$this->related($val);
 					break;
 				case 'where':
-					$where = function (array $val, $or = false) use ($where, $this)
+					$obj = $this;
+					$where = function (array $val, $or = false) use ($where, $obj)
 					{
 						$or ? $this->or_where_open() : $this->where_open();
 						foreach ($val as $k_w => $v_w)
