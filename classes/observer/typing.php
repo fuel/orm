@@ -43,6 +43,10 @@ class Observer_Typing {
 		'/^enum/uiD' => array(
 			'before' => 'Orm\\Observer_Typing::type_set'
 		),
+		'/^bool(ean)?$/uiD' => array(
+			'before' => 'Orm\\Observer_Typing::type_bool_to_int',
+			'after'  => 'Orm\\Observer_Typing::type_bool_from_int',
+		),
 		'/^serialize$/uiD' => array(
 			'before' => 'Orm\\Observer_Typing::type_serialize',
 			'after'  => 'Orm\\Observer_Typing::type_unserialize',
@@ -202,6 +206,30 @@ class Observer_Typing {
 		}
 
 		return $var;
+	}
+
+	/**
+	 * Converts boolean input to 1 or 0 for the DB
+	 *
+	 * @param   bool  value
+	 * @param   array
+	 * @return  int
+	 */
+	public static function type_bool_to_int($var, $settings)
+	{
+		return $var ? 1 : 0;
+	}
+
+	/**
+	 * Converts DB bool values to PHP bool value
+	 *
+	 * @param   bool  value
+	 * @param   array
+	 * @return  int
+	 */
+	public static function type_bool_from_int($var)
+	{
+		return $var == '1' ? true : false;
 	}
 
 	/**
