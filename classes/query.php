@@ -95,25 +95,25 @@ class Query {
 					$where_func = null;
 					$where = function (array $val, $or = false) use (&$where_func, $obj)
 					{
-						$or ? $obj->or_where_open() : $obj->where_open();
+						$or and $obj->or_where_open();
 						foreach ($val as $k_w => $v_w)
 						{
 							if (is_array($v_w) and ! empty($v_w[0]) and is_string($v_w[0]))
 							{
-								exit(\Debug::dump(1, $v_w));
 								call_user_func_array(array($obj, 'where'), $v_w);
 							}
 							elseif (is_int($k_w) or $k_w == 'or')
 							{
-								exit(\Debug::dump(2, $v_w, $k_w));
+								$k_w == 'or' ? $obj->or_where_open() : $obj->where_open();
 								$where($v_w, $k_w == 'or');
+								$k_w == 'or' ? $obj->or_where_close() : $obj->where_close();
 							}
 							else
 							{
 								$obj->where($k_w, $v_w);
 							}
 						}
-						$or ? $obj->or_where_close() : $obj->where_close();
+						$or and $obj->or_where_close();
 					};
 					$where_func = $where;
 					$where($val);
