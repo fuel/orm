@@ -673,11 +673,17 @@ class Query {
 		$obj     = array();
 		foreach ($primary_key as $pk)
 		{
-			if (is_null($row[$prefix.$pk]))
+			$pk_c = null;
+			foreach ($select as $s)
+			{
+				$s[0] === $prefix.$pk and $pk_c = $s[1];
+			}
+
+			if (is_null($row[$pk_c]))
 			{
 				return false;
 			}
-			$obj[$pk] = $row[$prefix.$pk];
+			$obj[$pk] = $row[$pk_c];
 		}
 
 		// Check for cached object
