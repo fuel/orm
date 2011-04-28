@@ -105,7 +105,7 @@ class Query {
 							elseif (is_int($k_w) or $k_w == 'or')
 							{
 								$k_w == 'or' ? $obj->or_where_open() : $obj->where_open();
-								$where($v_w, $k_w == 'or');
+								$where_func($v_w, $k_w == 'or');
 								$k_w == 'or' ? $obj->or_where_close() : $obj->where_close();
 							}
 							else
