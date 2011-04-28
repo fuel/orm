@@ -661,14 +661,15 @@ class Query {
 	 * @param  string  model classname to hydrate
 	 * @param  array   columns to use
 	 */
-	public function hydrate($row, $models, &$result, $model = null, $select = null)
+	public function hydrate(&$row, $models, &$result, $model = null, $select = null)
 	{
 		$model = is_null($model) ? $this->model : $model;
 		$select = is_null($select) ? $this->select() : $select;
 		$obj = array();
 		foreach ($select as $s)
 		{
-			$obj[preg_replace('/^t[0-9]+(_[a-z]+)?\\./uiD', '', $s[0])] = $row[$s[1]];
+			$obj[substr($s[0], strpos($s[0], '.') + 1)] = $row[$s[1]];
+			unset($row[$s[1]]);
 		}
 
 		foreach ($model::primary_key() as $pk)
@@ -679,7 +680,7 @@ class Query {
 			}
 		}
 
-		$cached_obj = $model::cached_object($obj);
+		$cached_obj = Model::cached_object($obj, $model);
 		$pk         = $model::implode_pk($obj);
 		if (is_array($result) and ! array_key_exists($pk, $result))
 		{
