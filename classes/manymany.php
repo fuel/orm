@@ -179,6 +179,7 @@ class ManyMany extends Relation {
 				$this->name.' is invalid.');
 		}
 		$original_model_ids === null and $original_model_ids = array();
+		$del_rels = $original_model_ids;
 
 		foreach ($models_to as $key => $model_to)
 		{
@@ -195,7 +196,6 @@ class ManyMany extends Relation {
 
 			$current_model_id = $model_to ? $model_to->implode_pk($model_to) : null;
 
-			$del_rels = $original_model_ids;
 			// Check if the model was already assigned, if not INSERT relationships:
 			if ( ! in_array($current_model_id, $original_model_ids))
 			{
