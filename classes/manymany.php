@@ -126,24 +126,26 @@ class ManyMany extends Relation {
 
 		$models = array(
 			$rel_name.'_through' => array(
-				'model'      => null,
-				'table'      => array($this->table_through, $alias_to.'_through'),
-				'join_type'  => 'left',
-				'join_on'    => array(),
-				'columns'    => $this->select_through($alias_to.'_through'),
-				'rel_name'   => $this->model_through,
-				'relation'   => $this
+				'model'        => null,
+				'table'        => array($this->table_through, $alias_to.'_through'),
+				'primary_key'  => null,
+				'join_type'    => 'left',
+				'join_on'      => array(),
+				'columns'      => $this->select_through($alias_to.'_through'),
+				'rel_name'     => $this->model_through,
+				'relation'     => $this
 			),
 			$rel_name => array(
-				'model'      => $this->model_to,
-				'table'      => array(call_user_func(array($this->model_to, 'table')), $alias_to),
-				'join_type'  => 'left',
-				'join_on'    => array(),
-				'columns'    => $this->select($alias_to),
-				'rel_name'   => strpos($rel_name, '.') ? substr($rel_name, strrpos($rel_name, '.') + 1) : $rel_name,
-				'relation'   => $this,
-				'where'      => array_key_exists('where', $conditions)    ? $conditions['where']    : array(),
-				'order_by'   => array_key_exists('order_by', $conditions) ? $conditions['order_by'] : array(),
+				'model'        => $this->model_to,
+				'table'        => array(call_user_func(array($this->model_to, 'table')), $alias_to),
+				'primary_key'  => call_user_func(array($this->model_to, 'primary_key')),
+				'join_type'    => 'left',
+				'join_on'      => array(),
+				'columns'      => $this->select($alias_to),
+				'rel_name'     => strpos($rel_name, '.') ? substr($rel_name, strrpos($rel_name, '.') + 1) : $rel_name,
+				'relation'     => $this,
+				'where'        => array_key_exists('where', $conditions)    ? $conditions['where']    : array(),
+				'order_by'     => array_key_exists('order_by', $conditions) ? $conditions['order_by'] : array(),
 			)
 		);
 

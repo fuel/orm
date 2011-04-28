@@ -661,77 +661,84 @@ class Query {
 	 * @param  string  model classname to hydrate
 	 * @param  array   columns to use
 	 */
-	public function hydrate(&$row, $models, &$result, $model = null, $select = null)
+	public function hydrate(&$row, $models, &$result, $model = null, $select = null, $primary_key = null)
 	{
 		$model = is_null($model) ? $this->model : $model;
 		$select = is_null($select) ? $this->select() : $select;
-		$obj = array();
-		foreach ($select as $s)
-		{
-			$obj[substr($s[0], strpos($s[0], '.') + 1)] = $row[$s[1]];
-			unset($row[$s[1]]);
-		}
+		$primary_key = is_null($primary_key) ? $model::primary_key() : $primary_key;
 
-		foreach ($model::primary_key() as $pk)
+		// First check the PKs, if null it's an empty row
+		$r1c1    = reset($select);
+		$prefix  = substr($r1c1[0], 0, strpos($r1c1[0], '.') + 1);
+		$obj     = array();
+		foreach ($primary_key as $pk)
 		{
-			if (is_null($obj[$pk]))
+			if (is_null($row[$prefix.$pk]))
 			{
 				return false;
 			}
+			$obj[$pk] = $row[$prefix.$pk];
 		}
 
-		$cached_obj = Model::cached_object($obj, $model);
-		$pk         = $model::implode_pk($obj);
+		// Check for cached object
+		$pk  = $model::implode_pk($obj);
+		$obj = Model::cached_object($pk, $model);
+
+		// Create the object when it wasn't found
+		if ( ! $obj)
+		{
+			// Retrieve the object array from the row
+			$obj = array();
+			foreach ($select as $s)
+			{
+				$obj[substr($s[0], strpos($s[0], '.') + 1)] = $row[$s[1]];
+				unset($row[$s[1]]);
+			}
+			$obj = $model::factory($obj, false);
+		}
+
+		// if the result to be generated is an array and the current object is not yet in there
 		if (is_array($result) and ! array_key_exists($pk, $result))
 		{
-			if ($cached_obj)
-			{
-				$cached_obj->_update_original($obj);
-				$obj = $cached_obj;
-			}
-			else
-			{
-				$obj = $model::factory($obj, false);
-			}
 			$result[$pk] = $obj;
 		}
+		// if the result to be generated is a single object and empty
 		elseif ( ! is_array($result) and empty($result))
 		{
-			if ($cached_obj)
-			{
-				$cached_obj->_update_original($obj);
-				$obj = $cached_obj;
-			}
-			else
-			{
-				$obj = $model::factory($obj, false);
-			}
 			$result = $obj;
 		}
-		else
-		{
-			$obj = is_array($result) ? $result[$pk] : $result;
-		}
 
+		// start fetching relationships
 		$rel_objs = $obj->_relate();
 		foreach ($models as $m)
 		{
+			// when the expected model is empty, there's nothing to be done
 			if (empty($m['model']))
 			{
 				continue;
 			}
 
+			// when not yet set, create the relation result var with null or array
 			if ( ! array_key_exists($m['rel_name'], $rel_objs))
 			{
 				$rel_objs[$m['rel_name']] = $m['relation']->singular ? null : array();
 			}
 
-			if ((is_array($result) and ! in_array($model::implode_pk($obj), $result))
-				or ! is_array($result) and empty($result))
+			// when array or singular empty, try to fetch the new relation from the row
+			if (is_array($result) and ! in_array($pk, $result) or ! is_array($result) and empty($result))
 			{
-				$this->hydrate($row, ! empty($m['models']) ? $m['models'] : array(), $rel_objs[$m['rel_name']], $m['model'], $m['columns']);
+				$this->hydrate(
+					$row,
+					! empty($m['models']) ? $m['models'] : array(),
+					$rel_objs[$m['rel_name']],
+					$m['model'],
+					$m['columns'],
+					$m['primary_key']
+				);
 			}
 		}
+
+		// attach the retrieved relations to the object and update its original DB values
 		$obj->_relate($rel_objs);
 		$obj->_update_original();
 
@@ -778,10 +785,8 @@ class Query {
 				$ref =& $models[array_shift($rels)];
 				foreach ($rels as $rel)
 				{
-					if (empty($ref['models']))
-					{
-						$ref['models'] = array($rel => array());
-					}
+					empty($ref['models']) and $ref['models'] = array();
+					empty($ref['models'][$rel]) and $ref['models'][$rel] = array();
 					$ref =& $ref['models'][$rel];
 				}
 				$ref = $values;
