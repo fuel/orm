@@ -731,7 +731,7 @@ class Query {
 			}
 
 			// when array or singular empty, try to fetch the new relation from the row
-			if (is_array($result) and ! in_array($pk, $result) or ! is_array($result) and empty($result))
+			if (is_array($result) or ( ! is_array($result) and empty($result)))
 			{
 				$this->hydrate(
 					$row,
