@@ -801,9 +801,10 @@ class Query {
 
 		$rows = $query->execute()->as_array();
 		$result = array();
-		foreach ($rows as $row)
+		foreach ($rows as $id => $row)
 		{
 			$this->hydrate($row, $models, $result);
+			unset($rows[$id]);
 		}
 
 		// It's all built, now lets execute and start hydration
