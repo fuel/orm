@@ -152,7 +152,8 @@ class Observer_Typing {
 			throw new InvalidContentType('Array or object could not be converted to integer.');
 		}
 
-		if ($var < intval($settings['min']) or $var > intval($settings['max']))
+		if ((array_key_exists('min', $settings) and $var < intval($settings['min']))
+			or (array_key_exists('max', $settings) and $var > intval($settings['max'])))
 		{
 			throw new InvalidContentType('Integer value outside of range: '.$var);
 		}
