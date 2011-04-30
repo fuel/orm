@@ -884,7 +884,9 @@ class Query {
 	public function count($distinct = false)
 	{
 		$select = $this->select ?: call_user_func($this->model.'::primary_key');
-		$select = $distinct ? \Database_Connection::instance()->table_prefix().$this->alias.'.'.$distinct : reset($select);
+		$select = $distinct ?: reset($select);
+		$select = \Database_Connection::instance()->table_prefix().
+			(strpos($select, '.') === false ? $this->alias.'.'.$select : $select);
 
 		// Get the columns
 		$columns = \DB::expr('COUNT('.($distinct ? 'DISTINCT ' : '').$select.') AS count_result');
