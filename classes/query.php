@@ -460,14 +460,15 @@ class Query {
 		}
 
 		// Get the order
-		if ( ! empty($this->order_by))
+		$order_by = $this->order_by;
+		if ( ! empty($order_by))
 		{
-			foreach ($this->order_by as $property => $direction)
+			foreach ($order_by as $property => $direction)
 			{
 				if (strpos($property, $this->alias.'.') === 0)
 				{
 					$query->order_by($type == 'select' ? $property : substr($property, strlen($this->alias.'.')), $direction);
-					unset($this->order_by[$property]);
+					unset($order_by[$property]);
 				}
 			}
 		}
@@ -478,12 +479,13 @@ class Query {
 			$query->group_by($this->group_by);
 		}
 
-		if ( ! empty($this->where))
+		$where = $this->where;
+		if ( ! empty($where))
 		{
 			$open_nests = 0;
-			foreach ($this->where as $key => $where)
+			foreach ($where as $key => $w)
 			{
-				list($method, $conditional) = $where;
+				list($method, $conditional) = $w;
 
 				if (empty($conditional) or $open_nests > 0)
 				{
@@ -496,7 +498,7 @@ class Query {
 				{
 					$type != 'select' and $conditional[0] = substr($conditional[0], strlen($this->alias.'.'));
 					call_user_func_array(array($query, $method), $conditional);
-					unset($this->where[$key]);
+					unset($where[$key]);
 				}
 			}
 		}
@@ -581,7 +583,14 @@ class Query {
 			{
 				foreach ((array) $m['order_by'] as $k_ob => $v_ob)
 				{
-					is_int($k_ob) ? $this->order_by($m['table'][1].'.'.$v_ob) : $this->order_by($m['table'][1].'.'.$k_ob, $v_ob);
+					if (is_int($k_ob))
+					{
+						$order_by[$v_ob] = 'ASC';
+					}
+					else
+					{
+						$order_by[$k_ob] = $v_ob;
+					}
 				}
 			}
 			if ( ! empty($m['where']))
@@ -591,19 +600,23 @@ class Query {
 					if (is_int($k_w))
 					{
 						$v_w[0] = $m['table'][1].'.'.$v_w[0];
-						call_user_func_array(array($this, 'where'), $v_w);
+						$where[] = array(
+							$v_w[0],
+							array_key_exists(2, $v_w) ? $v_w[1] : '=',
+							array_key_exists(2, $v_w) ? $v_w[2] : $v_w[1]
+						);
 					}
 					else
 					{
-						$this->where($m['table'][1].'.'.$k_w, $v_w);
+						$where[] = array($m['table'][1].'.'.$k_w, '=', $v_w);
 					}
 				}
 			}
 		}
 		// Get the order
-		if ( ! empty($this->order_by))
+		if ( ! empty($order_by))
 		{
-			foreach ($this->order_by as $column => $direction)
+			foreach ($order_by as $column => $direction)
 			{
 				// try to rewrite conditions on the relations to their table alias
 				$dotpos = strrpos($column, '.');
@@ -618,11 +631,11 @@ class Query {
 		}
 
 		// put omitted where conditions back
-		if ( ! empty($this->where))
+		if ( ! empty($where))
 		{
-			foreach ($this->where as $where)
+			foreach ($where as $w)
 			{
-				list($method, $conditional) = $where;
+				list($method, $conditional) = $w;
 
 				// try to rewrite conditions on the relations to their table alias
 				if ( ! empty($conditional))
@@ -870,11 +883,11 @@ class Query {
 	 */
 	public function count($distinct = false)
 	{
-		$this->select or $this->select = call_user_func($this->model.'::primary_key');
-		$select = reset($this->select);
+		$select = $this->select ?: call_user_func($this->model.'::primary_key');
+		$select = $distinct ? \Database_Connection::instance()->table_prefix().$this->alias.'.'.$distinct : reset($select);
 
 		// Get the columns
-		$columns = \DB::expr('COUNT('.($distinct ? 'DISTINCT ' : '').\Database_Connection::instance()->table_prefix().$this->alias.'.'.($distinct ?: $select).') AS count_result');
+		$columns = \DB::expr('COUNT('.($distinct ? 'DISTINCT ' : '').$select.') AS count_result');
 
 		// Remove the current select and
 		$query = call_user_func('DB::select', $columns);
