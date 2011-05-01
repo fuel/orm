@@ -957,7 +957,17 @@ class Model implements \ArrayAccess, \Iterator {
 					$observer = $observer_class;
 				}
 
-				call_user_func(array($observer, 'orm_notify'), $this, $event);
+				try
+				{
+					call_user_func(array($observer, 'orm_notify'), $this, $event);
+				}
+				catch (\Exception $e)
+				{
+					// Unfreeze before failing
+					$this->unfreeze();
+
+					throw $e;
+				}
 			}
 		}
 	}
