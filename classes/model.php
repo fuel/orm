@@ -523,10 +523,7 @@ class Model implements \ArrayAccess, \Iterator {
 		else
 		{
 			$this->_update_original($data);
-			foreach ($data as $prop => $val)
-			{
-				$this->_data[$prop] = $val;
-			}
+			$this->_data = array_merge($this->_data, $data);
 		}
 
 		if ($new === false)
@@ -549,10 +546,7 @@ class Model implements \ArrayAccess, \Iterator {
 	public function _update_original($original = null)
 	{
 		$original = is_null($original) ? $this->_data : $original;
-		foreach ($original as $key => $val)
-		{
-			$this->_original[$key] = $val;
-		}
+		$this->_original = array_merge($this->_original, $original);
 
 		$this->_update_original_relations();
 	}
