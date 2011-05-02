@@ -512,20 +512,20 @@ class Model implements \ArrayAccess, \Iterator {
 			{
 				if (array_key_exists($prop, $data))
 				{
-					$this->{$prop} = $data[$prop];
+					$this->_data[$prop] = $data[$prop];
 				}
 				elseif (array_key_exists('default', $settings))
 				{
-					$this->{$prop} = $settings['default'];
+					$this->_data[$prop] = $settings['default'];
 				}
 			}
 		}
 		else
 		{
 			$this->_update_original($data);
-			foreach ($data as $key => $val)
+			foreach ($data as $prop => $val)
 			{
-				$this->{$key} = $val;
+				$this->_data[$prop] = $val;
 			}
 		}
 
