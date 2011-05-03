@@ -739,8 +739,9 @@ class Query {
 				$rel_objs[$m['rel_name']] = $m['relation']->singular ? null : array();
 			}
 
-			// when array or singular empty, try to fetch the new relation from the row
-			if (is_array($result) or ( ! is_array($result) and empty($result)))
+			// when result is array or singular empty, try to fetch the new relation from the row
+			if (is_array($rel_objs[$m['rel_name']])
+				or ( ! is_array($rel_objs[$m['rel_name']]) and empty($rel_objs[$m['rel_name']])))
 			{
 				$this->hydrate(
 					$row,
