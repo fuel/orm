@@ -740,18 +740,14 @@ class Query {
 			}
 
 			// when result is array or singular empty, try to fetch the new relation from the row
-			if (is_array($rel_objs[$m['rel_name']])
-				or ( ! is_array($rel_objs[$m['rel_name']]) and empty($rel_objs[$m['rel_name']])))
-			{
-				$this->hydrate(
-					$row,
-					! empty($m['models']) ? $m['models'] : array(),
-					$rel_objs[$m['rel_name']],
-					$m['model'],
-					$m['columns'],
-					$m['primary_key']
-				);
-			}
+			$this->hydrate(
+				$row,
+				! empty($m['models']) ? $m['models'] : array(),
+				$rel_objs[$m['rel_name']],
+				$m['model'],
+				$m['columns'],
+				$m['primary_key']
+			);
 		}
 
 		// attach the retrieved relations to the object and update its original DB values
