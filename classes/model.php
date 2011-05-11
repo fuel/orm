@@ -209,7 +209,7 @@ class Model implements \ArrayAccess, \Iterator {
 		{
 			try
 			{
-				$properties = \DB::list_columns(static::table());
+				$properties = \DB::list_columns(static::table(), null, static::database());
 			}
 			catch (\Exception $e)
 			{
