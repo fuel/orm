@@ -36,6 +36,11 @@ class Model implements \ArrayAccess, \Iterator {
 	// protected static $_many_through;
 
 	/**
+	 * @var  string  database
+	 */
+	protected static $_database = null;
+
+	/**
 	 * @var  array  name or names of the primary keys
 	 */
 	protected static $_primary_key = array('id');
@@ -103,6 +108,15 @@ class Model implements \ArrayAccess, \Iterator {
 		}
 
 		return static::$_table_names_cached[$class];
+	}
+
+	/**
+	 * Return database used for the model
+	 * 
+	 * @return string
+	 */
+	public static function database() {
+		return static::$_database;
 	}
 
 	/**
@@ -195,7 +209,7 @@ class Model implements \ArrayAccess, \Iterator {
 		{
 			try
 			{
-				$properties = \DB::list_columns(static::table());
+				$properties = \DB::list_columns(static::table(), null, static::database());
 			}
 			catch (\Exception $e)
 			{
