@@ -773,7 +773,7 @@ class Model implements \ArrayAccess, \Iterator {
 		$properties  = array_keys(static::properties());
 		foreach ($properties as $p)
 		{
-			if ( ! (in_array($p, $primary_key) and is_null($this->{$p})))
+			if ( ! (in_array($p, $primary_key) or is_null($this->{$p})))
 			{
 				$query->set($p, $this->{$p});
 			}
