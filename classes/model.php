@@ -1041,7 +1041,7 @@ class Model implements \ArrayAccess, \Iterator {
 		// Reset primary keys
 		foreach (static::$_primary_key as $pk)
 		{
-			$this->{$pk} = null;
+			$this->_data[$pk] = null;
 		}
 
 		// This is a new object
