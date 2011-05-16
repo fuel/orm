@@ -81,7 +81,7 @@ class Observer_Typing {
 			}
 			if ($instance->{$p} === null) // add check if null is allowed
 			{
-				if (array_key_exists('is_nullable', $settings) and $settings['is_nullable'] === false)
+				if (array_key_exists('null', $settings) and $settings['null'] === false)
 				{
 					throw new InvalidContentType('The property "'.$p.'" cannot be NULL.');
 				}
