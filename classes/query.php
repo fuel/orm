@@ -610,15 +610,15 @@ class Query {
 					if (is_int($k_w))
 					{
 						$v_w[0] = $m['table'][1].'.'.$v_w[0];
-						$where[] = array(
+						$where[] = array('and_where', array(
 							$v_w[0],
 							array_key_exists(2, $v_w) ? $v_w[1] : '=',
 							array_key_exists(2, $v_w) ? $v_w[2] : $v_w[1]
-						);
+						));
 					}
 					else
 					{
-						$where[] = array($m['table'][1].'.'.$k_w, '=', $v_w);
+						$where[] = array('and_where', array($m['table'][1].'.'.$k_w, '=', $v_w));
 					}
 				}
 			}
