@@ -14,15 +14,20 @@ namespace Orm;
 
 class Query {
 
-	public static function factory($model, $options = array())
+	public static function factory($model, $connection = null, $options = array())
 	{
-		return new static($model, $options);
+		return new static($model, $connection, $options);
 	}
 
 	/**
 	 * @var  string  classname of the model
 	 */
 	protected $model;
+
+	/**
+	 * @var  null|string  connection name to use
+	 */
+	protected $connection;
 
 	/**
 	 * @var  string  table alias
@@ -74,7 +79,7 @@ class Query {
 	 */
 	protected $values = array();
 
-	protected function __construct($model, $options, $table_alias = null)
+	protected function __construct($model, $connection, $options, $table_alias = null)
 	{
 		$this->model = $model;
 
@@ -569,6 +574,11 @@ class Query {
 		}
 		foreach ($models as $m)
 		{
+			if ($m['connection'] != $this->connection)
+			{
+				throw new Exception('Models cannot be related between connection.');
+			}
+
 			$join_query = $query->join($m['table'], $m['join_type']);
 			foreach ($m['join_on'] as $on)
 			{
@@ -805,7 +815,7 @@ class Query {
 			}
 		}
 
-		$rows = $query->execute()->as_array();
+		$rows = $query->execute($this->connection)->as_array();
 		$result = array();
 		$model = $this->model;
 		$select = $this->select();
@@ -895,7 +905,7 @@ class Query {
 
 		$tmp   = $this->build_query($query, $columns);
 		$query = $tmp['query'];
-		$count = $query->execute()->get('count_result');
+		$count = $query->execute($this->connection)->get('count_result');
 
 		// Database_Result::get('count_result') returns a string | null
 		if ($count === null)
@@ -927,7 +937,7 @@ class Query {
 
 		$tmp   = $this->build_query($query, $columns);
 		$query = $tmp['query'];
-		$max   = $query->execute()->get('max_result');
+		$max   = $query->execute($this->connection)->get('max_result');
 
 		// Database_Result::get('max_result') returns a string | null
 		if ($max === null)
@@ -959,7 +969,7 @@ class Query {
 
 		$tmp   = $this->build_query($query, $columns);
 		$query = $tmp['query'];
-		$min   = $query->execute()->get('min_result');
+		$min   = $query->execute($this->connection)->get('min_result');
 
 		// Database_Result::get('min_result') returns a string | null
 		if ($min === null)
@@ -980,7 +990,7 @@ class Query {
 	{
 		$res = \DB::insert(call_user_func($this->model.'::table'), array_keys($this->values))
 			->values(array_values($this->values))
-			->execute();
+			->execute($this->connection);
 
 		// Failed to save the new record
 		if ($res[0] === 0)
@@ -1009,7 +1019,7 @@ class Query {
 		$query = \DB::update(call_user_func($this->model.'::table'));
 		$tmp   = $this->build_query($query, array(), 'update');
 		$query = $tmp['query'];
-		$res = $query->set($this->values)->execute();
+		$res = $query->set($this->values)->execute($this->connection);
 
 		// put back any relations/group_by settings
 		$this->relations = $tmp_relations;
@@ -1036,7 +1046,7 @@ class Query {
 		$query = \DB::delete(call_user_func($this->model.'::table'));
 		$tmp   = $this->build_query($query, array(), 'delete');
 		$query = $tmp['query'];
-		$res = $query->execute();
+		$res = $query->execute($this->connection);
 
 		// put back any relations/group_by settings
 		$this->relations = $tmp_relations;

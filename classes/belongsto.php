@@ -57,6 +57,7 @@ class BelongsTo extends Relation {
 		$alias_to = 't'.$alias_to_nr;
 		$model = array(
 			'model'        => $this->model_to,
+			'connection'   => call_user_func(array($this->model_to, 'connection')),
 			'table'        => array(call_user_func(array($this->model_to, 'table')), $alias_to),
 			'primary_key'  => call_user_func(array($this->model_to, 'primary_key')),
 			'join_type'    => 'left',

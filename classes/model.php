@@ -19,6 +19,11 @@ class Model implements \ArrayAccess, \Iterator {
 	 * --------------------------------------------------------------------------- */
 
 	/**
+	 * @var  string  connection to use
+	 */
+	// protected static $_connection = null;
+
+	/**
 	 * @var  string  table name to overwrite assumption
 	 */
 	// protected static $_table_name;
@@ -84,6 +89,18 @@ class Model implements \ArrayAccess, \Iterator {
 	public static function factory($data = array(), $new = true)
 	{
 		return new static($data, $new);
+	}
+
+	/**
+	 * Fetch the database connection name to use
+	 *
+	 * @return  null|string
+	 */
+	public static function connection()
+	{
+		$class = get_called_class();
+
+		return property_exists($class, '_connection') ? static::$_connection : null;
 	}
 
 	/**
@@ -204,7 +221,7 @@ class Model implements \ArrayAccess, \Iterator {
 		{
 			try
 			{
-				$properties = \DB::list_columns(static::table());
+				$properties = \DB::list_columns(static::table(), null, static::connection());
 			}
 			catch (\Exception $e)
 			{
@@ -358,7 +375,7 @@ class Model implements \ArrayAccess, \Iterator {
 	 */
 	public static function query($options = array())
 	{
-		return Query::factory(get_called_class(), $options);
+		return Query::factory(get_called_class(), static::connection(), $options);
 	}
 
 	/**
@@ -369,7 +386,7 @@ class Model implements \ArrayAccess, \Iterator {
 	 */
 	public static function count(array $options = array())
 	{
-		return Query::factory(get_called_class(), $options)->count();
+		return Query::factory(get_called_class(), static::connection(), $options)->count();
 	}
 
 	/**
@@ -381,7 +398,7 @@ class Model implements \ArrayAccess, \Iterator {
 	 */
 	public static function max($key = null)
 	{
-		return Query::factory(get_called_class())->max($key ?: static::primary_key());
+		return Query::factory(get_called_class(), static::connection())->max($key ?: static::primary_key());
 	}
 
 	/**
@@ -393,7 +410,7 @@ class Model implements \ArrayAccess, \Iterator {
 	 */
 	public static function min($key = null)
 	{
-		return Query::factory(get_called_class())->min($key ?: static::primary_key());
+		return Query::factory(get_called_class(), static::connection())->min($key ?: static::primary_key());
 	}
 
 	public static function __callStatic($method, $args)
@@ -779,7 +796,7 @@ class Model implements \ArrayAccess, \Iterator {
 		$this->observe('before_insert');
 
 		// Set all current values
-		$query = Query::factory(get_called_class());
+		$query = Query::factory(get_called_class(), static::connection());
 		$primary_key = static::primary_key();
 		$properties  = array_keys(static::properties());
 		foreach ($properties as $p)
@@ -829,7 +846,7 @@ class Model implements \ArrayAccess, \Iterator {
 		$this->observe('before_update');
 
 		// Create the query and limit to primary key(s)
-		$query       = Query::factory(get_called_class())->limit(1);
+		$query       = Query::factory(get_called_class(), static::connection())->limit(1);
 		$primary_key = static::primary_key();
 		$properties  = array_keys(static::properties());
 		foreach ($primary_key as $pk)
@@ -886,7 +903,7 @@ class Model implements \ArrayAccess, \Iterator {
 		$this->unfreeze();
 
 		// Create the query and limit to primary key(s)
-		$query = Query::factory(get_called_class())->limit(1);
+		$query = Query::factory(get_called_class(), static::connection())->limit(1);
 		$primary_key = static::primary_key();
 		foreach ($primary_key as $pk)
 		{
