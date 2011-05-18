@@ -82,6 +82,7 @@ class Query {
 	protected function __construct($model, $connection, $options, $table_alias = null)
 	{
 		$this->model = $model;
+		$this->connection = $connection;
 
 		foreach ($options as $opt => $val)
 		{
