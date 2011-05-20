@@ -87,15 +87,9 @@ class HasOne extends Relation {
 			throw new Exception('Invalid Model instance added to relations in this model.');
 		}
 
-		// Save if it's a yet unsaved object
-		if ($model_to and $model_to->is_new())
-		{
-			$model_to->save(false);
-		}
-
-		$current_model_id = $model_to ? $model_to->implode_pk($model_to) : null;
+		$current_model_id = ($model_to and ! $model_to->is_new()) ? $model_to->implode_pk($model_to) : null;
 		// Check if there was another model assigned (this supersedes any change to the foreign key(s))
-		if ($current_model_id != $original_model_id)
+		if (($model_to and $model_to->is_new()) or $current_model_id != $original_model_id)
 		{
 			// assign this object to the new objects foreign keys
 			if ( ! empty($model_to))

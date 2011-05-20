@@ -94,16 +94,10 @@ class HasMany extends Relation {
 				throw new Exception('Invalid Model instance added to relations in this model.');
 			}
 
-			// Save if it's a yet unsaved object
-			if ($model_to->is_new())
-			{
-				$model_to->save(false);
-			}
-
-			$current_model_id = $model_to ? $model_to->implode_pk($model_to) : null;
+			$current_model_id = ($model_to and ! $model_to->is_new()) ? $model_to->implode_pk($model_to) : null;
 
 			// Check if the model was already assigned
-			if ( ! in_array($current_model_id, $original_model_ids))
+			if (($model_to and $model_to->is_new()) or ! in_array($current_model_id, $original_model_ids))
 			{
 				// assign this object to the new objects foreign keys
 				reset($this->key_to);
@@ -114,6 +108,7 @@ class HasMany extends Relation {
 					$model_to->{current($this->key_to)} = $model_from->{$pk};
 					next($this->key_to);
 				}
+				$model_to->is_new() and $model_to->save(false);
 				$frozen and $model_to->freeze();
 			}
 			// check if the model_to's foreign_keys match the model_from's primary keys
