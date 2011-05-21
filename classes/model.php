@@ -814,7 +814,10 @@ class Model implements \ArrayAccess, \Iterator {
 		if (count($primary_key) == 1 and $id !== false)
 		{
 			$pk = reset($primary_key);
-			$this->{$pk} = $id;
+			if ($this->{$pk} === null)
+			{
+				$this->{$pk} = $id;
+			}
 		}
 
 		// update the original properties on creation and cache object for future retrieval in this request
@@ -949,7 +952,7 @@ class Model implements \ArrayAccess, \Iterator {
 	{
 		foreach ($this->_original as $p => $val)
 		{
-			$this->{$p} = $val;
+			$this->_data[$p] = $val;
 		}
 	}
 
