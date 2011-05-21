@@ -1109,7 +1109,7 @@ class Model implements \ArrayAccess, \Iterator {
 
 	public function offsetExists($offset)
 	{
-		$this->__isset($offset);
+		return $this->__isset($offset);
 	}
 
 	public function offsetUnset($offset)
@@ -1121,7 +1121,7 @@ class Model implements \ArrayAccess, \Iterator {
 	{
 		try
 		{
-			$this->__get($offset);
+			return $this->__get($offset);
 		}
 		catch (\Exception $e)
 		{
