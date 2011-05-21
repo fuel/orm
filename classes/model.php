@@ -870,7 +870,6 @@ class Model implements \ArrayAccess, \Iterator {
 		}
 
 		// update the original property on success
-
 		$this->observe('after_update');
 
 		return true;

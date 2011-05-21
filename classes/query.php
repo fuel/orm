@@ -1026,7 +1026,8 @@ class Query {
 		$this->relations = $tmp_relations;
 		$this->group_by  = $tmp_group_by;
 
-		return $res > 0;
+		// Update can affect 0 rows when input types are different but outcome stays the same
+		return $res >= 0;
 	}
 
 	/**
