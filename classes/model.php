@@ -969,7 +969,7 @@ class Model implements \ArrayAccess, \Iterator {
 			{
 				if ( ! class_exists($observer))
 				{
-					$observer_class = 'Observer_'.$observer; // TODO: needs to work with namespaces
+					$observer_class = \Inflector::get_namespace($observer).'Observer_'.\Inflector::denamespace($observer);
 					if ( ! class_exists($observer_class))
 					{
 						throw new InvalidObserver($observer);
