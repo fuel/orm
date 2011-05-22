@@ -899,7 +899,7 @@ class Query {
 		$columns = \DB::expr('COUNT('.($distinct ? 'DISTINCT ' : '').$select.') AS count_result');
 
 		// Remove the current select and
-		$query = call_user_func('DB::select', $columns);
+		$query = call_user_func('DB::select', $columns, 'count');
 
 		// Set from table
 		$query->from(array(call_user_func($this->model.'::table'), $this->alias));
@@ -931,7 +931,7 @@ class Query {
 		$columns = \DB::expr('MAX('.\Database_Connection::instance()->table_prefix().$this->alias.'.'.$column.') AS max_result');
 
 		// Remove the current select and
-		$query = call_user_func('DB::select', $columns);
+		$query = call_user_func('DB::select', $columns, 'max');
 
 		// Set from table
 		$query->from(array(call_user_func($this->model.'::table'), $this->alias));
@@ -963,7 +963,7 @@ class Query {
 		$columns = \DB::expr('MIN('.\Database_Connection::instance()->table_prefix().$this->alias.'.'.$column.') AS min_result');
 
 		// Remove the current select and
-		$query = call_user_func('DB::select', $columns);
+		$query = call_user_func('DB::select', $columns, 'min');
 
 		// Set from table
 		$query->from(array(call_user_func($this->model.'::table'), $this->alias));
