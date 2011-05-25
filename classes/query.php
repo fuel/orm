@@ -255,7 +255,12 @@ class Query {
 			return $this;
 		}
 
-		strpos($condition[0], '.') === false and $condition[0] = $this->alias.'.'.$condition[0];
+		// prefix table alias when not yet prefixed and not a DB expression object
+		if (strpos($condition[0], '.') === false and ! $condition[0] instanceof \Fuel\Core\Database_Expression)
+		{
+			$condition[0] = $this->alias.'.'.$condition[0];
+		}
+
 		if (count($condition) == 2)
 		{
 			$this->where[] = array($type, array($condition[0], '=', $condition[1]));
