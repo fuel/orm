@@ -354,7 +354,12 @@ class Query {
 			return $this;
 		}
 
-		strpos($property, '.') === false and $property = $this->alias.'.'.$property;
+		// prefix table alias when not yet prefixed and not a DB expression object
+		if (strpos($property, '.') === false and ! $property instanceof \Fuel\Core\Database_Expression)
+		{
+			$property = $this->alias.'.'.$property;
+		}
+
 		$this->order_by[$property] = $direction;
 
 		return $this;
