@@ -137,7 +137,7 @@ abstract class Relation {
 	{
 		if (strncmp($property, '_', 1) == 0 or ! property_exists($this, $property))
 		{
-			throw new Exception('Invalid relation property: '.$property);
+			throw new \Fuel_Exception('Invalid relation property: '.$property);
 		}
 
 		return $this->{$property};

@@ -12,6 +12,9 @@
 
 namespace Orm;
 
+// Invalid content exception, thrown when conversion is not possible
+class InvalidContentType extends Exception {}
+
 class Observer_Typing {
 
 	/**
@@ -303,8 +306,5 @@ class Observer_Typing {
 		return json_decode($var);
 	}
 }
-
-// Invalid content exception, thrown when conversion is not possible
-class InvalidContentType extends Exception {}
 
 // End of file typing.php

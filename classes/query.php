@@ -156,7 +156,7 @@ class Query {
 
 				if (empty($fields))
 				{
-					throw new Exception('No properties found in model.');
+					throw new \Fuel_Exception('No properties found in model.');
 				}
 				foreach ($fields as $field)
 				{
@@ -266,7 +266,7 @@ class Query {
 		}
 		else
 		{
-			throw new Exception('Invalid param count for where condition.');
+			throw new \Fuel_Exception('Invalid param count for where condition.');
 		}
 
 		return $this;
@@ -380,7 +380,7 @@ class Query {
 				$rel = call_user_func(array($model, 'relations'), $r);
 				if (empty($rel))
 				{
-					throw new UndefinedRelation('Relation "'.$r.'" was not found in the model "'.$model.'".');
+					throw new \UnexpectedValueException('Relation "'.$r.'" was not found in the model "'.$model.'".');
 				}
 				$model = $rel->model_to;
 			}
@@ -390,7 +390,7 @@ class Query {
 			$rel = call_user_func(array($this->model, 'relations'), $relation);
 			if (empty($rel))
 			{
-				throw new UndefinedRelation('Relation "'.$relation.'" was not found in the model.');
+				throw new \UnexpectedValueException('Relation "'.$relation.'" was not found in the model.');
 			}
 		}
 
@@ -524,7 +524,7 @@ class Query {
 			{
 				if (empty($models[substr($name, 0, $pos)]['table'][1]))
 				{
-					throw new UndefinedRelation('Trying to get the relation of an unloaded relation, make sure you load the parent relation before any of its children.');
+					throw new \UnexpectedValueException('Trying to get the relation of an unloaded relation, make sure you load the parent relation before any of its children.');
 				}
 
 				$alias = $models[substr($name, 0, $pos)]['table'][1];
@@ -577,7 +577,7 @@ class Query {
 		{
 			if ($m['connection'] != $this->connection)
 			{
-				throw new Exception('Models cannot be related between connection.');
+				throw new \Fuel_Exception('Models cannot be related between connection.');
 			}
 
 			$join_query = $query->join($m['table'], $m['join_type']);

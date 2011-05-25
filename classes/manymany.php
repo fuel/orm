@@ -68,7 +68,7 @@ class ManyMany extends Relation {
 
 		if ( ! class_exists($this->model_to))
 		{
-			throw new Exception('Related model not found by Many_Many relation "'.$this->name.'": '.$this->model_to);
+			throw new \Fuel_Exception('Related model not found by Many_Many relation "'.$this->name.'": '.$this->model_to);
 		}
 	}
 
@@ -177,7 +177,7 @@ class ManyMany extends Relation {
 
 		if ( ! is_array($models_to) and ($models_to = is_null($models_to) ? array() : $models_to) !== array())
 		{
-			throw new Exception('Assigned relationships must be an array or null, given relationship value for '.
+			throw new \Fuel_Exception('Assigned relationships must be an array or null, given relationship value for '.
 				$this->name.' is invalid.');
 		}
 		$original_model_ids === null and $original_model_ids = array();
@@ -187,7 +187,7 @@ class ManyMany extends Relation {
 		{
 			if ( ! $model_to instanceof $this->model_to)
 			{
-				throw new Exception('Invalid Model instance added to relations in this model.');
+				throw new \Fuel_Exception('Invalid Model instance added to relations in this model.');
 			}
 
 			// Save if it's a yet unsaved object

@@ -12,6 +12,9 @@
 
 namespace Orm;
 
+// Exception to throw when validation failed
+class ValidationFailed extends Exception {}
+
 class Observer_Validation extends Observer {
 
 	/**
@@ -92,8 +95,5 @@ class Observer_Validation extends Observer {
 		}
 	}
 }
-
-// Exception to throw when validation failed
-class ValidationFailed extends Exception {}
 
 // End of file validation.php
