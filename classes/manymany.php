@@ -64,7 +64,7 @@ class ManyMany extends Relation {
 			? (array) $config['key_through_to'] : (array) \Inflector::foreign_key($this->model_to);
 
 		$this->cascade_save    = array_key_exists('cascade_save', $config) ? $config['cascade_save'] : $this->cascade_save;
-		$this->cascade_delete  = array_key_exists('cascade_save', $config) ? $config['cascade_save'] : $this->cascade_delete;
+		$this->cascade_delete  = array_key_exists('cascade_delete', $config) ? $config['cascade_delete'] : $this->cascade_delete;
 
 		if ( ! class_exists($this->model_to))
 		{

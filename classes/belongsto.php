@@ -30,7 +30,7 @@ class BelongsTo extends Relation {
 		$this->conditions  = array_key_exists('conditions', $config) ? (array) $config['conditions'] : array();
 
 		$this->cascade_save    = array_key_exists('cascade_save', $config) ? $config['cascade_save'] : $this->cascade_save;
-		$this->cascade_delete  = array_key_exists('cascade_save', $config) ? $config['cascade_save'] : $this->cascade_delete;
+		$this->cascade_delete  = array_key_exists('cascade_delete', $config) ? $config['cascade_delete'] : $this->cascade_delete;
 
 		if ( ! class_exists($this->model_to))
 		{
