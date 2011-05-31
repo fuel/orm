@@ -13,7 +13,7 @@
 namespace Orm;
 
 // Invalid content exception, thrown when conversion is not possible
-class InvalidContentType extends Exception {}
+class InvalidContentType extends \UnexpectedValueException {}
 
 class Observer_Typing {
 

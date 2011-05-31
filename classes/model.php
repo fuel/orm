@@ -15,12 +15,12 @@ namespace Orm;
 /**
  * Record Not Found Exception
  */
-class RecordNotFound extends \Fuel_Exception {}
+class RecordNotFound extends \OutOfBoundsException {}
 
 /**
  * Frozen Object Exception
  */
-class FrozenObject extends \Fuel_Exception {}
+class FrozenObject extends \RuntimeException {}
 
 class Model implements \ArrayAccess, \Iterator {
 
