@@ -1,7 +1,5 @@
 <?php
 /**
- * Fuel
- *
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
  * @package		Fuel
@@ -40,6 +38,11 @@ abstract class Relation {
 	 * @var  string  foreign key in related model
 	 */
 	protected $key_to = array();
+
+	/**
+	 * @var  array  where & order_by conditions for loading this relation
+	 */
+	protected $conditions = array();
 
 	/**
 	 * @var  bool  whether it's a single object or multiple
@@ -134,7 +137,7 @@ abstract class Relation {
 	{
 		if (strncmp($property, '_', 1) == 0 or ! property_exists($this, $property))
 		{
-			throw new Exception('Invalid relation property: '.$property);
+			throw new \Fuel_Exception('Invalid relation property: '.$property);
 		}
 
 		return $this->{$property};

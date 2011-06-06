@@ -1,7 +1,5 @@
 <?php
 /**
- * Fuel
- *
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
  * @package		Fuel
@@ -25,13 +23,14 @@ class HasOne extends Relation {
 		$this->model_to    = array_key_exists('model_to', $config) ? $config['model_to'] : \Inflector::get_namespace($from).'Model_'.\Inflector::classify($name);
 		$this->key_from    = array_key_exists('key_from', $config) ? (array) $config['key_from'] : $this->key_from;
 		$this->key_to      = array_key_exists('key_to', $config) ? (array) $config['key_to'] : (array) \Inflector::foreign_key($this->model_from);
+		$this->conditions  = array_key_exists('conditions', $config) ? (array) $config['conditions'] : array();
 
 		$this->cascade_save    = array_key_exists('cascade_save', $config) ? $config['cascade_save'] : $this->cascade_save;
-		$this->cascade_delete  = array_key_exists('cascade_save', $config) ? $config['cascade_save'] : $this->cascade_delete;
+		$this->cascade_delete  = array_key_exists('cascade_delete', $config) ? $config['cascade_delete'] : $this->cascade_delete;
 
 		if ( ! class_exists($this->model_to))
 		{
-			throw new Exception('Related model not found by Has_One relation "'.$this->name.'": '.$this->model_to);
+			throw new \Fuel_Exception('Related model not found by Has_One relation "'.$this->name.'": '.$this->model_to);
 		}
 	}
 
@@ -47,17 +46,23 @@ class HasOne extends Relation {
 		return $query->get_one();
 	}
 
-	public function join($alias_from, $rel_name, $alias_to_nr)
+	public function join($alias_from, $rel_name, $alias_to_nr, $conditions = array())
 	{
+		$conditions = array_merge($this->conditions, $conditions);
+
 		$alias_to = 't'.$alias_to_nr;
 		$model = array(
-			'model'      => $this->model_to,
-			'table'      => array(call_user_func(array($this->model_to, 'table')), $alias_to),
-			'join_type'  => 'left',
-			'join_on'    => array(),
-			'columns'    => $this->select($alias_to),
-			'rel_name'   => $rel_name,
-			'relation'   => $this
+			'model'        => $this->model_to,
+			'connection'   => call_user_func(array($this->model_to, 'connection')),
+			'table'        => array(call_user_func(array($this->model_to, 'table')), $alias_to),
+			'primary_key'  => call_user_func(array($this->model_to, 'primary_key')),
+			'join_type'    => 'left',
+			'join_on'      => array(),
+			'columns'      => $this->select($alias_to),
+			'rel_name'     => strpos($rel_name, '.') ? substr($rel_name, strrpos($rel_name, '.') + 1) : $rel_name,
+			'relation'     => $this,
+			'where'        => array_key_exists('where', $conditions)    ? $conditions['where']    : array(),
+			'order_by'     => array_key_exists('order_by', $conditions) ? $conditions['order_by'] : array(),
 		);
 
 		reset($this->key_to);
@@ -67,7 +72,7 @@ class HasOne extends Relation {
 			next($this->key_to);
 		}
 
-		return array($model);
+		return array($rel_name => $model);
 	}
 
 	public function save($model_from, $model_to, $original_model_id, $parent_saved, $cascade)
@@ -79,18 +84,12 @@ class HasOne extends Relation {
 
 		if ( ! $model_to instanceof $this->model_to and $model_to !== null)
 		{
-			throw new Exception('Invalid Model instance added to relations in this model.');
+			throw new \Fuel_Exception('Invalid Model instance added to relations in this model.');
 		}
 
-		// Save if it's a yet unsaved object
-		if ($model_to and $model_to->is_new())
-		{
-			$model_to->save(false);
-		}
-
-		$current_model_id = $model_to ? $model_to->implode_pk($model_to) : null;
+		$current_model_id = ($model_to and ! $model_to->is_new()) ? $model_to->implode_pk($model_to) : null;
 		// Check if there was another model assigned (this supersedes any change to the foreign key(s))
-		if ($current_model_id != $original_model_id)
+		if (($model_to and $model_to->is_new()) or $current_model_id != $original_model_id)
 		{
 			// assign this object to the new objects foreign keys
 			if ( ! empty($model_to))

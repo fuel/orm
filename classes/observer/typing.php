@@ -1,7 +1,5 @@
 <?php
 /**
- * Fuel
- *
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
  * @package		Fuel
@@ -13,6 +11,9 @@
  */
 
 namespace Orm;
+
+// Invalid content exception, thrown when conversion is not possible
+class InvalidContentType extends \UnexpectedValueException {}
 
 class Observer_Typing {
 
@@ -30,20 +31,24 @@ class Observer_Typing {
 	 */
 	public static $type_methods = array(
 		'/^varchar/uiD' => array(
-			'before' => 'Orm\\Observer_Typing::type_varchar'
-			),
+			'before' => 'Orm\\Observer_Typing::type_string'
+		),
 		'/^(tiny|small|medium|big)?int(eger)?/uiD'
 			=> 'Orm\\Observer_Typing::type_integer',
 		'/^(float|double|decimal)/uiD'
 			=> 'Orm\\Observer_Typing::type_float',
 		'/^(tiny|medium|long)?text/' => array(
-			'before' => 'Orm\\Observer_Typing::type_text'
+			'before' => 'Orm\\Observer_Typing::type_string'
 		),
-		'/^set\\(/uiD' => array(
+		'/^set/uiD' => array(
 			'before' => 'Orm\\Observer_Typing::type_set'
 		),
-		'/^enum\\(/uiD' => array(
+		'/^enum/uiD' => array(
 			'before' => 'Orm\\Observer_Typing::type_set'
+		),
+		'/^bool(ean)?$/uiD' => array(
+			'before' => 'Orm\\Observer_Typing::type_bool_to_int',
+			'after'  => 'Orm\\Observer_Typing::type_bool_from_int',
 		),
 		'/^serialize$/uiD' => array(
 			'before' => 'Orm\\Observer_Typing::type_serialize',
@@ -73,12 +78,16 @@ class Observer_Typing {
 
 		foreach ($properties as $p => $settings)
 		{
-			if (empty($settings['type']) || in_array($p, $instance->primary_key()))
+			if (empty($settings['data_type']) || in_array($p, $instance->primary_key()))
 			{
 				continue;
 			}
 			if ($instance->{$p} === null) // add check if null is allowed
 			{
+				if (array_key_exists('null', $settings) and $settings['null'] === false)
+				{
+					throw new InvalidContentType('The property "'.$p.'" cannot be NULL.');
+				}
 				continue;
 			}
 
@@ -88,16 +97,29 @@ class Observer_Typing {
 				{
 					$method = ! empty($method[$event_type]) ? $method[$event_type] : false;
 				}
-
-				if ($method and preg_match($match, $settings['type']) > 0)
+				if ($method === false)
 				{
-					$instance->{$p} = call_user_func($method, $instance->{$p}, $settings['type']);
+					continue;
+				}
+
+				if ($method and preg_match($match, $settings['data_type']) > 0)
+				{
+					$instance->{$p} = call_user_func($method, $instance->{$p}, $settings);
+					continue;
 				}
 			}
 		}
 	}
 
-	public static function type_varchar($var, $type)
+	/**
+	 * Casts to string when necessary and checks if within max length
+	 *
+	 * @throws  InvalidContentType
+	 * @param   mixed  value
+	 * @param   array
+	 * @return  string
+	 */
+	public static function type_string($var, $settings)
 	{
 		if (is_array($var) or (is_object($var) and ! method_exists($var, '__toString')))
 		{
@@ -105,62 +127,52 @@ class Observer_Typing {
 		}
 
 		$var = strval($var);
-		$length = intval(substr($type, 8, -1));
-		strlen($var) > $length and $var = substr($var, 0, $length);
+
+		if (array_key_exists('character_maximum_length', $settings))
+		{
+			$length  = intval($settings['character_maximum_length']);
+			if ($length > 0 and strlen($var) > $length)
+			{
+				$var = substr($var, 0, $length);
+			}
+		}
 
 		return $var;
 	}
 
-	public static function type_text($var, $type)
-	{
-		if (is_array($var) or (is_object($var) and ! method_exists($var, '__toString')))
-		{
-			throw new InvalidContentType('Array or object could not be converted to text.');
-		}
-
-		return strval($var);
-	}
-
-	public static function type_integer($var, $type)
+	/**
+	 * Casts to int when necessary and checks if within max values
+	 *
+	 * @throws  InvalidContentType
+	 * @param   mixed  value
+	 * @param   array
+	 * @return  int
+	 */
+	public static function type_integer($var, $settings)
 	{
 		if (is_array($var) or is_object($var))
 		{
 			throw new InvalidContentType('Array or object could not be converted to integer.');
 		}
 
-		if (strtolower(substr($type, 0, strlen('tinyint'))) == 'tinyint')
+		if ((array_key_exists('min', $settings) and $var < intval($settings['min']))
+			or (array_key_exists('max', $settings) and $var > intval($settings['max'])))
 		{
-			if ($var < -32768 or $var > 32767)
-			{
-				throw new InvalidContentType('Tiny integer value outside of range: '.$var);
-			}
-		}
-		elseif (strtolower(substr($type, 0, strlen('smallint'))) == 'smallint')
-		{
-			if ($var < -8388608 or $var > 8388607)
-			{
-				throw new InvalidContentType('Small integer value outside of range: '.$var);
-			}
-		}
-		elseif (strtolower(substr($type, 0, strlen('bigint'))) == 'bigint')
-		{
-			if ($var < intval('-9223372036854775808') or $var > intval('9223372036854775807'))
-			{
-				throw new InvalidContentType('Big integer value outside of range: '.$var);
-			}
-		}
-		else // assume int/integer
-		{
-			if ($var < intval('-2147483648') or $var > intval('2147483647'))
-			{
-				throw new InvalidContentType('Integer value outside of range: '.$var);
-			}
+			throw new InvalidContentType('Integer value outside of range: '.$var);
 		}
 
 		return intval($var);
 	}
 
-	public static function type_float($var)
+	/**
+	 * Casts to float when necessary
+	 *
+	 * @throws  InvalidContentType
+	 * @param   mixed  value
+	 * @param   array
+	 * @return  float
+	 */
+	public static function type_float($var, $settings)
 	{
 		if (is_array($var) or is_object($var))
 		{
@@ -170,28 +182,129 @@ class Observer_Typing {
 		return floatval($var);
 	}
 
-	public static function type_serialize($var)
+	/**
+	 * Casts to string when necessary and checks if it's a valid value
+	 *
+	 * @throws  InvalidContentType
+	 * @param   mixed  value
+	 * @param   array
+	 * @return  string
+	 */
+	public static function type_set($var, $settings)
 	{
-		return serialize($var);
+		$var    = strval($var);
+		$values = array_filter(explode(',', trim($var)));
+
+		if ($settings['data_type'] == 'enum' and count($values) > 1)
+		{
+			throw new InvalidContentType('Enum cannot have more than 1 value.');
+		}
+
+		foreach ($values as $val)
+		{
+			if ( ! in_array($val, $settings['options']))
+			{
+				throw new InvalidContentType('Invalid value given for '.ucfirst($settings['data_type']).
+					', value "'.$var.'" not in available options: "'.implode(', ', $settings['options']).'".');
+			}
+		}
+
+		return $var;
 	}
 
+	/**
+	 * Converts boolean input to 1 or 0 for the DB
+	 *
+	 * @param   bool  value
+	 * @param   array
+	 * @return  int
+	 */
+	public static function type_bool_to_int($var, $settings)
+	{
+		return $var ? 1 : 0;
+	}
+
+	/**
+	 * Converts DB bool values to PHP bool value
+	 *
+	 * @param   bool  value
+	 * @param   array
+	 * @return  int
+	 */
+	public static function type_bool_from_int($var)
+	{
+		return $var == '1' ? true : false;
+	}
+
+	/**
+	 * Returns the serialized input
+	 *
+	 * @throws  InvalidContentType
+	 * @param   mixed  value
+	 * @param   array
+	 * @return  string
+	 */
+	public static function type_serialize($var, $settings)
+	{
+		$var = serialize($var);
+
+		if (array_key_exists('character_maximum_length', $settings))
+		{
+			$length  = intval($settings['character_maximum_length']);
+			if ($length > 0 and strlen($var) > $length)
+			{
+				throw new InvalidContentType('Value could not be serialized, exceeds max string length for field.');
+			}
+		}
+
+		return $var;
+	}
+
+	/**
+	 * Unserializes the input
+	 *
+	 * @param   string
+	 * @return  mixed
+	 */
 	public static function type_unserialize($var)
 	{
 		return unserialize($var);
 	}
 
-	public static function type_json_encode($var)
+	/**
+	 * JSON encodes the input
+	 *
+	 * @throws  InvalidContentType
+	 * @param   mixed  value
+	 * @param   array
+	 * @return  string
+	 */
+	public static function type_json_encode($var, $settings)
 	{
-		return json_encode($var);
+		$var = json_encode($var);
+
+		if (array_key_exists('character_maximum_length', $settings))
+		{
+			$length  = intval($settings['character_maximum_length']);
+			if ($length > 0 and strlen($var) > $length)
+			{
+				throw new InvalidContentType('Value could not be JSON encoded, exceeds max string length for field.');
+			}
+		}
+
+		return $var;
 	}
 
+	/**
+	 * Decodes the JSON
+	 *
+	 * @param   string
+	 * @return  mixed
+	 */
 	public static function type_json_decode($var)
 	{
 		return json_decode($var);
 	}
 }
-
-// Invalid content exception, thrown when conversion is not possible
-class InvalidContentType extends Exception {}
 
 // End of file typing.php

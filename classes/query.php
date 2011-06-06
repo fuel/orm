@@ -1,7 +1,5 @@
 <?php
 /**
- * Fuel
- *
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
  * @package		Fuel
@@ -16,15 +14,20 @@ namespace Orm;
 
 class Query {
 
-	public static function factory($model, $options = array())
+	public static function factory($model, $connection = null, $options = array())
 	{
-		return new static($model, $options);
+		return new static($model, $connection, $options);
 	}
 
 	/**
 	 * @var  string  classname of the model
 	 */
 	protected $model;
+
+	/**
+	 * @var  null|string  connection name to use
+	 */
+	protected $connection;
 
 	/**
 	 * @var  string  table alias
@@ -76,15 +79,61 @@ class Query {
 	 */
 	protected $values = array();
 
-	protected function __construct($model, $options, $table_alias = null)
+	protected function __construct($model, $connection, $options, $table_alias = null)
 	{
 		$this->model = $model;
+		$this->connection = $connection;
 
 		foreach ($options as $opt => $val)
 		{
-			if (method_exists($this, $opt))
+			switch ($opt)
 			{
-				call_user_func_array(array($this, $opt), array($val));
+				case 'select':
+					$val = (array) $val;
+					call_user_func_array(array($this, 'select'), $val);
+					break;
+				case 'related':
+					$val = (array) $val;
+					$this->related($val);
+					break;
+				case 'where':
+					$obj = $this;
+					$where_func = null;
+					$where = function (array $val, $or = false) use (&$where_func, $obj)
+					{
+						$or and $obj->or_where_open();
+						foreach ($val as $k_w => $v_w)
+						{
+							if (is_array($v_w) and ! empty($v_w[0]) and is_string($v_w[0]))
+							{
+								call_user_func_array(array($obj, ($k_w == 'or' ? 'or_' : '').'where'), $v_w);
+							}
+							elseif (is_int($k_w) or $k_w == 'or')
+							{
+								$k_w == 'or' ? $obj->or_where_open() : $obj->where_open();
+								$where_func($v_w, $k_w == 'or');
+								$k_w == 'or' ? $obj->or_where_close() : $obj->where_close();
+							}
+							else
+							{
+								$obj->where($k_w, $v_w);
+							}
+						}
+						$or and $obj->or_where_close();
+					};
+					$where_func = $where;
+					$where($val);
+					break;
+				case 'order_by':
+					$val = (array) $val;
+					$this->order_by($val);
+					break;
+				case 'limit':
+					$this->limit($val);
+					break;
+				case 'offset':
+					$this->offset($val);
+					break;
 			}
 		}
 	}
@@ -107,7 +156,7 @@ class Query {
 
 				if (empty($fields))
 				{
-					throw new Exception('No properties found in model.');
+					throw new \Fuel_Exception('No properties found in model.');
 				}
 				foreach ($fields as $field)
 				{
@@ -129,6 +178,8 @@ class Query {
 			strpos($val, '.') === false ? 't0.'.$val : $val;
 			$this->select[$this->alias.'_c'.$i++] = $this->alias.'.'.$val;
 		}
+
+		return $this;
 	}
 
 	/**
@@ -165,6 +216,8 @@ class Query {
 	public function where()
 	{
 		$condition = func_get_args();
+		is_array(reset($condition)) and $condition = reset($condition);
+
 		return $this->_where($condition);
 	}
 
@@ -178,6 +231,8 @@ class Query {
 	public function or_where()
 	{
 		$condition = func_get_args();
+		is_array(reset($condition)) and $condition = reset($condition);
+
 		return $this->_where($condition, 'or_where');
 	}
 
@@ -190,31 +245,22 @@ class Query {
 	 */
 	public function _where($condition, $type = 'and_where')
 	{
-		if (empty($condition))
+		if (is_array(reset($condition)) or is_string(key($condition)))
 		{
-			return $this;
-		}
-
-		if (is_array(reset($condition)))
-		{
-			foreach ($condition as $c)
+			foreach ($condition as $k_c => $v_c)
 			{
-				$this->_where($c, $type);
+				is_string($k_c) and $v_c = array($k_c, $v_c);
+				$this->_where($v_c, $type);
 			}
 			return $this;
 		}
-		elseif (is_string(key($condition)))
+
+		// prefix table alias when not yet prefixed and not a DB expression object
+		if (strpos($condition[0], '.') === false and ! $condition[0] instanceof \Fuel\Core\Database_Expression)
 		{
-			foreach($condition as $k => $val)
-			{
-				unset($condition[$k]);
-				$condition[] = array($k, '=', $val);
-			}
-			return $this->_where($condition, $type);
+			$condition[0] = $this->alias.'.'.$condition[0];
 		}
 
-		// TODO: needs to work better, this will cause problems with WHERE IN
-		strpos($condition[0], '.') === false and $condition[0] = $this->alias.'.'.$condition[0];
 		if (count($condition) == 2)
 		{
 			$this->where[] = array($type, array($condition[0], '=', $condition[1]));
@@ -225,7 +271,7 @@ class Query {
 		}
 		else
 		{
-			throw new Exception('Invalid param count for where condition.');
+			throw new \Fuel_Exception('Invalid param count for where condition.');
 		}
 
 		return $this;
@@ -303,22 +349,17 @@ class Query {
 		{
 			foreach ($property as $p => $d)
 			{
-				// Simple array of keys
-				if (is_int($p))
-				{
-					$this->order_by($d, $direction);
-				}
-
-				// Assoc array of orders
-				else
-				{
-					$this->order_by($p, $d);
-				}
+				is_int($p) ? $this->order_by($d, $direction) : $this->order_by($p, $d);
 			}
 			return $this;
 		}
 
-		strpos($property, '.') === false and $property = $this->alias.'.'.$property;
+		// prefix table alias when not yet prefixed and not a DB expression object
+		if (strpos($property, '.') === false and ! $property instanceof \Fuel\Core\Database_Expression)
+		{
+			$property = $this->alias.'.'.$property;
+		}
+
 		$this->order_by[$property] = $direction;
 
 		return $this;
@@ -329,24 +370,52 @@ class Query {
 	 *
 	 * @param  string
 	 */
-	public function related($relation)
+	public function related($relation, $conditions = array())
 	{
 		if (is_array($relation))
 		{
-			foreach ($relation as $r)
+			foreach ($relation as $k_r => $v_r)
 			{
-				$this->related($r);
+				is_array($v_r) ? $this->related($k_r, $v_r) : $this->related($v_r);
 			}
 			return $this;
 		}
 
-		$rel = call_user_func(array($this->model, 'relations'), $relation);
-		if (empty($rel))
+		if (strpos($relation, '.'))
 		{
-			throw new UndefinedRelation('Relation "'.$relation.'" was not found in the model.');
+			$rels = explode('.', $relation);
+			$model = $this->model;
+			foreach ($rels as $r)
+			{
+				$rel = call_user_func(array($model, 'relations'), $r);
+				if (empty($rel))
+				{
+					throw new \UnexpectedValueException('Relation "'.$r.'" was not found in the model "'.$model.'".');
+				}
+				$model = $rel->model_to;
+			}
+		}
+		else
+		{
+			$rel = call_user_func(array($this->model, 'relations'), $relation);
+			if (empty($rel))
+			{
+				throw new \UnexpectedValueException('Relation "'.$relation.'" was not found in the model.');
+			}
 		}
 
-		$this->relations[$relation] = $rel;
+		$this->relations[$relation] = array($rel, $conditions);
+
+		if ( ! empty($conditions['related']))
+		{
+			$conditions['related'] = (array) $conditions['related'];
+			foreach ($conditions['related'] as $k_r => $v_r)
+			{
+				is_array($v_r) ? $this->related($relation.'.'.$k_r, $v_r) : $this->related($relation.'.'.$v_r);
+			}
+
+			unset($conditions['related']);
+		}
 
 		return $this;
 	}
@@ -407,14 +476,15 @@ class Query {
 		}
 
 		// Get the order
-		if ( ! empty($this->order_by))
+		$order_by = $this->order_by;
+		if ( ! empty($order_by))
 		{
-			foreach ($this->order_by as $property => $direction)
+			foreach ($order_by as $property => $direction)
 			{
 				if (strpos($property, $this->alias.'.') === 0)
 				{
 					$query->order_by($type == 'select' ? $property : substr($property, strlen($this->alias.'.')), $direction);
-					unset($this->order_by[$property]);
+					unset($order_by[$property]);
 				}
 			}
 		}
@@ -425,16 +495,26 @@ class Query {
 			$query->group_by($this->group_by);
 		}
 
-		if ( ! empty($this->where))
+		$where = $this->where;
+		if ( ! empty($where))
 		{
-			foreach ($this->where as $key => $where)
+			$open_nests = 0;
+			foreach ($where as $key => $w)
 			{
-				list($method, $conditional) = $where;
-				if (empty($conditional) or strpos($conditional[0], $this->alias.'.') === 0)
+				list($method, $conditional) = $w;
+
+				if (empty($conditional) or $open_nests > 0)
+				{
+					strpos($method, '_open') and $open_nests++;
+					strpos($method, '_close') and $open_nests--;
+					continue;
+				}
+
+				if (strpos($conditional[0], $this->alias.'.') === 0)
 				{
 					$type != 'select' and $conditional[0] = substr($conditional[0], strlen($this->alias.'.'));
 					call_user_func_array(array($query, $method), $conditional);
-					unset($this->where[$key]);
+					unset($where[$key]);
 				}
 			}
 		}
@@ -449,7 +529,22 @@ class Query {
 		$models = array();
 		foreach ($this->relations as $name => $rel)
 		{
-			$models = array_merge($models, $rel->join($this->alias, $name, $i++));
+			// when there's a dot it must be a nested relation
+			if ($pos = strrpos($name, '.'))
+			{
+				if (empty($models[substr($name, 0, $pos)]['table'][1]))
+				{
+					throw new \UnexpectedValueException('Trying to get the relation of an unloaded relation, make sure you load the parent relation before any of its children.');
+				}
+
+				$alias = $models[substr($name, 0, $pos)]['table'][1];
+			}
+			else
+			{
+				$alias = $this->alias;
+			}
+
+			$models = array_merge($models, $rel[0]->join($alias, $name, $i++, $rel[1]));
 		}
 
 		if ($this->use_subquery())
@@ -490,6 +585,11 @@ class Query {
 		}
 		foreach ($models as $m)
 		{
+			if ($m['connection'] != $this->connection)
+			{
+				throw new \Fuel_Exception('Models cannot be related between connection.');
+			}
+
 			$join_query = $query->join($m['table'], $m['join_type']);
 			foreach ($m['join_on'] as $on)
 			{
@@ -497,21 +597,78 @@ class Query {
 			}
 		}
 
-		// Get the order
-		if ( ! empty($this->order_by))
+		// Add any additional order_by and where clauses from the relations
+		foreach ($models as $m)
 		{
-			foreach ($this->order_by as $column => $direction)
+			if ( ! empty($m['order_by']))
 			{
+				foreach ((array) $m['order_by'] as $k_ob => $v_ob)
+				{
+					if (is_int($k_ob))
+					{
+						$order_by[$v_ob] = 'ASC';
+					}
+					else
+					{
+						$order_by[$k_ob] = $v_ob;
+					}
+				}
+			}
+			if ( ! empty($m['where']))
+			{
+				foreach ((array) $m['where'] as $k_w => $v_w)
+				{
+					if (is_int($k_w))
+					{
+						$v_w[0] = $m['table'][1].'.'.$v_w[0];
+						$where[] = array('and_where', array(
+							$v_w[0],
+							array_key_exists(2, $v_w) ? $v_w[1] : '=',
+							array_key_exists(2, $v_w) ? $v_w[2] : $v_w[1]
+						));
+					}
+					else
+					{
+						$where[] = array('and_where', array($m['table'][1].'.'.$k_w, '=', $v_w));
+					}
+				}
+			}
+		}
+		// Get the order
+		if ( ! empty($order_by))
+		{
+			foreach ($order_by as $column => $direction)
+			{
+				// try to rewrite conditions on the relations to their table alias
+				$dotpos = strrpos($column, '.');
+				$relation = substr($column, 0, $dotpos);
+				if ($dotpos > 0 and array_key_exists($relation, $models))
+				{
+					$column = $models[$relation]['table'][1].substr($column, $dotpos);
+				}
+
 				$query->order_by($column, $direction);
 			}
 		}
 
 		// put omitted where conditions back
-		if ( ! empty($this->where))
+		if ( ! empty($where))
 		{
-			foreach ($this->where as $where)
+			foreach ($where as $w)
 			{
-				list($method, $conditional) = $where;
+				list($method, $conditional) = $w;
+
+				// try to rewrite conditions on the relations to their table alias
+				if ( ! empty($conditional))
+				{
+					$dotpos = strrpos($conditional[0], '.');
+					$relation = substr($conditional[0], 0, $dotpos);
+					if ($dotpos > 0 and array_key_exists($relation, $models))
+					{
+						$conditional[0] = $models[$relation]['table'][1].substr($conditional[0], $dotpos);
+					}
+				}
+
 				call_user_func_array(array($query, $method), $conditional);
 			}
 		}
@@ -538,76 +695,83 @@ class Query {
 	 * @param  string  model classname to hydrate
 	 * @param  array   columns to use
 	 */
-	public function hydrate($row, $models, &$result, $model = null, $select = null)
+	public function hydrate(&$row, $models, &$result, $model = null, $select = null, $primary_key = null)
 	{
-		$model = is_null($model) ? $this->model : $model;
-		$select = is_null($select) ? $this->select() : $select;
-		$obj = array();
-		foreach ($select as $s)
+		// First check the PKs, if null it's an empty row
+		$r1c1    = reset($select);
+		$prefix  = substr($r1c1[0], 0, strpos($r1c1[0], '.') + 1);
+		$obj     = array();
+		foreach ($primary_key as $pk)
 		{
-			$obj[preg_replace('/^t[0-9]+(_[a-z]+)?\\./uiD', '', $s[0])] = $row[$s[1]];
-		}
+			$pk_c = null;
+			foreach ($select as $s)
+			{
+				$s[0] === $prefix.$pk and $pk_c = $s[1];
+			}
 
-		foreach ($model::primary_key() as $pk)
-		{
-			if (is_null($obj[$pk]))
+			if (is_null($row[$pk_c]))
 			{
 				return false;
 			}
+			$obj[$pk] = $row[$pk_c];
 		}
 
-		$cached_obj = $model::cached_object($obj);
-		$pk         = $model::implode_pk($obj);
+		// Check for cached object
+		$pk  = count($primary_key) == 1 ? reset($obj) : '['.implode('][', $obj).']';
+		$obj = Model::cached_object($pk, $model);
+
+		// Create the object when it wasn't found
+		if ( ! $obj)
+		{
+			// Retrieve the object array from the row
+			$obj = array();
+			foreach ($select as $s)
+			{
+				$obj[substr($s[0], strpos($s[0], '.') + 1)] = $row[$s[1]];
+				unset($row[$s[1]]);
+			}
+			$obj = $model::factory($obj, false);
+		}
+
+		// if the result to be generated is an array and the current object is not yet in there
 		if (is_array($result) and ! array_key_exists($pk, $result))
 		{
-			if ($cached_obj)
-			{
-				$cached_obj->_update_original($obj);
-				$obj = $cached_obj;
-			}
-			else
-			{
-				$obj = $model::factory($obj, false);
-			}
 			$result[$pk] = $obj;
 		}
+		// if the result to be generated is a single object and empty
 		elseif ( ! is_array($result) and empty($result))
 		{
-			if ($cached_obj)
-			{
-				$cached_obj->_update_original($obj);
-				$obj = $cached_obj;
-			}
-			else
-			{
-				$obj = $model::factory($obj, false);
-			}
 			$result = $obj;
 		}
-		else
-		{
-			$obj = is_array($result) ? $result[$pk] : $result;
-		}
 
+		// start fetching relationships
 		$rel_objs = $obj->_relate();
 		foreach ($models as $m)
 		{
+			// when the expected model is empty, there's nothing to be done
 			if (empty($m['model']))
 			{
 				continue;
 			}
 
+			// when not yet set, create the relation result var with null or array
 			if ( ! array_key_exists($m['rel_name'], $rel_objs))
 			{
 				$rel_objs[$m['rel_name']] = $m['relation']->singular ? null : array();
 			}
 
-			if ((is_array($result) and ! in_array($model::implode_pk($obj), $result))
-				or ! is_array($result) and empty($result))
-			{
-				$this->hydrate($row, array(), $rel_objs[$m['rel_name']], $m['model'], $m['columns']);
-			}
+			// when result is array or singular empty, try to fetch the new relation from the row
+			$this->hydrate(
+				$row,
+				! empty($m['models']) ? $m['models'] : array(),
+				$rel_objs[$m['rel_name']],
+				$m['model'],
+				$m['columns'],
+				$m['primary_key']
+			);
 		}
+
+		// attach the retrieved relations to the object and update its original DB values
 		$obj->_relate($rel_objs);
 		$obj->_update_original();
 
@@ -644,11 +808,33 @@ class Query {
 		$query   = $tmp['query'];
 		$models  = $tmp['models'];
 
-		$rows = $query->execute()->as_array();
-		$result = array();
-		foreach ($rows as $row)
+		// Make models hierarchical
+		foreach ($models as $name => $values)
 		{
-			$this->hydrate($row, $models, $result);
+			if (strpos($name, '.'))
+			{
+				unset($models[$name]);
+				$rels = explode('.', $name);
+				$ref =& $models[array_shift($rels)];
+				foreach ($rels as $rel)
+				{
+					empty($ref['models']) and $ref['models'] = array();
+					empty($ref['models'][$rel]) and $ref['models'][$rel] = array();
+					$ref =& $ref['models'][$rel];
+				}
+				$ref = $values;
+			}
+		}
+
+		$rows = $query->execute($this->connection)->as_array();
+		$result = array();
+		$model = $this->model;
+		$select = $this->select();
+		$primary_key = $model::primary_key();
+		foreach ($rows as $id => $row)
+		{
+			$this->hydrate($row, $models, $result, $model, $select, $primary_key);
+			unset($rows[$id]);
 		}
 
 		// It's all built, now lets execute and start hydration
@@ -714,10 +900,13 @@ class Query {
 	 */
 	public function count($distinct = false)
 	{
-		$this->select or $this->select = 'id';
+		$select = $this->select ?: call_user_func($this->model.'::primary_key');
+		$select = $distinct ?: reset($select);
+		$select = \Database_Connection::instance()->table_prefix().
+			(strpos($select, '.') === false ? $this->alias.'.'.$select : $select);
 
 		// Get the columns
-		$columns = \DB::expr('COUNT('.($distinct ? 'DISTINCT ' : '').\Database_Connection::instance()->table_prefix().$this->alias.'.'.($distinct ?: $this->select).') AS count_result');
+		$columns = \DB::expr('COUNT('.($distinct ? 'DISTINCT ' : '').$select.') AS count_result');
 
 		// Remove the current select and
 		$query = call_user_func('DB::select', $columns);
@@ -725,9 +914,9 @@ class Query {
 		// Set from table
 		$query->from(array(call_user_func($this->model.'::table'), $this->alias));
 
-		$tmp   = $this->build_query($query, $columns);
+		$tmp   = $this->build_query($query, $columns, 'count');
 		$query = $tmp['query'];
-		$count = $query->execute()->get('count_result');
+		$count = $query->execute($this->connection)->get('count_result');
 
 		// Database_Result::get('count_result') returns a string | null
 		if ($count === null)
@@ -757,9 +946,9 @@ class Query {
 		// Set from table
 		$query->from(array(call_user_func($this->model.'::table'), $this->alias));
 
-		$tmp   = $this->build_query($query, $columns);
+		$tmp   = $this->build_query($query, $columns, 'max');
 		$query = $tmp['query'];
-		$max   = $query->execute()->get('max_result');
+		$max   = $query->execute($this->connection)->get('max_result');
 
 		// Database_Result::get('max_result') returns a string | null
 		if ($max === null)
@@ -789,9 +978,9 @@ class Query {
 		// Set from table
 		$query->from(array(call_user_func($this->model.'::table'), $this->alias));
 
-		$tmp   = $this->build_query($query, $columns);
+		$tmp   = $this->build_query($query, $columns, 'min');
 		$query = $tmp['query'];
-		$min   = $query->execute()->get('min_result');
+		$min   = $query->execute($this->connection)->get('min_result');
 
 		// Database_Result::get('min_result') returns a string | null
 		if ($min === null)
@@ -812,7 +1001,7 @@ class Query {
 	{
 		$res = \DB::insert(call_user_func($this->model.'::table'), array_keys($this->values))
 			->values(array_values($this->values))
-			->execute();
+			->execute($this->connection);
 
 		// Failed to save the new record
 		if ($res[0] === 0)
@@ -841,13 +1030,14 @@ class Query {
 		$query = \DB::update(call_user_func($this->model.'::table'));
 		$tmp   = $this->build_query($query, array(), 'update');
 		$query = $tmp['query'];
-		$res = $query->set($this->values)->execute();
+		$res = $query->set($this->values)->execute($this->connection);
 
 		// put back any relations/group_by settings
 		$this->relations = $tmp_relations;
 		$this->group_by  = $tmp_group_by;
 
-		return $res > 0;
+		// Update can affect 0 rows when input types are different but outcome stays the same
+		return $res >= 0;
 	}
 
 	/**
@@ -868,7 +1058,7 @@ class Query {
 		$query = \DB::delete(call_user_func($this->model.'::table'));
 		$tmp   = $this->build_query($query, array(), 'delete');
 		$query = $tmp['query'];
-		$res = $query->execute();
+		$res = $query->execute($this->connection);
 
 		// put back any relations/group_by settings
 		$this->relations = $tmp_relations;

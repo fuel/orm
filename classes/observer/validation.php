@@ -1,7 +1,5 @@
 <?php
 /**
- * Fuel
- *
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
  * @package		Fuel
@@ -13,6 +11,9 @@
  */
 
 namespace Orm;
+
+// Exception to throw when validation failed
+class ValidationFailed extends \Fuel_Exception {}
 
 class Observer_Validation extends Observer {
 
@@ -94,8 +95,5 @@ class Observer_Validation extends Observer {
 		}
 	}
 }
-
-// Exception to throw when validation failed
-class ValidationFailed extends Exception {}
 
 // End of file validation.php
