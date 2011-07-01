@@ -63,6 +63,12 @@ class Observer_Validation extends Observer {
 			}
 		}
 
+		// Add related fields to the validation to prevent them being stripped
+		$val = $fieldset->validation();
+		foreach ($class::relations() as $name=>$relation) {
+			$val->add($name);
+		}
+
 		return $fieldset;
 	}
 
