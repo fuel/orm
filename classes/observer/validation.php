@@ -63,6 +63,12 @@ class Observer_Validation extends Observer {
 			}
 		}
 
+		// Add related fields to the validation to prevent them being stripped
+		$val = $fieldset->validation();
+		foreach ($class::relations() as $name=>$relation) {
+			$val->add($name);
+		}
+
 		return $fieldset;
 	}
 
@@ -73,6 +79,17 @@ class Observer_Validation extends Observer {
 	 * @throws  ValidationFailed
 	 */
 	public function before_save(Model $obj)
+	{
+		$this->validate($obj);
+	}
+
+	/**
+	 * Execute to do validation without saving
+	 *
+	 * @param	Model
+	 * @throws	ValidationFailed
+	 */
+	public function validate(Model $obj)
 	{
 		$val = static::set_fields(get_class($obj))->validation();
 
