@@ -80,6 +80,17 @@ class Observer_Validation extends Observer {
 	 */
 	public function before_save(Model $obj)
 	{
+		$this->validate($obj);
+	}
+
+	/**
+	 * Execute to do validation without saving
+	 *
+	 * @param	Model
+	 * @throws	ValidationFailed
+	 */
+	public function validate(Model $obj)
+	{
 		$val = static::set_fields(get_class($obj))->validation();
 
 		$input = array();
