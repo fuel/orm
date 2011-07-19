@@ -773,7 +773,7 @@ class Query {
 
 		// attach the retrieved relations to the object and update its original DB values
 		$obj->_relate($rel_objs);
-		$obj->_update_original();
+		$obj->_update_original_relations();
 
 		return $obj;
 	}
