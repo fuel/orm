@@ -40,7 +40,7 @@ class Observer_Validation extends Observer {
 
 		foreach ($properties as $p => $settings)
 		{
-			$field = $fieldset->add($p, ! empty($settings['label']) ? $settings['label'] : $p);
+			$field = $fieldset->field($p) ? $fieldset->field($p) : $fieldset->add($p, ! empty($settings['label']) ? $settings['label'] : $p);
 			if (empty($settings['validation']))
 			{
 				continue;
