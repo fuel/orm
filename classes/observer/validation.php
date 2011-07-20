@@ -25,8 +25,9 @@ class Observer_Validation extends Observer {
 	 * @param   Fieldset|null
 	 * @return  Fieldset
 	 */
-	public static function set_fields($class, $fieldset = null)
+	public static function set_fields($obj, $fieldset = null)
 	{
+		$class = get_class($obj);
 		$properties = $class::properties();
 
 		if (is_null($fieldset))
@@ -38,9 +39,11 @@ class Observer_Validation extends Observer {
 			}
 		}
 
+		$fieldset->validation()->add_callable($obj);
+
 		foreach ($properties as $p => $settings)
 		{
-			$field = $fieldset->add($p, ! empty($settings['label']) ? $settings['label'] : $p);
+			$field = $fieldset->field($p) ? $fieldset->field($p) : $fieldset->add($p, ! empty($settings['label']) ? $settings['label'] : $p);
 			if (empty($settings['validation']))
 			{
 				continue;
@@ -91,7 +94,7 @@ class Observer_Validation extends Observer {
 	 */
 	public function validate(Model $obj)
 	{
-		$val = static::set_fields(get_class($obj))->validation();
+		$val = static::set_fields($obj)->validation();
 
 		$input = array();
 		foreach ($obj as $k => $v)
