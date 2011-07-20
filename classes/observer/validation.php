@@ -25,8 +25,9 @@ class Observer_Validation extends Observer {
 	 * @param   Fieldset|null
 	 * @return  Fieldset
 	 */
-	public static function set_fields($class, $fieldset = null)
+	public static function set_fields($obj, $fieldset = null)
 	{
+		$class = get_class($obj);
 		$properties = $class::properties();
 
 		if (is_null($fieldset))
@@ -38,9 +39,11 @@ class Observer_Validation extends Observer {
 			}
 		}
 
+		$fieldset->validation()->add_callable($obj);
+
 		foreach ($properties as $p => $settings)
 		{
-			$field = $fieldset->add($p, ! empty($settings['label']) ? $settings['label'] : $p);
+			$field = $fieldset->field($p) ? $fieldset->field($p) : $fieldset->add($p, ! empty($settings['label']) ? $settings['label'] : $p);
 			if (empty($settings['validation']))
 			{
 				continue;
@@ -63,6 +66,12 @@ class Observer_Validation extends Observer {
 			}
 		}
 
+		// Add related fields to the validation to prevent them being stripped
+		$val = $fieldset->validation();
+		foreach ($class::relations() as $name=>$relation) {
+			$val->add($name);
+		}
+
 		return $fieldset;
 	}
 
@@ -74,7 +83,18 @@ class Observer_Validation extends Observer {
 	 */
 	public function before_save(Model $obj)
 	{
-		$val = static::set_fields(get_class($obj))->validation();
+		$this->validate($obj);
+	}
+
+	/**
+	 * Execute to do validation without saving
+	 *
+	 * @param	Model
+	 * @throws	ValidationFailed
+	 */
+	public function validate(Model $obj)
+	{
+		$val = static::set_fields($obj)->validation();
 
 		$input = array();
 		foreach ($obj as $k => $v)
