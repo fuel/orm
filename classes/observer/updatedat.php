@@ -19,7 +19,10 @@ class Observer_UpdatedAt extends Observer {
 
 	public function before_save(Model $obj)
 	{
-		$obj->{static::$property} = static::$mysql_timestamp ? \Date::time()->format('mysql') : \Date::time()->get_timestamp();
+		if ($obj->is_new() or $obj->is_changed())
+		{
+			$obj->{static::$property} = static::$mysql_timestamp ? \Date::time()->format('mysql') : \Date::time()->get_timestamp();
+		}
 	}
 }
 
