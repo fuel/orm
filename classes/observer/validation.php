@@ -46,7 +46,7 @@ class Observer_Validation extends Observer {
 		}
 		$_generated[$class][] = $fieldset;
 
-		$fieldset->add_callable($obj);
+		$fieldset->validation()->add_callable($obj);
 
 		$properties = is_object($obj) ? $obj->properties() : $class::properties();
 		foreach ($properties as $p => $settings)
@@ -83,7 +83,7 @@ class Observer_Validation extends Observer {
 	 * @param   Model
 	 * @throws  ValidationFailed
 	 */
-	public function before(Model $obj)
+	public function before_save(Model $obj)
 	{
 		return $this->validate($obj);
 	}
