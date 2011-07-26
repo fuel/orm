@@ -106,7 +106,7 @@ class Observer_Validation extends Observer {
 
 		if ($val->run($input) === false)
 		{
-			throw new ValidationFailed();
+			throw new ValidationFailed($val->show_errors());
 		}
 		else
 		{
