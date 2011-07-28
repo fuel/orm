@@ -241,7 +241,6 @@ class Query {
 	 *
 	 * @param  array
 	 * @param  string
-	 * @todo   adding the table alias needs to work better, this will cause problems with WHERE IN
 	 */
 	public function _where($condition, $type = 'and_where')
 	{
@@ -503,7 +502,7 @@ class Query {
 			{
 				list($method, $conditional) = $w;
 
-				if (empty($conditional) or $open_nests > 0)
+				if ($type == 'select' and (empty($conditional) or $open_nests > 0))
 				{
 					strpos($method, '_open') and $open_nests++;
 					strpos($method, '_close') and $open_nests--;
