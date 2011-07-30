@@ -592,10 +592,27 @@ class Model implements \ArrayAccess, \Iterator {
 	/**
 	 * Update the original relations for this object
 	 */
-	public function _update_original_relations()
+	public function _update_original_relations($relations = null)
 	{
-		$this->_original_relations = array();
-		foreach ($this->_data_relations as $rel => $data)
+		if (is_null($relations))
+		{
+			$this->_original_relations = array();
+			$relations = $this->_data_relations;
+		}
+		else
+		{
+			foreach ($relations as $key => $rel)
+			{
+				// Unload the just fetched relation from the originals
+				unset($this->_original_relations[$rel]);
+
+				// Unset the numeric key and set the data to update by the relation name
+				unset($relations[$key]);
+				$relations[$rel] = $this->_data_relations[$rel];
+			}
+		}
+
+		foreach ($relations as $rel => $data)
 		{
 			if (is_array($data))
 			{
@@ -661,7 +678,7 @@ class Model implements \ArrayAccess, \Iterator {
 			if ( ! array_key_exists($property, $this->_data_relations))
 			{
 				$this->_data_relations[$property] = $rel->get($this);
-				$this->_update_original_relations();
+				$this->_update_original_relations(array($property));
 			}
 			return $this->_data_relations[$property];
 		}
@@ -1100,7 +1117,7 @@ class Model implements \ArrayAccess, \Iterator {
 	 */
 	public static function set_form_fields($form, $instance = null)
 	{
-		Observer_Validation::set_fields(get_called_class(), $form);
+		Observer_Validation::set_fields($instance instanceof static ? $instance : get_called_class(), $form);
 		$instance and $form->repopulate($instance);
 	}
 

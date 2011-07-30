@@ -241,7 +241,6 @@ class Query {
 	 *
 	 * @param  array
 	 * @param  string
-	 * @todo   adding the table alias needs to work better, this will cause problems with WHERE IN
 	 */
 	public function _where($condition, $type = 'and_where')
 	{
@@ -360,7 +359,7 @@ class Query {
 			$property = $this->alias.'.'.$property;
 		}
 
-		$this->order_by[$property] = $direction;
+		$this->order_by[] = array($property, $direction);
 
 		return $this;
 	}
@@ -479,12 +478,12 @@ class Query {
 		$order_by = $this->order_by;
 		if ( ! empty($order_by))
 		{
-			foreach ($order_by as $property => $direction)
+			foreach ($order_by as $key => $ob)
 			{
-				if (strpos($property, $this->alias.'.') === 0)
+				if (strpos($ob[0], $this->alias.'.') === 0)
 				{
-					$query->order_by($type == 'select' ? $property : substr($property, strlen($this->alias.'.')), $direction);
-					unset($order_by[$property]);
+					$query->order_by($type == 'select' ? $ob[0] : substr($ob[0], strlen($this->alias.'.')), $ob[1]);
+					unset($order_by[$key]);
 				}
 			}
 		}
@@ -503,7 +502,7 @@ class Query {
 			{
 				list($method, $conditional) = $w;
 
-				if (empty($conditional) or $open_nests > 0)
+				if ($type == 'select' and (empty($conditional) or $open_nests > 0))
 				{
 					strpos($method, '_open') and $open_nests++;
 					strpos($method, '_close') and $open_nests--;
@@ -606,11 +605,11 @@ class Query {
 				{
 					if (is_int($k_ob))
 					{
-						$order_by[$v_ob] = 'ASC';
+						$order_by[] = array($v_ob, 'ASC');
 					}
 					else
 					{
-						$order_by[$k_ob] = $v_ob;
+						$order_by[] = array($k_ob, $v_ob);
 					}
 				}
 			}
@@ -637,17 +636,17 @@ class Query {
 		// Get the order
 		if ( ! empty($order_by))
 		{
-			foreach ($order_by as $column => $direction)
+			foreach ($order_by as $ob)
 			{
 				// try to rewrite conditions on the relations to their table alias
-				$dotpos = strrpos($column, '.');
-				$relation = substr($column, 0, $dotpos);
+				$dotpos = strrpos($ob[0], '.');
+				$relation = substr($ob[0], 0, $dotpos);
 				if ($dotpos > 0 and array_key_exists($relation, $models))
 				{
-					$column = $models[$relation]['table'][1].substr($column, $dotpos);
+					$column = $models[$relation]['table'][1].substr($ob[0], $dotpos);
 				}
 
-				$query->order_by($column, $direction);
+				$query->order_by($column, $ob[1]);
 			}
 		}
 
@@ -773,7 +772,7 @@ class Query {
 
 		// attach the retrieved relations to the object and update its original DB values
 		$obj->_relate($rel_objs);
-		$obj->_update_original();
+		$obj->_update_original_relations();
 
 		return $obj;
 	}

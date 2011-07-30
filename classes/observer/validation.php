@@ -25,10 +25,11 @@ class Observer_Validation extends Observer {
 	 * @param   Fieldset|null
 	 * @return  Fieldset
 	 */
-	public static function set_fields($class, $fieldset = null)
+	public static function set_fields($obj, $fieldset = null)
 	{
-		$properties = $class::properties();
+		static $_generated = array();
 
+		$class = is_object($obj) ? get_class($obj) : $obj;
 		if (is_null($fieldset))
 		{
 			$fieldset = \Fieldset::instance($class);
@@ -38,6 +39,16 @@ class Observer_Validation extends Observer {
 			}
 		}
 
+		! array_key_exists($class, $_generated) and $_generated[$class] = array();
+		if (in_array($fieldset, $_generated[$class], true))
+		{
+			return $fieldset;
+		}
+		$_generated[$class][] = $fieldset;
+
+		$fieldset->validation()->add_callable($obj);
+
+		$properties = is_object($obj) ? $obj->properties() : $class::properties();
 		foreach ($properties as $p => $settings)
 		{
 			$field = $fieldset->add($p, ! empty($settings['label']) ? $settings['label'] : $p);
@@ -74,17 +85,28 @@ class Observer_Validation extends Observer {
 	 */
 	public function before_save(Model $obj)
 	{
-		$val = static::set_fields(get_class($obj))->validation();
+		return $this->validate($obj);
+	}
+
+	/**
+	 * Validate the model
+	 *
+	 * @param   Model
+	 * @throws  ValidationFailed
+	 */
+	public function validate(Model $obj)
+	{
+		$val = static::set_fields($obj)->validation();
 
 		$input = array();
-		foreach ($obj as $k => $v)
+		foreach (array_keys($obj->properties()) as $p)
 		{
-			! in_array($k, $obj->primary_key()) and $input[$k] = $v;
+			! in_array($p, $obj->primary_key()) and $input[$p] = $obj->{$p};
 		}
 
 		if ($val->run($input) === false)
 		{
-			throw new ValidationFailed();
+			throw new ValidationFailed($val->show_errors());
 		}
 		else
 		{
