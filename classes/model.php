@@ -1221,7 +1221,10 @@ class Model implements \ArrayAccess, \Iterator {
 	{
 		foreach($values as $property => $value)
 		{
-			$this->__set($property, $value);
+			if ( ! in_array($property, static::primary_key()))
+			{
+				$this->__set($property, $value);
+			}
 		}
 	}
 
