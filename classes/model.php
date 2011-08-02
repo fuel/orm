@@ -1213,6 +1213,19 @@ class Model implements \ArrayAccess, \Iterator {
 	}
 
 	/**
+	 * Allow populating this object from an array
+	 *
+	 * @return  array
+	 */
+	public function from_array(array $values)
+	{
+		foreach($values as $property => $value)
+		{
+			$this->__set($property, $value);
+		}
+	}
+
+	/**
 	 * Allow converting this object to an array
 	 *
 	 * @return  array
