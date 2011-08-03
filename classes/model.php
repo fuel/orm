@@ -543,6 +543,12 @@ class Model implements \ArrayAccess, \Iterator {
 	 */
 	public function __construct(array $data = array(), $new = true)
 	{
+		if( ! empty($this->_data))
+		{
+			$this->_original = $this->_data;
+			$new = false;
+		}
+		
 		if ($new)
 		{
 			$properties = $this->properties();
