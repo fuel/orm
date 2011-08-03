@@ -547,6 +547,14 @@ class Model implements \ArrayAccess, \Iterator {
 		{
 			$this->_original = $this->_data;
 			$new = false;
+			$pks = static::primary_key();
+			foreach($pks as $pk)
+			{
+				if( ! array_key_exists($pk, $this->_original))
+				{
+					$new = true;
+				}
+			}
 		}
 		
 		if ($new)
