@@ -556,7 +556,7 @@ class Model implements \ArrayAccess, \Iterator {
 				}
 			}
 		}
-		
+
 		if ($new)
 		{
 			$properties = $this->properties();
@@ -1235,7 +1235,7 @@ class Model implements \ArrayAccess, \Iterator {
 	{
 		foreach($values as $property => $value)
 		{
-			if ( ! in_array($property, static::primary_key()))
+			if (array_key_exists($property, static::properties()) and ! in_array($property, static::primary_key()))
 			{
 				$this->__set($property, $value);
 			}
