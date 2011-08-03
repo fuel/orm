@@ -1061,7 +1061,7 @@ class Model implements \ArrayAccess, \Iterator {
 		$property = (array) $property ?: array_keys(static::properties());
 		foreach ($property as $p)
 		{
-			if ($this->{$p} !== $this->_original[$p])
+			if ( ! isset($this->_original[$p]) or $this->{$p} !== $this->_original[$p])
 			{
 				return true;
 			}
