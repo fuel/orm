@@ -543,6 +543,20 @@ class Model implements \ArrayAccess, \Iterator {
 	 */
 	public function __construct(array $data = array(), $new = true)
 	{
+		if( ! empty($this->_data))
+		{
+			$this->_original = $this->_data;
+			$new = false;
+			$pks = static::primary_key();
+			foreach($pks as $pk)
+			{
+				if( ! array_key_exists($pk, $this->_original))
+				{
+					$new = true;
+				}
+			}
+		}
+		
 		if ($new)
 		{
 			$properties = $this->properties();
@@ -1055,7 +1069,7 @@ class Model implements \ArrayAccess, \Iterator {
 		$property = (array) $property ?: array_keys(static::properties());
 		foreach ($property as $p)
 		{
-			if ($this->{$p} !== $this->_original[$p])
+			if ( ! isset($this->_original[$p]) or $this->{$p} !== $this->_original[$p])
 			{
 				return true;
 			}
