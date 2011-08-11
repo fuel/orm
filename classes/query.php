@@ -509,7 +509,7 @@ class Query {
 					continue;
 				}
 
-				if (!empty($conditional) and strpos($conditional[0], $this->alias.'.') === 0)
+				if ( ! empty($conditional) and strpos($conditional[0], $this->alias.'.') === 0)
 				{
 					$type != 'select' and $conditional[0] = substr($conditional[0], strlen($this->alias.'.'));
 					call_user_func_array(array($query, $method), $conditional);
