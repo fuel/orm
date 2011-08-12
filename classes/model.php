@@ -543,18 +543,12 @@ class Model implements \ArrayAccess, \Iterator {
 	 */
 	public function __construct(array $data = array(), $new = true)
 	{
+		// This is to deal with PHP's native hydration from that happens before constructor is called
+		// for example using the DB's as_object() function
 		if( ! empty($this->_data))
 		{
 			$this->_original = $this->_data;
 			$new = false;
-			$pks = static::primary_key();
-			foreach($pks as $pk)
-			{
-				if( ! array_key_exists($pk, $this->_original))
-				{
-					$new = true;
-				}
-			}
 		}
 
 		if ($new)
