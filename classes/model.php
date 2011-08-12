@@ -992,27 +992,6 @@ class Model implements \ArrayAccess, \Iterator {
 	}
 
 	/**
-	 * clears the model object, and reset it to an is_new state
-	 */
-	public function clear()
-	{
-		// This is a new object
-		$this->_is_new = true;
-		$this->_original = array();
-		$this->_original_relations = array();
-
-		// Cleanup relations
-		foreach ($this->relations() as $name => $rel)
-		{
-			// singular relations (hasone, belongsto) can't be copied, neither can HasMany
-			if ($rel->singular or $rel instanceof HasMany)
-			{
-				unset($this->_data_relations[$name]);
-			}
-		}
-	}
-
-	/**
 	 * Calls all observers for the current event
 	 *
 	 * @param  string
@@ -1231,7 +1210,7 @@ class Model implements \ArrayAccess, \Iterator {
 		{
 			if (array_key_exists($property, static::properties()) and ! in_array($property, static::primary_key()))
 			{
-				$this->__set($property, $value);
+				$this->_data[$property] = $value;
 			}
 		}
 	}
