@@ -164,8 +164,20 @@ class Query {
 				}
 			}
 
+			// ensure all PKs are being selected
+			$select = $this->select;
+			$pks = call_user_func($this->model.'::primary_key');
+			foreach($pks as $pk)
+			{
+				if ( ! in_array($this->alias.'.'.$pk, $select))
+				{
+					$this->select($pk);
+				}
+			}
+
+			// convert selection array for DB class
 			$out = array();
-			foreach($this->select as $k => $v)
+			foreach($select as $k => $v)
 			{
 				$out[] = array($v, $k);
 			}
@@ -175,8 +187,7 @@ class Query {
 		$i = count($this->select);
 		foreach ($fields as $val)
 		{
-			strpos($val, '.') === false ? 't0.'.$val : $val;
-			$this->select[$this->alias.'_c'.$i++] = $this->alias.'.'.$val;
+			$this->select[$this->alias.'_c'.$i++] = (strpos($val, '.') === false ? $this->alias.'.' : '').$val;
 		}
 
 		return $this;
