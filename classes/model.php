@@ -1172,31 +1172,38 @@ class Model implements \ArrayAccess, \Iterator {
 	 */
 
 	protected $_iterable = array();
+	protected $_iterable_keys  = array();
+	protected $_iterable_pos = 0;
+	protected $_iterable_max = 0;
 
 	public function rewind()
 	{
 		$this->_iterable = array_merge($this->_data, $this->_data_relations);
+		$this->_iterable_keys = array_keys($this->_iterable);
+		$this->_iterable_max = count($this->_iterable_keys);
+		$this->_iterable_pos = 0;
 		reset($this->_iterable);
+		reset($this->_iterable_keys);
 	}
 
 	public function current()
 	{
-		return current($this->_iterable);
+		return $this->_iterable[$this->key()];
 	}
 
 	public function key()
 	{
-		return key($this->_iterable);
+		return $this->_iterable_keys[$this->_iterable_pos];
 	}
 
 	public function next()
 	{
-		return next($this->_iterable);
+		++$this->_iterable_pos;
 	}
 
 	public function valid()
 	{
-		return $this->current() !== false;
+		return $this->_iterable_pos < $this->_iterable_max;
 	}
 
 	/**
