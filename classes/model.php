@@ -1196,7 +1196,7 @@ class Model implements \ArrayAccess, \Iterator {
 
 	public function valid()
 	{
-		return $this->current() !== false;
+		return key($this->_iterable) !== null;
 	}
 
 	/**
