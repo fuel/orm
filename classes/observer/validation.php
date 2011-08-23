@@ -35,7 +35,7 @@ class Observer_Validation extends Observer {
 			$fieldset = \Fieldset::instance($class);
 			if ( ! $fieldset)
 			{
-				$fieldset = \Fieldset::factory($class);
+				$fieldset = \Fieldset::forge($class);
 			}
 		}
 

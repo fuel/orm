@@ -96,7 +96,18 @@ class Model implements \ArrayAccess, \Iterator {
 		'many_many'     => 'Orm\\ManyMany',
 	);
 
+	/**
+	 * This method is deprecated...use forge() instead.
+	 * 
+	 * @deprecated until 1.2
+	 */
 	public static function factory($data = array(), $new = true)
+	{
+		\Log::warning('This method is deprecated.  Please use a forge() instead.', __METHOD__);
+		return static::forge($data, $new);
+	}
+
+	public static function forge($data = array(), $new = true)
 	{
 		return new static($data, $new);
 	}
@@ -385,7 +396,7 @@ class Model implements \ArrayAccess, \Iterator {
 	 */
 	public static function query($options = array())
 	{
-		return Query::factory(get_called_class(), static::connection(), $options);
+		return Query::forge(get_called_class(), static::connection(), $options);
 	}
 
 	/**
@@ -396,7 +407,7 @@ class Model implements \ArrayAccess, \Iterator {
 	 */
 	public static function count(array $options = array())
 	{
-		return Query::factory(get_called_class(), static::connection(), $options)->count();
+		return Query::forge(get_called_class(), static::connection(), $options)->count();
 	}
 
 	/**
@@ -408,7 +419,7 @@ class Model implements \ArrayAccess, \Iterator {
 	 */
 	public static function max($key = null)
 	{
-		return Query::factory(get_called_class(), static::connection())->max($key ?: static::primary_key());
+		return Query::forge(get_called_class(), static::connection())->max($key ?: static::primary_key());
 	}
 
 	/**
@@ -420,7 +431,7 @@ class Model implements \ArrayAccess, \Iterator {
 	 */
 	public static function min($key = null)
 	{
-		return Query::factory(get_called_class(), static::connection())->min($key ?: static::primary_key());
+		return Query::forge(get_called_class(), static::connection())->min($key ?: static::primary_key());
 	}
 
 	public static function __callStatic($method, $args)
@@ -831,7 +842,7 @@ class Model implements \ArrayAccess, \Iterator {
 		$this->observe('before_insert');
 
 		// Set all current values
-		$query = Query::factory(get_called_class(), static::connection());
+		$query = Query::forge(get_called_class(), static::connection());
 		$primary_key = static::primary_key();
 		$properties  = array_keys(static::properties());
 		foreach ($properties as $p)
@@ -884,7 +895,7 @@ class Model implements \ArrayAccess, \Iterator {
 		$this->observe('before_update');
 
 		// Create the query and limit to primary key(s)
-		$query       = Query::factory(get_called_class(), static::connection())->limit(1);
+		$query       = Query::forge(get_called_class(), static::connection())->limit(1);
 		$primary_key = static::primary_key();
 		$properties  = array_keys(static::properties());
 		foreach ($primary_key as $pk)
@@ -940,7 +951,7 @@ class Model implements \ArrayAccess, \Iterator {
 		$this->unfreeze();
 
 		// Create the query and limit to primary key(s)
-		$query = Query::factory(get_called_class(), static::connection())->limit(1);
+		$query = Query::forge(get_called_class(), static::connection())->limit(1);
 		$primary_key = static::primary_key();
 		foreach ($primary_key as $pk)
 		{

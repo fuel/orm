@@ -14,7 +14,18 @@ namespace Orm;
 
 class Query {
 
+	/**
+	 * This method is deprecated...use forge() instead.
+	 * 
+	 * @deprecated until 1.2
+	 */
 	public static function factory($model, $connection = null, $options = array())
+	{
+		\Log::warning('This method is deprecated.  Please use a forge() instead.', __METHOD__);
+		return static::forge($model, $connection, $options);
+	}
+
+	public static function forge($model, $connection = null, $options = array())
 	{
 		return new static($model, $connection, $options);
 	}
@@ -743,7 +754,7 @@ class Query {
 				$obj[substr($s[0], strpos($s[0], '.') + 1)] = $row[$s[1]];
 				unset($row[$s[1]]);
 			}
-			$obj = $model::factory($obj, false);
+			$obj = $model::forge($obj, false);
 		}
 
 		// if the result to be generated is an array and the current object is not yet in there
