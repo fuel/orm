@@ -164,8 +164,20 @@ class Query {
 				}
 			}
 
+			// ensure all PKs are being selected
+			$select = $this->select;
+			$pks = call_user_func($this->model.'::primary_key');
+			foreach($pks as $pk)
+			{
+				if ( ! in_array($this->alias.'.'.$pk, $select))
+				{
+					$this->select($pk);
+				}
+			}
+
+			// convert selection array for DB class
 			$out = array();
-			foreach($this->select as $k => $v)
+			foreach($select as $k => $v)
 			{
 				$out[] = array($v, $k);
 			}
@@ -175,8 +187,7 @@ class Query {
 		$i = count($this->select);
 		foreach ($fields as $val)
 		{
-			strpos($val, '.') === false ? 't0.'.$val : $val;
-			$this->select[$this->alias.'_c'.$i++] = $this->alias.'.'.$val;
+			$this->select[$this->alias.'_c'.$i++] = (strpos($val, '.') === false ? $this->alias.'.' : '').$val;
 		}
 
 		return $this;
@@ -509,9 +520,12 @@ class Query {
 					continue;
 				}
 
-				if (strpos($conditional[0], $this->alias.'.') === 0)
+				if (empty($conditional) or strpos($conditional[0], $this->alias.'.') === 0)
 				{
-					$type != 'select' and $conditional[0] = substr($conditional[0], strlen($this->alias.'.'));
+					if ( ! empty($conditional) and $type != 'select')
+					{
+						$conditional[0] = substr($conditional[0], strlen($this->alias.'.'));
+					}
 					call_user_func_array(array($query, $method), $conditional);
 					unset($where[$key]);
 				}

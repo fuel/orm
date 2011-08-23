@@ -543,6 +543,14 @@ class Model implements \ArrayAccess, \Iterator {
 	 */
 	public function __construct(array $data = array(), $new = true)
 	{
+		// This is to deal with PHP's native hydration from that happens before constructor is called
+		// for example using the DB's as_object() function
+		if( ! empty($this->_data))
+		{
+			$this->_original = $this->_data;
+			$new = false;
+		}
+
 		if ($new)
 		{
 			$properties = $this->properties();
@@ -1034,7 +1042,7 @@ class Model implements \ArrayAccess, \Iterator {
 		$property = (array) $property ?: array_keys(static::properties());
 		foreach ($property as $p)
 		{
-			if ($this->{$p} !== $this->_original[$p])
+			if ( ! isset($this->_original[$p]) or $this->{$p} !== $this->_original[$p])
 			{
 				return true;
 			}
@@ -1188,7 +1196,23 @@ class Model implements \ArrayAccess, \Iterator {
 
 	public function valid()
 	{
-		return $this->current() !== false;
+		return key($this->_iterable) !== null;
+	}
+
+	/**
+	 * Allow populating this object from an array
+	 *
+	 * @return  array
+	 */
+	public function from_array(array $values)
+	{
+		foreach($values as $property => $value)
+		{
+			if (array_key_exists($property, static::properties()) and ! in_array($property, static::primary_key()))
+			{
+				$this->_data[$property] = $value;
+			}
+		}
 	}
 
 	/**
