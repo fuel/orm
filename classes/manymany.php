@@ -70,6 +70,9 @@ class ManyMany extends Relation {
 		{
 			throw new \Fuel_Exception('Related model not found by Many_Many relation "'.$this->name.'": '.$this->model_to);
 		}
+		// ensure $model_from is not an alias
+		$model_reflect = new \ReflectionClass($this->model_to);
+		$this->model_to = $model_reflect->getName();
 	}
 
 	public function get(Model $from)
