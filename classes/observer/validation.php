@@ -46,8 +46,6 @@ class Observer_Validation extends Observer {
 		}
 		$_generated[$class][] = $fieldset;
 
-		$fieldset->validation()->add_callable($obj);
-
 		$properties = is_object($obj) ? $obj->properties() : $class::properties();
 		foreach ($properties as $p => $settings)
 		{
@@ -104,7 +102,7 @@ class Observer_Validation extends Observer {
 			! in_array($p, $obj->primary_key()) and $input[$p] = $obj->{$p};
 		}
 
-		if ($val->run($input) === false)
+		if ($val->run($input, false, array($obj)) === false)
 		{
 			throw new ValidationFailed($val->show_errors());
 		}
