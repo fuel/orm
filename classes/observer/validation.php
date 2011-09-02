@@ -49,12 +49,18 @@ class Observer_Validation extends Observer {
 		$properties = is_object($obj) ? $obj->properties() : $class::properties();
 		foreach ($properties as $p => $settings)
 		{
-			$field = $fieldset->add($p, ! empty($settings['label']) ? $settings['label'] : $p);
-			if (empty($settings['validation']))
+			if (isset($settings['form']['options']))
 			{
-				continue;
+				foreach ($settings['form']['options'] as $key => $value)
+				{
+					$settings['form']['options'][$key] = __($value) ?: $value;
+				}
 			}
-			else
+
+			$label       = isset($settings['label']) ? $settings['label'] : $p;
+			$attributes  = isset($settings['form']) ? $settings['form'] : array();
+			$field       = $fieldset->add($p, $label, $attributes);
+			if ( ! empty($settings['validation']))
 			{
 				foreach ($settings['validation'] as $rule => $args)
 				{
