@@ -21,7 +21,7 @@ class Query {
 	 */
 	public static function factory($model, $connection = null, $options = array())
 	{
-		\Log::warning('This method is deprecated.  Please use a forge() instead.', __METHOD__);
+		logger(\Fuel::L_WARNING, 'This method is deprecated.  Please use a forge() instead.', __METHOD__);
 		return static::forge($model, $connection, $options);
 	}
 
