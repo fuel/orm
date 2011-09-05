@@ -108,7 +108,7 @@ class Observer_Validation extends Observer {
 			! in_array($p, $obj->primary_key()) and $obj->is_changed($p) and $input[$p] = $obj->{$p};
 		}
 
-		if ( ! empty($input) and $val->run($input, false, array($obj)) === false)
+		if ( ! empty($input) and $val->run($input, true, array($obj)) === false)
 		{
 			throw new ValidationFailed($val->show_errors());
 		}
