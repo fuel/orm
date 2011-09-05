@@ -16,7 +16,7 @@ class Query {
 
 	/**
 	 * This method is deprecated...use forge() instead.
-	 * 
+	 *
 	 * @deprecated until 1.2
 	 */
 	public static function factory($model, $connection = null, $options = array())
@@ -531,9 +531,11 @@ class Query {
 					continue;
 				}
 
-				if (empty($conditional) or strpos($conditional[0], $this->alias.'.') === 0)
+				if (empty($conditional)
+					or strpos($conditional[0], $this->alias.'.') === 0
+					or ($type != 'select' and $conditional[0] instanceof \Fuel\Core\Database_Expression))
 				{
-					if ( ! empty($conditional) and $type != 'select')
+					if ( ! empty($conditional) and ! $conditional[0] instanceof \Fuel\Core\Database_Expression)
 					{
 						$conditional[0] = substr($conditional[0], strlen($this->alias.'.'));
 					}
