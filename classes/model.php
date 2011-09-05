@@ -103,7 +103,7 @@ class Model implements \ArrayAccess, \Iterator {
 	 */
 	public static function factory($data = array(), $new = true)
 	{
-		\Log::warning('This method is deprecated.  Please use a forge() instead.', __METHOD__);
+		logger(\Fuel::L_WARNING, 'This method is deprecated.  Please use a forge() instead.', __METHOD__);
 		return static::forge($data, $new);
 	}
 
