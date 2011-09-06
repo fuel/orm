@@ -564,7 +564,18 @@ class Model implements \ArrayAccess, \Iterator {
 
 		if ($new)
 		{
-			$this->values($data);
+			$properties = $this->properties();
+			foreach ($properties as $prop => $settings)
+			{
+				if (array_key_exists($prop, $data))
+				{
+					$this->_data[$prop] = $data[$prop];
+				}
+				elseif (array_key_exists('default', $settings))
+				{
+					$this->_data[$prop] = $settings['default'];
+				}
+			}
 		}
 		else
 		{
@@ -672,28 +683,7 @@ class Model implements \ArrayAccess, \Iterator {
 	 */
 	public function & __get($property)
 	{
-		if (array_key_exists($property, static::properties()))
-		{
-			if ( ! array_key_exists($property, $this->_data))
-			{
-				$this->_data[$property] = null;
-			}
-
-			return $this->_data[$property];
-		}
-		elseif ($rel = static::relations($property))
-		{
-			if ( ! array_key_exists($property, $this->_data_relations))
-			{
-				$this->_data_relations[$property] = $rel->get($this);
-				$this->_update_original_relations(array($property));
-			}
-			return $this->_data_relations[$property];
-		}
-		else
-		{
-			throw new \OutOfBoundsException('Property "'.$property.'" not found for '.get_called_class().'.');
-		}
+		return $this->get($property);
 	}
 
 	/**
@@ -704,27 +694,7 @@ class Model implements \ArrayAccess, \Iterator {
 	 */
 	public function __set($property, $value)
 	{
-		if ($this->_frozen)
-		{
-			throw new FrozenObject('No changes allowed.');
-		}
-
-		if (in_array($property, static::primary_key()) and $this->{$property} !== null)
-		{
-			throw new \Fuel_Exception('Primary key cannot be changed.');
-		}
-		if (array_key_exists($property, static::properties()))
-		{
-			$this->_data[$property] = $value;
-		}
-		elseif (static::relations($property))
-		{
-			$this->_data_relations[$property] = $value;
-		}
-		else
-		{
-			throw new \OutOfBoundsException('Property "'.$property.'" not found for '.get_called_class().'.');
-		}
+		return $this->set($property, $value);
 	}
 
 	/**
@@ -775,9 +745,30 @@ class Model implements \ArrayAccess, \Iterator {
 	 * @param   string  $property
 	 * @return  mixed
 	 */
-	public function get($property)
+	public function & get($property)
 	{
-		return $this->__get($property);
+		if (array_key_exists($property, static::properties()))
+		{
+			if ( ! array_key_exists($property, $this->_data))
+			{
+				$this->_data[$property] = null;
+			}
+
+			return $this->_data[$property];
+		}
+		elseif ($rel = static::relations($property))
+		{
+			if ( ! array_key_exists($property, $this->_data_relations))
+			{
+				$this->_data_relations[$property] = $rel->get($this);
+				$this->_update_original_relations(array($property));
+			}
+			return $this->_data_relations[$property];
+		}
+		else
+		{
+			throw new \OutOfBoundsException('Property "'.$property.'" not found for '.get_called_class().'.');
+		}
 	}
 
 	/**
@@ -794,24 +785,27 @@ class Model implements \ArrayAccess, \Iterator {
 	 */
 	public function set($property, $value)
 	{
-		$this->__set($property, $value);
-		return $this;
-	}
+		if ($this->_frozen)
+		{
+			throw new FrozenObject('No changes allowed.');
+		}
 
-	/**
-	 * Uns
-	 * 
-	 * Unsets a property or
-	 * relation of the
-	 * object
-	 * 
-	 * @access  public
-	 * @param   string  $property
-	 * @return  Orm\Model
-	 */
-	public function uns($property)
-	{
-		$this->__unset($property);
+		if (in_array($property, static::primary_key()) and $this->{$property} !== null)
+		{
+			throw new \Fuel_Exception('Primary key cannot be changed.');
+		}
+		if (array_key_exists($property, static::properties()))
+		{
+			$this->_data[$property] = $value;
+		}
+		elseif (static::relations($property))
+		{
+			$this->_data_relations[$property] = $value;
+		}
+		else
+		{
+			throw new \OutOfBoundsException('Property "'.$property.'" not found for '.get_called_class().'.');
+		}
 		return $this;
 	}
 
@@ -828,18 +822,11 @@ class Model implements \ArrayAccess, \Iterator {
 	 */
 	public function values(Array $data)
 	{
-		$properties = $this->properties();
-		foreach ($properties as $prop => $settings)
+		foreach ($data as $property => $value)
 		{
-			if (array_key_exists($prop, $data))
-			{
-				$this->_data[$prop] = $data[$prop];
-			}
-			elseif (array_key_exists('default', $settings))
-			{
-				$this->_data[$prop] = $settings['default'];
-			}
+			$this->set($property, $value);
 		}
+
 		return $this;
 	}
 
