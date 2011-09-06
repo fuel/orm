@@ -246,7 +246,7 @@ class Model implements \ArrayAccess, \Iterator {
 			}
 			catch (\Exception $e)
 			{
-				throw new \Fuel_Exception('Listing columns not failed, you have to set the model properties with a '.
+				throw new \Fuel_Exception('Listing columns failed, you have to set the model properties with a '.
 					'static $_properties setting in the model. Original exception: '.$e->getMessage());
 			}
 		}
