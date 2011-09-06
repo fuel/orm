@@ -564,18 +564,7 @@ class Model implements \ArrayAccess, \Iterator {
 
 		if ($new)
 		{
-			$properties = $this->properties();
-			foreach ($properties as $prop => $settings)
-			{
-				if (array_key_exists($prop, $data))
-				{
-					$this->_data[$prop] = $data[$prop];
-				}
-				elseif (array_key_exists('default', $settings))
-				{
-					$this->_data[$prop] = $settings['default'];
-				}
-			}
+			$this->values($data);
 		}
 		else
 		{
@@ -823,6 +812,34 @@ class Model implements \ArrayAccess, \Iterator {
 	public function uns($property)
 	{
 		$this->__unset($property);
+		return $this;
+	}
+
+	/**
+	 * Values
+	 * 
+	 * Short way of setting the values
+	 * for the object as opposed to setting
+	 * each one individually
+	 * 
+	 * @access  public
+	 * @param   array  $values
+	 * @return  Orm\Model
+	 */
+	public function values(Array $data)
+	{
+		$properties = $this->properties();
+		foreach ($properties as $prop => $settings)
+		{
+			if (array_key_exists($prop, $data))
+			{
+				$this->_data[$prop] = $data[$prop];
+			}
+			elseif (array_key_exists('default', $settings))
+			{
+				$this->_data[$prop] = $settings['default'];
+			}
+		}
 		return $this;
 	}
 
