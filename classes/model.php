@@ -776,6 +776,57 @@ class Model implements \ArrayAccess, \Iterator {
 	}
 
 	/**
+	 * Get
+	 * 
+	 * Gets a property or
+	 * relation from the
+	 * object
+	 * 
+	 * @access  public
+	 * @param   string  $property
+	 * @return  mixed
+	 */
+	public function get($property)
+	{
+		return $this->__get($property);
+	}
+
+	/**
+	 * Set
+	 * 
+	 * Sets a property or
+	 * relation of the
+	 * object
+	 * 
+	 * @access  public
+	 * @param   string  $property
+	 * @param   string  $value
+	 * @return  Orm\Model
+	 */
+	public function set($property, $value)
+	{
+		$this->__set($property, $value);
+		return $this;
+	}
+
+	/**
+	 * Uns
+	 * 
+	 * Unsets a property or
+	 * relation of the
+	 * object
+	 * 
+	 * @access  public
+	 * @param   string  $property
+	 * @return  Orm\Model
+	 */
+	public function uns($property)
+	{
+		$this->__unset($property);
+		return $this;
+	}
+
+	/**
 	 * Save the object and it's relations, create when necessary
 	 *
 	 * @param  mixed  $cascade
@@ -1270,6 +1321,33 @@ class Model implements \ArrayAccess, \Iterator {
 		}
 
 		return $array;
+	}
+
+	/**
+	 * Call
+	 * 
+	 * 
+	 */
+	public function __call($method, $args)
+	{
+		$convenience = substr($method, 0, 3);
+		$property    = substr($method, 4);
+
+		switch ($convenience)
+		{
+			case 'get':
+				return $this->get($property);
+				break;
+			case 'set':
+				return $this->set($property, reset($args));
+				break;
+			case 'uns':
+				return $this->uns($property);
+				break;
+		}
+
+		// Throw an exception
+		throw new \ErrorException('Call to undefined method '.get_class($this).'::'.$method.'()');
 	}
 }
 
