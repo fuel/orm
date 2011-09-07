@@ -925,16 +925,15 @@ class Query {
 	 * @param   bool  false for random selected column or specific column, only works for main model currently
 	 * @return  int   number of rows OR false
 	 */
-	public function count($distinct = false)
+	public function count($column = null, $distinct = true)
 	{
-		$select = $this->select ?: call_user_func($this->model.'::primary_key');
-		$select = $distinct ?: reset($select);
+		$select = $column ?: reset(call_user_func($this->model.'::primary_key'));
 		$select = \Database_Connection::instance()->table_prefix().
 			(strpos($select, '.') === false ? $this->alias.'.'.$select : $select);
 
 		// Get the columns
-		$columns = \DB::expr('COUNT('.
-			\Database_Connection::instance()->quote_identifier(($distinct ? 'DISTINCT ' : '').$select).
+		$columns = \DB::expr('COUNT('.($distinct ? 'DISTINCT ' : '').
+			\Database_Connection::instance()->quote_identifier($select).
 			') AS count_result');
 
 		// Remove the current select and
@@ -943,7 +942,7 @@ class Query {
 		// Set from table
 		$query->from(array(call_user_func($this->model.'::table'), $this->alias));
 
-		$tmp   = $this->build_query($query, $columns, 'count');
+		$tmp   = $this->build_query($query, $columns, 'select');
 		$query = $tmp['query'];
 		$count = $query->execute($this->connection)->get('count_result');
 
