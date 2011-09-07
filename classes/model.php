@@ -246,7 +246,7 @@ class Model implements \ArrayAccess, \Iterator {
 			}
 			catch (\Exception $e)
 			{
-				throw new \Fuel_Exception('Listing columns not failed, you have to set the model properties with a '.
+				throw new \Fuel_Exception('Listing columns failed, you have to set the model properties with a '.
 					'static $_properties setting in the model. Original exception: '.$e->getMessage());
 			}
 		}
@@ -683,28 +683,7 @@ class Model implements \ArrayAccess, \Iterator {
 	 */
 	public function & __get($property)
 	{
-		if (array_key_exists($property, static::properties()))
-		{
-			if ( ! array_key_exists($property, $this->_data))
-			{
-				$this->_data[$property] = null;
-			}
-
-			return $this->_data[$property];
-		}
-		elseif ($rel = static::relations($property))
-		{
-			if ( ! array_key_exists($property, $this->_data_relations))
-			{
-				$this->_data_relations[$property] = $rel->get($this);
-				$this->_update_original_relations(array($property));
-			}
-			return $this->_data_relations[$property];
-		}
-		else
-		{
-			throw new \OutOfBoundsException('Property "'.$property.'" not found for '.get_called_class().'.');
-		}
+		return $this->get($property);
 	}
 
 	/**
@@ -715,27 +694,7 @@ class Model implements \ArrayAccess, \Iterator {
 	 */
 	public function __set($property, $value)
 	{
-		if ($this->_frozen)
-		{
-			throw new FrozenObject('No changes allowed.');
-		}
-
-		if (in_array($property, static::primary_key()) and $this->{$property} !== null)
-		{
-			throw new \Fuel_Exception('Primary key cannot be changed.');
-		}
-		if (array_key_exists($property, static::properties()))
-		{
-			$this->_data[$property] = $value;
-		}
-		elseif (static::relations($property))
-		{
-			$this->_data_relations[$property] = $value;
-		}
-		else
-		{
-			throw new \OutOfBoundsException('Property "'.$property.'" not found for '.get_called_class().'.');
-		}
+		return $this->set($property, $value);
 	}
 
 	/**
@@ -773,6 +732,102 @@ class Model implements \ArrayAccess, \Iterator {
 		{
 			$this->_data_relations[$property] = $rel->singular ? null : array();
 		}
+	}
+
+	/**
+	 * Get
+	 * 
+	 * Gets a property or
+	 * relation from the
+	 * object
+	 * 
+	 * @access  public
+	 * @param   string  $property
+	 * @return  mixed
+	 */
+	public function & get($property)
+	{
+		if (array_key_exists($property, static::properties()))
+		{
+			if ( ! array_key_exists($property, $this->_data))
+			{
+				$this->_data[$property] = null;
+			}
+
+			return $this->_data[$property];
+		}
+		elseif ($rel = static::relations($property))
+		{
+			if ( ! array_key_exists($property, $this->_data_relations))
+			{
+				$this->_data_relations[$property] = $rel->get($this);
+				$this->_update_original_relations(array($property));
+			}
+			return $this->_data_relations[$property];
+		}
+		else
+		{
+			throw new \OutOfBoundsException('Property "'.$property.'" not found for '.get_called_class().'.');
+		}
+	}
+
+	/**
+	 * Set
+	 * 
+	 * Sets a property or
+	 * relation of the
+	 * object
+	 * 
+	 * @access  public
+	 * @param   string  $property
+	 * @param   string  $value
+	 * @return  Orm\Model
+	 */
+	public function set($property, $value)
+	{
+		if ($this->_frozen)
+		{
+			throw new FrozenObject('No changes allowed.');
+		}
+
+		if (in_array($property, static::primary_key()) and $this->{$property} !== null)
+		{
+			throw new \Fuel_Exception('Primary key cannot be changed.');
+		}
+		if (array_key_exists($property, static::properties()))
+		{
+			$this->_data[$property] = $value;
+		}
+		elseif (static::relations($property))
+		{
+			$this->_data_relations[$property] = $value;
+		}
+		else
+		{
+			throw new \OutOfBoundsException('Property "'.$property.'" not found for '.get_called_class().'.');
+		}
+		return $this;
+	}
+
+	/**
+	 * Values
+	 * 
+	 * Short way of setting the values
+	 * for the object as opposed to setting
+	 * each one individually
+	 * 
+	 * @access  public
+	 * @param   array  $values
+	 * @return  Orm\Model
+	 */
+	public function values(Array $data)
+	{
+		foreach ($data as $property => $value)
+		{
+			$this->set($property, $value);
+		}
+
+		return $this;
 	}
 
 	/**
@@ -1270,6 +1325,33 @@ class Model implements \ArrayAccess, \Iterator {
 		}
 
 		return $array;
+	}
+
+	/**
+	 * Call
+	 * 
+	 * 
+	 */
+	public function __call($method, $args)
+	{
+		$convenience = substr($method, 0, 3);
+		$property    = substr($method, 4);
+
+		switch ($convenience)
+		{
+			case 'get':
+				return $this->get($property);
+				break;
+			case 'set':
+				return $this->set($property, reset($args));
+				break;
+			case 'uns':
+				return $this->uns($property);
+				break;
+		}
+
+		// Throw an exception
+		throw new \ErrorException('Call to undefined method '.get_class($this).'::'.$method.'()');
 	}
 }
 
