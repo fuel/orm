@@ -928,8 +928,7 @@ class Query {
 	public function count($column = null, $distinct = true)
 	{
 		$select = $column ?: \Arr::get(call_user_func($this->model.'::primary_key'), 0);
-		$select = \Database_Connection::instance()->table_prefix().
-			(strpos($select, '.') === false ? $this->alias.'.'.$select : $select);
+		$select = (strpos($select, '.') === false ? $this->alias.'.'.$select : $select);
 
 		// Get the columns
 		$columns = \DB::expr('COUNT('.($distinct ? 'DISTINCT ' : '').
