@@ -111,7 +111,7 @@ class Observer_Validation extends Observer {
 			if ( ! in_array($p, $obj->primary_key()) and $obj->is_changed($p))
 			{
 				$input[$p] = $obj->{$p};
-				$allow_partial[] = $p;
+				is_array($allow_partial) and $allow_partial[] = $p;
 			}
 		}
 
