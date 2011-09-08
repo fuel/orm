@@ -102,13 +102,20 @@ class Observer_Validation extends Observer {
 	{
 		$val = static::set_fields($obj)->validation();
 
+		// only allow partial validation on updates, specify the fields for updates to allow null
+		$allow_partial = $obj->is_new() ? false : array();
+
 		$input = array();
 		foreach (array_keys($obj->properties()) as $p)
 		{
-			! in_array($p, $obj->primary_key()) and $obj->is_changed($p) and $input[$p] = $obj->{$p};
+			if ( ! in_array($p, $obj->primary_key()) and $obj->is_changed($p))
+			{
+				$input[$p] = $obj->{$p};
+				$allow_partial[] = $p;
+			}
 		}
 
-		if ( ! empty($input) and $val->run($input, true, array($obj)) === false)
+		if ( ! empty($input) and $val->run($input, $allow_partial, array($obj)) === false)
 		{
 			throw new ValidationFailed($val->show_errors());
 		}
