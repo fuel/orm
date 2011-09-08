@@ -61,14 +61,24 @@ class Query {
 	protected $select = array();
 
 	/**
-	 * @var  int  max number of returned rows
+	 * @var  int  max number of returned base model instances
 	 */
 	protected $limit;
 
 	/**
-	 * @var  int  offset
+	 * @var  int  offset of base model table
 	 */
 	protected $offset;
+
+	/**
+	 * @var  int  max number of requested rows
+	 */
+	protected $rows_limit;
+
+	/**
+	 * @var  int  offset of requested rows
+	 */
+	protected $rows_offset;
 
 	/**
 	 * @var  array  where conditions
@@ -144,6 +154,12 @@ class Query {
 					break;
 				case 'offset':
 					$this->offset($val);
+					break;
+				case 'rows_limit':
+					$this->rows_limit($val);
+					break;
+				case 'rows_offset':
+					$this->rows_offset($val);
 					break;
 			}
 		}
@@ -224,6 +240,30 @@ class Query {
 	public function offset($offset)
 	{
 		$this->offset = intval($offset);
+
+		return $this;
+	}
+
+	/**
+	 * Set the limit of rows requested
+	 *
+	 * @param  int
+	 */
+	public function rows_limit($limit)
+	{
+		$this->rows_limit = intval($limit);
+
+		return $this;
+	}
+
+	/**
+	 * Set the offset of rows requested
+	 *
+	 * @param  int
+	 */
+	public function rows_offset($offset)
+	{
+		$this->rows_offset = intval($offset);
 
 		return $this;
 	}
@@ -699,6 +739,11 @@ class Query {
 				call_user_func_array(array($query, $method), $conditional);
 			}
 		}
+
+		// Set the row limit and offset, these are applied to the outer query when a subquery
+		// is used or overwrite limit/offset when it's a normal query
+		! is_null($this->rows_limit) and $query->limit($this->rows_limit);
+		! is_null($this->rows_offset) and $query->offset($this->rows_offset);
 
 		return array('query' => $query, 'models' => $models);
 	}
