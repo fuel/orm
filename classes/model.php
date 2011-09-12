@@ -542,7 +542,7 @@ class Model implements \ArrayAccess, \Iterator {
 	private $_data_relations = array();
 
 	/**
-	 * @var  arrayy  keeps a copy of the relation ids that were originally retrieved from the database
+	 * @var  array  keeps a copy of the relation ids that were originally retrieved from the database
 	 */
 	private $_original_relations = array();
 
