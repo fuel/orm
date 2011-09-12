@@ -36,6 +36,7 @@ class BelongsTo extends Relation {
 		{
 			throw new \Fuel_Exception('Related model not found by Belongs_To relation "'.$this->name.'": '.$this->model_to);
 		}
+		$this->model_to = get_real_class($this->model_to);
 	}
 
 	public function get(Model $from)
