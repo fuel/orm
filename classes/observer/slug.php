@@ -34,7 +34,7 @@ class Observer_Slug extends Observer {
 	{
 		$class = get_class($obj);
 		$slug  = \Inflector::friendly_title($obj->{static::$source}, '-', true);
-		$same  = $class::find()->where(static::$property, 'like', $slug.'%')->get();
+		$same  = $class::find()->where(static::$property, 'regexp', '^'.$slug.'(-[0-9]+)?$')->get();
 
 		if ( ! empty($same))
 		{
