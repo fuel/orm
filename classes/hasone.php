@@ -184,8 +184,8 @@ class HasOne extends Relation {
 		$rels[$this->name] = null;
 		$model_from->_relate($rels);
 		$model_from->freeze();
-
-		if ( ! $model_to->frozen())
+		///////changing next line to "if ($model_to and ! $model_to->frozen)" from "if ( ! $model_to->frozen())"
+		if ($model_to and ! $model_to->frozen())
 		{
 			foreach ($this->key_to as $fk)
 			{
