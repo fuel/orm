@@ -145,7 +145,7 @@ class HasMany extends Relation {
 			}
 
 			// Fix it if key isn't an imploded PK
-			if ($key != $current_model_id)
+			if ($key != ($current_model_id = $model_to->implode_pk($model_to)))
 			{
 				$model_from->unfreeze();
 				$rel = $model_from->_relate();
