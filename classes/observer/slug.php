@@ -32,9 +32,8 @@ class Observer_Slug extends Observer {
 	 */
 	public function before_insert(Model $obj)
 	{
-		$class = get_class($obj);
 		$slug  = \Inflector::friendly_title($obj->{static::$source}, '-', true);
-		$same  = $class::find()->where(static::$property, 'regexp', '^'.$slug.'(-[0-9]+)?$')->get();
+		$same  = $obj->find()->where(static::$property, 'regexp', '^'.$slug.'(-[0-9]+)?$')->get();
 
 		if ( ! empty($same))
 		{
