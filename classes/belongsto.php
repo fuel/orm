@@ -61,7 +61,7 @@ class BelongsTo extends Relation {
 			'connection'   => call_user_func(array($this->model_to, 'connection')),
 			'table'        => array(call_user_func(array($this->model_to, 'table')), $alias_to),
 			'primary_key'  => call_user_func(array($this->model_to, 'primary_key')),
-			'join_type'    => 'left',
+			'join_type'    => array_key_exists('join_type', $conditions) ? $conditions['join_type'] : 'left',
 			'join_on'      => array(),
 			'columns'      => $this->select($alias_to),
 			'rel_name'     => strpos($rel_name, '.') ? substr($rel_name, strrpos($rel_name, '.') + 1) : $rel_name,
