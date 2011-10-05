@@ -1011,8 +1011,7 @@ class Query {
 
 		// Get the columns
 		$columns = \DB::expr('MAX('.
-			\Database_Connection::instance()->quote_identifier(
-				\Database_Connection::instance()->table_prefix().$this->alias.'.'.$column).
+			\Database_Connection::instance()->quote_identifier($this->alias.'.'.$column).
 			') AS max_result');
 
 		// Remove the current select and
@@ -1046,8 +1045,7 @@ class Query {
 
 		// Get the columns
 		$columns = \DB::expr('MIN('.
-			\Database_Connection::instance()->quote_identifier(
-				\Database_Connection::instance()->table_prefix().$this->alias.'.'.$column).
+			\Database_Connection::instance()->quote_identifier($this->alias.'.'.$column).
 			') AS min_result');
 
 		// Remove the current select and
