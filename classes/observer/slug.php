@@ -33,19 +33,22 @@ class Observer_Slug extends Observer {
 	public function before_insert(Model $obj)
 	{
 		$slug  = \Inflector::friendly_title($obj->{static::$source}, '-', true);
-		$same  = $obj->find()->where(static::$property, 'regexp', '^'.$slug.'(-[0-9]+)?$')->get();
+		$same  = $obj->find()->where(static::$property, 'like', $slug.'%')->get();
 
 		if ( ! empty($same))
 		{
-			$max = 0;
+			$max = -1;
 			
 			foreach ($same as $record)
 			{
-				$index = (int) preg_replace('/^[^\n]+-([0-9]+)$/', '\1', $record->{static::$property});
-				$max < $index and $max = $index;
+				if (preg_match('/^'.$slug.'(-[0-9]+)?$/', $record->{static::$property}))
+				{
+					$index = (int) preg_replace('/^[^\n]+-([0-9]+)$/', '\1', $record->{static::$property});
+					$max < $index and $max = $index;
+				}
 			}
 			
-			$slug .= '-'.($max + 1);
+			$max < 0 or $slug .= '-'.($max + 1);
 		}
 			
 		$obj->{static::$property} = $slug;
