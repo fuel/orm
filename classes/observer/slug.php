@@ -41,10 +41,10 @@ class Observer_Slug extends Observer {
 			
 			foreach ($same as $record)
 			{
-				if (preg_match('/^'.$slug.'(-[0-9]+)?$/', $record->{static::$property}))
+				if (preg_match('/^'.$slug.'(?:-([0-9]+))?$/', $record->{static::$property}, $matches))
 				{
-					$index = (int) preg_replace('/^[^\n]+-([0-9]+)$/', '\1', $record->{static::$property});
-					$max < $index and $max = $index;
+				     $index = (int) $matches[1];
+				     $max < $index and $max = $index;
 				}
 			}
 			
