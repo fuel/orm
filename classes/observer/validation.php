@@ -13,7 +13,7 @@
 namespace Orm;
 
 // Exception to throw when validation failed
-class ValidationFailed extends \Fuel_Exception {}
+class ValidationFailed extends \FuelException {}
 
 class Observer_Validation extends Observer {
 
