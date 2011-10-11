@@ -12,7 +12,8 @@
 
 namespace Orm;
 
-abstract class Relation {
+abstract class Relation
+{
 
 	/**
 	 * @var  string  name of the relationship in the model_from

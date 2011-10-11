@@ -12,7 +12,8 @@
 
 namespace Orm;
 
-class HasOne extends Relation {
+class HasOne extends Relation
+{
 
 	protected $singular = true;
 

@@ -12,7 +12,8 @@
 
 namespace Orm;
 
-class BelongsTo extends Relation {
+class BelongsTo extends Relation
+{
 
 	protected $singular = true;
 

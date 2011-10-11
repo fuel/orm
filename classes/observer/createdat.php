@@ -12,7 +12,8 @@
 
 namespace Orm;
 
-class Observer_CreatedAt extends Observer {
+class Observer_CreatedAt extends Observer
+{
 
 	public static $mysql_timestamp = false;
 	public static $property = 'created_at';

@@ -12,7 +12,8 @@
 
 namespace Orm;
 
-class ManyMany extends Relation {
+class ManyMany extends Relation
+{
 
 	protected $key_from = array('id');
 

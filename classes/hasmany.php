@@ -12,7 +12,8 @@
 
 namespace Orm;
 
-class HasMany extends Relation {
+class HasMany extends Relation
+{
 
 	public function __construct($from, $name, array $config)
 	{

@@ -12,7 +12,8 @@
 
 namespace Orm;
 
-class Query {
+class Query
+{
 
 	/**
 	 * This method is deprecated...use forge() instead.

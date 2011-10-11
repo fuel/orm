@@ -12,7 +12,8 @@
 
 namespace Orm;
 
-class Observer_Slug extends Observer {
+class Observer_Slug extends Observer
+{
 
 	/**
 	 * @var string Source property, which is used to create the slug
