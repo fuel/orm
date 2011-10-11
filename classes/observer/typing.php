@@ -58,6 +58,10 @@ class Observer_Typing {
 			'before' => 'Orm\\Observer_Typing::type_json_encode',
 			'after'  => 'Orm\\Observer_Typing::type_json_decode',
 		),
+		'/^date$/uiD' => array(
+			'before' => 'Orm\\Observer_Typing::type_date_decode',
+			'after'  => 'Orm\\Observer_Typing::type_date_encode',
+		),
 	);
 
 	/**
@@ -304,6 +308,31 @@ class Observer_Typing {
 	public static function type_json_decode($var)
 	{
 		return json_decode($var);
+	}
+	
+	/**
+	 * Return a Fuel Date object on the base of a given format
+	 *
+	 * @param int value
+	 * @param array
+	 * @return \Fuel\Core\Date
+	 */
+	public static function type_date_encode($var, $settings)
+	{
+		$pattern = isset($settings['format']) ? $settings['format'] : 'local';
+		return \Date::create_from_string($var , $pattern);
+	}
+	
+	/**
+	 * Return a formated value of a given Fuel Date object
+	 *
+	 * @param \Fuel\Core\Date
+	 * @return int
+	 */
+	public static function type_date_decode(\Date $var, $settings)
+	{
+		$pattern = isset($settings['format']) ? $settings['format'] : 'local';
+		return $var->format($pattern);
 	}
 }
 
