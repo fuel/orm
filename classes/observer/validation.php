@@ -13,7 +13,34 @@
 namespace Orm;
 
 // Exception to throw when validation failed
-class ValidationFailed extends \FuelException {}
+class ValidationFailed extends \FuelException {
+	protected $fieldset;
+
+	/**
+	 * Overridden \FuelException construct to add a Fieldset instance into the exception
+	 *
+	 * @param string
+	 * @param int
+	 * @param Exception
+	 * @param Fieldset
+	 */
+	public function __construct($message = null, $code = 0, \Exception $previous = null, \Fieldset $fieldset = null)
+	{
+		parent::__construct($message, $code, $previous);
+
+		$this->fieldset = $fieldset;
+	}
+
+	/**
+	 * Gets the Fieldset from this exception
+	 *
+	 * @return Fieldset
+	 */
+	public function get_fieldset()
+	{
+		return $this->fieldset;
+	}
+}
 
 class Observer_Validation extends Observer
 {
@@ -101,7 +128,8 @@ class Observer_Validation extends Observer
 	 */
 	public function validate(Model $obj)
 	{
-		$val = static::set_fields($obj)->validation();
+		$fieldset = static::set_fields($obj);
+		$val = $fieldset->validation();
 
 		// only allow partial validation on updates, specify the fields for updates to allow null
 		$allow_partial = $obj->is_new() ? false : array();
@@ -118,7 +146,7 @@ class Observer_Validation extends Observer
 
 		if ( ! empty($input) and $val->run($input, $allow_partial, array($obj)) === false)
 		{
-			throw new ValidationFailed($val->show_errors());
+			throw new ValidationFailed($val->show_errors(), 0, null, $fieldset);
 		}
 		else
 		{
