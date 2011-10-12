@@ -320,8 +320,10 @@ class Observer_Typing
 	 */
 	public static function type_date_encode($var, $settings)
 	{
-		$pattern = isset($settings['format']) ? $settings['format'] : 'local';
-		return \Date::create_from_string($var , $pattern);
+		if(!isset($settings['format_model'])) throw new InvalidContentType('Value could not be encoded, no option format_model given.');
+		if(!isset($settings['format_view']))  throw new InvalidContentType('Value could not be encoded, no option format_view given.');
+		
+		return \Date::create_from_string($var, $settings['format_model'])->format($settings['format_view']);
 	}
 	
 	/**
@@ -330,10 +332,12 @@ class Observer_Typing
 	 * @param \Fuel\Core\Date
 	 * @return int
 	 */
-	public static function type_date_decode(\Date $var, $settings)
+	public static function type_date_decode($var, $settings)
 	{
-		$pattern = isset($settings['format']) ? $settings['format'] : 'local';
-		return $var->format($pattern);
+		if(!isset($settings['format_model'])) throw new InvalidContentType('Value could not be encoded, no option format_model given.');
+		if(!isset($settings['format_view']))  throw new InvalidContentType('Value could not be encoded, no option format_view given.');
+		
+		return \Date::create_from_string($var, $settings['format_view'])->format($settings['format_model']);
 	}
 }
 
