@@ -15,14 +15,27 @@ namespace Orm;
 // Exception to throw when validation failed
 class ValidationFailed extends \FuelException {
 	protected $fieldset;
-	
+
+	/**
+	 * Overridden \FuelException construct to add a Fieldset instance into the exception
+	 *
+	 * @param string
+	 * @param int
+	 * @param Exception
+	 * @param Fieldset
+	 */
 	public function __construct($message = null, $code = 0, \Exception $previous = null, \Fieldset $fieldset = null)
 	{
 		parent::__construct($message, $code, $previous);
-		
+
 		$this->fieldset = $fieldset;
 	}
 
+	/**
+	 * Gets the Fieldset from this exception
+	 *
+	 * @return Fieldset
+	 */
 	public function get_fieldset()
 	{
 		return $this->fieldset;
