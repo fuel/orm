@@ -15,7 +15,8 @@ namespace Orm;
 // Invalid content exception, thrown when conversion is not possible
 class InvalidContentType extends \UnexpectedValueException {}
 
-class Observer_Typing {
+class Observer_Typing
+{
 
 	/**
 	 * @var  array  types of events to act on and whether they are pre- or post-database

@@ -12,7 +12,8 @@
 
 namespace Orm;
 
-abstract class Observer {
+abstract class Observer
+{
 
 	protected static $_instance = array();
 

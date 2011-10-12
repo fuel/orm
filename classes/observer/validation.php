@@ -13,9 +13,10 @@
 namespace Orm;
 
 // Exception to throw when validation failed
-class ValidationFailed extends \Fuel_Exception {}
+class ValidationFailed extends \FuelException {}
 
-class Observer_Validation extends Observer {
+class Observer_Validation extends Observer
+{
 
 	/**
 	 * Set a Model's properties as fields on a Fieldset, which will be created with the Model's
