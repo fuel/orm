@@ -15,9 +15,10 @@ namespace Orm;
 // Invalid content exception, thrown when conversion is not possible
 class InvalidContentType extends \UnexpectedValueException {}
 
-class Observer_Typing
-{
+class Observer_Typing {
 
+	public static $date_format = 'mysql';
+	
 	/**
 	 * @var  array  types of events to act on and whether they are pre- or post-database
 	 */
@@ -318,26 +319,25 @@ class Observer_Typing
 	 * @param array
 	 * @return \Fuel\Core\Date
 	 */
-	public static function type_date_encode($var, $settings)
+	public static function type_date_encode($var)
 	{
-		if(!isset($settings['format_model'])) throw new InvalidContentType('Value could not be encoded, no option format_model given.');
-		if(!isset($settings['format_view']))  throw new InvalidContentType('Value could not be encoded, no option format_view given.');
+		if(!$ret = \Date::create_from_string($var, static::$date_format))
+		{
+			throw new InvalidContentType('Input was not recognized by pattern.');
+		}
 		
-		return \Date::create_from_string($var, $settings['format_model'])->format($settings['format_view']);
+		return $ret;
 	}
 	
 	/**
 	 * Return a formated value of a given Fuel Date object
 	 *
 	 * @param \Fuel\Core\Date
-	 * @return int
+	 * @return mixed
 	 */
-	public static function type_date_decode($var, $settings)
+	public static function type_date_decode(\Date $var)
 	{
-		if(!isset($settings['format_model'])) throw new InvalidContentType('Value could not be encoded, no option format_model given.');
-		if(!isset($settings['format_view']))  throw new InvalidContentType('Value could not be encoded, no option format_view given.');
-		
-		return \Date::create_from_string($var, $settings['format_view'])->format($settings['format_model']);
+		return $var->format(static::$date_format);
 	}
 }
 
