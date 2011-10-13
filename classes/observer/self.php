@@ -12,7 +12,8 @@
 
 namespace Orm;
 
-class Observer_Self {
+class Observer_Self
+{
 
 	public static function orm_notify(Model $instance, $event)
 	{

@@ -246,7 +246,7 @@ class Model implements \ArrayAccess, \Iterator {
 			}
 			catch (\Exception $e)
 			{
-				throw new \Fuel_Exception('Listing columns failed, you have to set the model properties with a '.
+				throw new \FuelException('Listing columns failed, you have to set the model properties with a '.
 					'static $_properties setting in the model. Original exception: '.$e->getMessage());
 			}
 		}
@@ -453,7 +453,7 @@ class Model implements \ArrayAccess, \Iterator {
 		// God knows, complain
 		else
 		{
-			throw new \Fuel_Exception('Invalid method call.  Method '.$method.' does not exist.', 0);
+			throw new \FuelException('Invalid method call.  Method '.$method.' does not exist.', 0);
 		}
 
 		$where = $or_where = array();
@@ -671,7 +671,7 @@ class Model implements \ArrayAccess, \Iterator {
 		}
 		else
 		{
-			throw new \Fuel_Exception('Invalid input for _relate(), should be an array.');
+			throw new \FuelException('Invalid input for _relate(), should be an array.');
 		}
 	}
 
@@ -792,7 +792,7 @@ class Model implements \ArrayAccess, \Iterator {
 
 		if (in_array($property, static::primary_key()) and $this->{$property} !== null)
 		{
-			throw new \Fuel_Exception('Primary key cannot be changed.');
+			throw new \FuelException('Primary key cannot be changed.');
 		}
 		if (array_key_exists($property, static::properties()))
 		{
