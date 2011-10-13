@@ -196,7 +196,7 @@ class Model implements \ArrayAccess, \Iterator {
 		}
 
 		$pk = '';
-		foreach(static::$_primary_key as $p)
+		foreach (static::$_primary_key as $p)
 		{
 			if (is_null((is_object($data) ? $data->{$p} : (isset($data[$p]) ? $data[$p] : null))))
 			{

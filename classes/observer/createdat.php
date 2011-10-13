@@ -24,4 +24,4 @@ class Observer_CreatedAt extends Observer
 	}
 }
 
-// End of file validation.php
+// End of file createdat.php
