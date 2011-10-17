@@ -15,7 +15,8 @@ namespace Orm;
 // Invalid content exception, thrown when conversion is not possible
 class InvalidContentType extends \UnexpectedValueException {}
 
-class Observer_Typing {
+class Observer_Typing
+{
 
 	public static $date_format = 'mysql';
 	
@@ -321,7 +322,7 @@ class Observer_Typing {
 	 */
 	public static function type_date_encode($var)
 	{
-		if(!$ret = \Date::create_from_string($var, static::$date_format))
+		if  ( ! $ret = \Date::create_from_string($var, static::$date_format))
 		{
 			throw new InvalidContentType('Input was not recognized by pattern.');
 		}
