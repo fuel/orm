@@ -12,7 +12,8 @@
 
 namespace Orm;
 
-class Observer_UpdatedAt extends Observer {
+class Observer_UpdatedAt extends Observer
+{
 
 	public static $mysql_timestamp = false;
 	public static $property = 'updated_at';

@@ -12,7 +12,8 @@
 
 namespace Orm;
 
-class Query {
+class Query
+{
 
 	/**
 	 * This method is deprecated...use forge() instead.
@@ -183,7 +184,7 @@ class Query {
 
 				if (empty($fields))
 				{
-					throw new \Fuel_Exception('No properties found in model.');
+					throw new \FuelException('No properties found in model.');
 				}
 				foreach ($fields as $field)
 				{
@@ -332,7 +333,7 @@ class Query {
 		}
 		else
 		{
-			throw new \Fuel_Exception('Invalid param count for where condition.');
+			throw new \FuelException('Invalid param count for where condition.');
 		}
 
 		return $this;
@@ -654,7 +655,7 @@ class Query {
 		{
 			if ($m['connection'] != $this->connection)
 			{
-				throw new \Fuel_Exception('Models cannot be related between connection.');
+				throw new \FuelException('Models cannot be related between connection.');
 			}
 
 			$join_query = $query->join($m['table'], $m['join_type']);

@@ -12,7 +12,8 @@
 
 namespace Orm;
 
-class Observer_CreatedAt extends Observer {
+class Observer_CreatedAt extends Observer
+{
 
 	public static $mysql_timestamp = false;
 	public static $property = 'created_at';
@@ -23,4 +24,4 @@ class Observer_CreatedAt extends Observer {
 	}
 }
 
-// End of file validation.php
+// End of file createdat.php

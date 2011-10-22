@@ -28,6 +28,7 @@ Autoloader::add_classes(array(
 	'Orm\\Observer_UpdatedAt'   => __DIR__.'/classes/observer/updatedat.php',
 	'Orm\\Observer_Validation'  => __DIR__.'/classes/observer/validation.php',
 	'Orm\\Observer_Self'        => __DIR__.'/classes/observer/self.php',
+	'Orm\\Observer_Slug'        => __DIR__.'/classes/observer/slug.php',
 
 	// Exceptions
 	'Orm\\RecordNotFound'      => __DIR__.'/classes/model.php',

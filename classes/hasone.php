@@ -12,7 +12,8 @@
 
 namespace Orm;
 
-class HasOne extends Relation {
+class HasOne extends Relation
+{
 
 	protected $singular = true;
 
@@ -30,7 +31,7 @@ class HasOne extends Relation {
 
 		if ( ! class_exists($this->model_to))
 		{
-			throw new \Fuel_Exception('Related model not found by Has_One relation "'.$this->name.'": '.$this->model_to);
+			throw new \FuelException('Related model not found by Has_One relation "'.$this->name.'": '.$this->model_to);
 		}
 		$this->model_to = get_real_class($this->model_to);
 	}
@@ -85,7 +86,7 @@ class HasOne extends Relation {
 
 		if ( ! $model_to instanceof $this->model_to and $model_to !== null)
 		{
-			throw new \Fuel_Exception('Invalid Model instance added to relations in this model.');
+			throw new \FuelException('Invalid Model instance added to relations in this model.');
 		}
 
 		$current_model_id = ($model_to and ! $model_to->is_new()) ? $model_to->implode_pk($model_to) : null;
