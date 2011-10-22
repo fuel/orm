@@ -98,7 +98,7 @@ class Model implements \ArrayAccess, \Iterator {
 
 	/**
 	 * This method is deprecated...use forge() instead.
-	 * 
+	 *
 	 * @deprecated until 1.2
 	 */
 	public static function factory($data = array(), $new = true)
@@ -196,7 +196,7 @@ class Model implements \ArrayAccess, \Iterator {
 		}
 
 		$pk = '';
-		foreach(static::$_primary_key as $p)
+		foreach (static::$_primary_key as $p)
 		{
 			if (is_null((is_object($data) ? $data->{$p} : (isset($data[$p]) ? $data[$p] : null))))
 			{
@@ -246,7 +246,7 @@ class Model implements \ArrayAccess, \Iterator {
 			}
 			catch (\Exception $e)
 			{
-				throw new \Fuel_Exception('Listing columns failed, you have to set the model properties with a '.
+				throw new \FuelException('Listing columns failed, you have to set the model properties with a '.
 					'static $_properties setting in the model. Original exception: '.$e->getMessage());
 			}
 		}
@@ -255,6 +255,26 @@ class Model implements \ArrayAccess, \Iterator {
 		static::$_properties_cached[$class] = $properties;
 
 		return static::$_properties_cached[$class];
+	}
+
+	/**
+	 * Fetches a property description array, or specific data from it
+	 *
+	 * @param   string  property or property.key
+	 * @param   mixed   return value when key not present
+	 * @return  mixed
+	 */
+	public static function property($key, $default = null)
+	{
+		$class = get_called_class();
+
+		// If already determined
+		if ( ! array_key_exists($class, static::$_properties_cached))
+		{
+			static::properties();
+		}
+
+		return \Arr::get(static::$_properties_cached[$class], $key, $default);
 	}
 
 	/**
@@ -453,7 +473,7 @@ class Model implements \ArrayAccess, \Iterator {
 		// God knows, complain
 		else
 		{
-			throw new \Fuel_Exception('Invalid method call.  Method '.$method.' does not exist.', 0);
+			throw new \FuelException('Invalid method call.  Method '.$method.' does not exist.', 0);
 		}
 
 		$where = $or_where = array();
@@ -671,7 +691,7 @@ class Model implements \ArrayAccess, \Iterator {
 		}
 		else
 		{
-			throw new \Fuel_Exception('Invalid input for _relate(), should be an array.');
+			throw new \FuelException('Invalid input for _relate(), should be an array.');
 		}
 	}
 
@@ -736,11 +756,11 @@ class Model implements \ArrayAccess, \Iterator {
 
 	/**
 	 * Get
-	 * 
+	 *
 	 * Gets a property or
 	 * relation from the
 	 * object
-	 * 
+	 *
 	 * @access  public
 	 * @param   string  $property
 	 * @return  mixed
@@ -773,11 +793,11 @@ class Model implements \ArrayAccess, \Iterator {
 
 	/**
 	 * Set
-	 * 
+	 *
 	 * Sets a property or
 	 * relation of the
 	 * object
-	 * 
+	 *
 	 * @access  public
 	 * @param   string  $property
 	 * @param   string  $value
@@ -792,7 +812,7 @@ class Model implements \ArrayAccess, \Iterator {
 
 		if (in_array($property, static::primary_key()) and $this->{$property} !== null)
 		{
-			throw new \Fuel_Exception('Primary key cannot be changed.');
+			throw new \FuelException('Primary key cannot be changed.');
 		}
 		if (array_key_exists($property, static::properties()))
 		{
@@ -811,11 +831,11 @@ class Model implements \ArrayAccess, \Iterator {
 
 	/**
 	 * Values
-	 * 
+	 *
 	 * Short way of setting the values
 	 * for the object as opposed to setting
 	 * each one individually
-	 * 
+	 *
 	 * @access  public
 	 * @param   array  $values
 	 * @return  Orm\Model
@@ -838,47 +858,63 @@ class Model implements \ArrayAccess, \Iterator {
 	 *     bool = force/prevent cascade,
 	 *     array cascades only the relations that are in the array
 	 */
-	public function save($cascade = null)
+	public function save($cascade = null, $use_transaction = false)
 	{
 		if ($this->frozen())
 		{
 			return false;
 		}
 
-		$this->observe('before_save');
-
-		$this->freeze();
-		foreach($this->relations() as $rel_name => $rel)
+		if ($use_transaction)
 		{
-			if (array_key_exists($rel_name, $this->_data_relations))
-			{
-				$rel->save($this, $this->{$rel_name},
-					array_key_exists($rel_name, $this->_original_relations) ? $this->_original_relations[$rel_name] : null,
-					false, is_array($cascade) ? in_array($rel_name, $cascade) : $cascade
-				);
-			}
+			$db = \Database_Connection::instance(static::connection());
+			$db->start_transaction();
 		}
-		$this->unfreeze();
 
-		// Insert or update
-		$return = $this->_is_new ? $this->create() : $this->update();
-
-		$this->freeze();
-		foreach($this->relations() as $rel_name => $rel)
+		try
 		{
-			if (array_key_exists($rel_name, $this->_data_relations))
+			$this->observe('before_save');
+
+			$this->freeze();
+			foreach($this->relations() as $rel_name => $rel)
 			{
-				$rel->save($this, $this->{$rel_name},
-					array_key_exists($rel_name, $this->_original_relations) ? $this->_original_relations[$rel_name] : null,
-					true, is_array($cascade) ? in_array($rel_name, $cascade) : $cascade
-				);
+				if (array_key_exists($rel_name, $this->_data_relations))
+				{
+					$rel->save($this, $this->{$rel_name},
+						array_key_exists($rel_name, $this->_original_relations) ? $this->_original_relations[$rel_name] : null,
+						false, is_array($cascade) ? in_array($rel_name, $cascade) : $cascade
+					);
+				}
 			}
+			$this->unfreeze();
+
+			// Insert or update
+			$return = $this->_is_new ? $this->create() : $this->update();
+
+			$this->freeze();
+			foreach($this->relations() as $rel_name => $rel)
+			{
+				if (array_key_exists($rel_name, $this->_data_relations))
+				{
+					$rel->save($this, $this->{$rel_name},
+						array_key_exists($rel_name, $this->_original_relations) ? $this->_original_relations[$rel_name] : null,
+						true, is_array($cascade) ? in_array($rel_name, $cascade) : $cascade
+					);
+				}
+			}
+			$this->unfreeze();
+
+			$this->_update_original();
+
+			$this->observe('after_save');
+
+			$use_transaction and $db->commit_transaction();
 		}
-		$this->unfreeze();
-
-		$this->_update_original();
-
-		$this->observe('after_save');
+		catch (\Exception $e)
+		{
+			$use_transaction and $db->rollback_transaction();
+			throw $e;
+		}
 
 		return $return;
 	}
@@ -988,7 +1024,7 @@ class Model implements \ArrayAccess, \Iterator {
 	 *     array cascades only the relations that are in the array
 	 * @return  Model  this instance as a new object without primary key(s)
 	 */
-	public function delete($cascade = null)
+	public function delete($cascade = null, $use_transaction = false)
 	{
 		// New objects can't be deleted, neither can frozen
 		if ($this->is_new() or $this->frozen())
@@ -996,52 +1032,68 @@ class Model implements \ArrayAccess, \Iterator {
 			return false;
 		}
 
-		$this->observe('before_delete');
-
-		$this->freeze();
-		foreach($this->relations() as $rel_name => $rel)
+		if ($use_transaction)
 		{
-			$rel->delete($this, $this->{$rel_name}, false, is_array($cascade) ? in_array($rel_name, $cascade) : $cascade);
-		}
-		$this->unfreeze();
-
-		// Create the query and limit to primary key(s)
-		$query = Query::forge(get_called_class(), static::connection())->limit(1);
-		$primary_key = static::primary_key();
-		foreach ($primary_key as $pk)
-		{
-			$query->where($pk, '=', $this->{$pk});
+			$db = \Database_Connection::instance(static::connection());
+			$db->start_transaction();
 		}
 
-		// Return success of update operation
-		if ( ! $query->delete())
+		try
 		{
-			return false;
-		}
+			$this->observe('before_delete');
 
-		$this->freeze();
-		foreach($this->relations() as $rel_name => $rel)
+			$this->freeze();
+			foreach($this->relations() as $rel_name => $rel)
+			{
+				$rel->delete($this, $this->{$rel_name}, false, is_array($cascade) ? in_array($rel_name, $cascade) : $cascade);
+			}
+			$this->unfreeze();
+
+			// Create the query and limit to primary key(s)
+			$query = Query::forge(get_called_class(), static::connection())->limit(1);
+			$primary_key = static::primary_key();
+			foreach ($primary_key as $pk)
+			{
+				$query->where($pk, '=', $this->{$pk});
+			}
+
+			// Return success of update operation
+			if ( ! $query->delete())
+			{
+				return false;
+			}
+
+			$this->freeze();
+			foreach($this->relations() as $rel_name => $rel)
+			{
+				$rel->delete($this, $this->{$rel_name}, true, is_array($cascade) ? in_array($rel_name, $cascade) : $cascade);
+			}
+			$this->unfreeze();
+
+			// Perform cleanup:
+			// remove from internal object cache, remove PK's, set to non saved object, remove db original values
+			if (array_key_exists(get_called_class(), static::$_cached_objects)
+				and array_key_exists(static::implode_pk($this), static::$_cached_objects[get_called_class()]))
+			{
+				unset(static::$_cached_objects[get_called_class()][static::implode_pk($this)]);
+			}
+			foreach ($this->primary_key() as $pk)
+			{
+				unset($this->_data[$pk]);
+			}
+			$this->_is_new = true;
+			$this->_original = array();
+
+
+			$this->observe('after_delete');
+
+			$use_transaction and $db->commit_transaction();
+		}
+		catch (\Exception $e)
 		{
-			$rel->delete($this, $this->{$rel_name}, true, is_array($cascade) ? in_array($rel_name, $cascade) : $cascade);
+			$use_transaction and $db->rollback_transaction();
+			throw $e;
 		}
-		$this->unfreeze();
-
-		// Perform cleanup:
-		// remove from internal object cache, remove PK's, set to non saved object, remove db original values
-		if (array_key_exists(get_called_class(), static::$_cached_objects)
-			and array_key_exists(static::implode_pk($this), static::$_cached_objects[get_called_class()]))
-		{
-			unset(static::$_cached_objects[get_called_class()][static::implode_pk($this)]);
-		}
-		foreach ($this->primary_key() as $pk)
-		{
-			unset($this->_data[$pk]);
-		}
-		$this->_is_new = true;
-		$this->_original = array();
-
-
-		$this->observe('after_delete');
 
 		return $this;
 	}
@@ -1118,6 +1170,57 @@ class Model implements \ArrayAccess, \Iterator {
 	}
 
 	/**
+	 * Generates an array with keys new & old that contain ONLY the values that differ between the original and
+	 * the current unsaved model.
+	 * Note: relations are given as single or array of imploded pks
+	 *
+	 * @return  array
+	 */
+	public function get_diff()
+	{
+		$diff = array(0 => array(), 1 => array());
+		foreach ($this->_data as $key => $val)
+		{
+			if ($this->is_changed($key))
+			{
+				$diff[0][$key] = $this->_original[$key];
+				$diff[1][$key] = $val;
+			}
+		}
+		foreach ($this->_data_relations as $key => $val)
+		{
+			$rel = static::relations($key);
+			if ($rel->singular)
+			{
+				if (($new_pk = $val->implode_pk($val)) != $this->_original_relations[$key])
+				{
+					$diff[0][$key] = $this->_original_relations[$key];
+					$diff[1][$key] = $new_pk;
+				}
+			}
+			else
+			{
+				$original_pks = $this->_original_relations[$key];
+				foreach ($val as $v)
+				{
+					if ( ! in_array(($new_pk = $v->implode_pk($v)), $original_pks))
+					{
+						$diff[0][$key] = null;
+						$diff[1][$key] = $new_pk;
+					}
+					else
+					{
+						$original_pks = array_diff($original_pks, array($new_pk));
+					}
+					$diff[0][$key] += $original_pks;
+				}
+			}
+		}
+
+		return $diff;
+	}
+
+	/***
 	 * Returns whether this is a saved or a new object
 	 *
 	 * @return  bool
@@ -1328,31 +1431,29 @@ class Model implements \ArrayAccess, \Iterator {
 	}
 
 	/**
-	 * Call
-	 * 
-	 * 
+	 * Allow for getter, setter and unset methods
+	 *
+	 * @param   string  $method
+	 * @param   array   $args
+	 * @return  mixed
+	 * @throws  \BadMethodCallException
 	 */
 	public function __call($method, $args)
 	{
-		$convenience = substr($method, 0, 3);
-		$property    = substr($method, 4);
-
-		switch ($convenience)
+		if (substr($method, 0, 4) == 'get_')
 		{
-			case 'get':
-				return $this->get($property);
-				break;
-			case 'set':
-				return $this->set($property, reset($args));
-				break;
-			case 'uns':
-				return $this->uns($property);
-				break;
+			return $this->get(substr($method, 4));
+		}
+		elseif (substr($method, 0, 4) == 'set_')
+		{
+			return $this->set(substr($method, 4), reset($args));
+		}
+		elseif (substr($method, 0, 6) == 'unset_')
+		{
+			return $this->__unset(substr($method, 6));
 		}
 
 		// Throw an exception
-		throw new \ErrorException('Call to undefined method '.get_class($this).'::'.$method.'()');
+		throw new \BadMethodCallException('Call to undefined method '.get_class($this).'::'.$method.'()');
 	}
 }
-
-/* End of file model.php */
