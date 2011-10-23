@@ -42,16 +42,15 @@ class Observer_Slug extends Observer
 	 */
 	public function before_insert(Model $obj)
 	{
-		$properties = (array) static::$source;
-		$source;
-		
+		$properties = (array) $this->_source;
+		$source = '';
 		foreach ($properties as $property)
 		{
 			$source .= '-'.$obj->{$property};
 		}
-	
-		$slug  = \Inflector::friendly_title(substr($source, 1), '-', true);
-		$same  = $obj->find()->where(static::$property, 'like', $slug.'%')->get();
+
+		$slug = \Inflector::friendly_title(substr($source, 1), '-', true);
+		$same = $obj->query()->where($this->_property, 'like', $slug.'%')->get();
 
 		if ( ! empty($same))
 		{
@@ -59,16 +58,16 @@ class Observer_Slug extends Observer
 
 			foreach ($same as $record)
 			{
-				if (preg_match('/^'.$slug.'(?:-([0-9]+))?$/', $record->{static::$property}, $matches))
+				if (preg_match('/^'.$slug.'(?:-([0-9]+))?$/', $record->{$this->_property}, $matches))
 				{
-				     $index = (int) $matches[1];
-				     $max < $index and $max = $index;
+					$index = (int) $matches[1];
+					$max < $index and $max = $index;
 				}
 			}
 
 			$max < 0 or $slug .= '-'.($max + 1);
 		}
 
-		$obj->{static::$property} = $slug;
+		$obj->{$this->_property} = $slug;
 	}
 }
