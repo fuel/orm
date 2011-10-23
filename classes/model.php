@@ -347,6 +347,9 @@ class Model implements \ArrayAccess, \Iterator {
 					{
 						if (is_string($obs_v) or (is_array($obs_v) and is_int(key($obs_v))))
 						{
+							// @TODO deprecated until v1.2
+							logger(\Fuel::L_WARNING, 'Passing observer events as array is deprecated, they must be
+								inside another array under a key "events". Check the docs for more info.', __METHOD__);
 							$observers[$obs_k] = array('events' => (array) $obs_v);
 						}
 						else
