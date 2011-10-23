@@ -15,26 +15,25 @@ namespace Orm;
 abstract class Observer
 {
 
-	protected static $_instance = array();
+	protected static $_instances = array();
 
 	public static function orm_notify($instance, $event)
 	{
-		if (method_exists(static::instance(), $event))
+		$model_class = get_class($instance);
+		if (method_exists(static::instance($model_class), $event))
 		{
-			static::instance()->{$event}($instance);
+			static::instance($model_class)->{$event}($instance);
 		}
 	}
 
-	public static function instance()
+	public static function instance($model_class)
 	{
-		$class = get_called_class();
-
-		if (empty(static::$_instance[$class]))
+		if (empty(static::$_instances[$model_class]))
 		{
-			static::$_instance[$class] = new static;
+			static::$_instances[$model_class] = new static($model_class);
 		}
 
-		return static::$_instance[$class];
+		return static::$_instances[$model_class];
 	}
 }
 

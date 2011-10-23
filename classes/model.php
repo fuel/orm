@@ -324,9 +324,11 @@ class Model implements \ArrayAccess, \Iterator {
 	/**
 	 * Get the class's observers and what they observe
 	 *
+	 * @param   string  specific observer to retrieve info of, allows direct param access by using dot notation
+	 * @param   mixed   default return value when specific key wasn't found
 	 * @return  array
 	 */
-	public static function observers()
+	public static function observers($specific = null, $default = null)
 	{
 		$class = get_called_class();
 
@@ -343,11 +345,23 @@ class Model implements \ArrayAccess, \Iterator {
 					}
 					else
 					{
-						$observers[$obs_k] = (array) $obs_v;
+						if (is_string($obs_v) or (is_array($obs_v) and is_int(key($obs_v))))
+						{
+							$observers[$obs_k] = array('events' => (array) $obs_v);
+						}
+						else
+						{
+							$observers[$obs_k] = $obs_v;
+						}
 					}
 				}
 			}
 			static::$_observers_cached[$class] = $observers;
+		}
+
+		if ($specific)
+		{
+			return \Arr::get(static::$_observers_cached[$class], $specific, $default);
 		}
 
 		return static::$_observers_cached[$class];
@@ -1116,8 +1130,9 @@ class Model implements \ArrayAccess, \Iterator {
 	 */
 	public function observe($event)
 	{
-		foreach ($this->observers() as $observer => $events)
+		foreach ($this->observers() as $observer => $settings)
 		{
+			$events = isset($settings['events']) ? $settings['events'] : array();
 			if (empty($events) or in_array($event, $events))
 			{
 				if ( ! class_exists($observer))
