@@ -59,7 +59,7 @@ class Observer_Typing
 			'before' => 'Orm\\Observer_Typing::type_json_encode',
 			'after'  => 'Orm\\Observer_Typing::type_json_decode',
 		),
-		'/^time_(unix|mysql)$' => array(
+		'/^time_(unix|mysql)$/' => array(
 			'before' => 'Orm\\Observer_Typing::type_time_encode',
 			'after'  => 'Orm\\Observer_Typing::type_time_decode',
 		),
