@@ -995,7 +995,7 @@ class Model implements \ArrayAccess, \Iterator {
 		}
 
 		// Non changed objects don't have to be saved, but return true anyway (no reason to fail)
-		if ( ! $this->is_changed())
+		if ( ! $this->is_changed(array_keys(static::properties())))
 		{
 			return true;
 		}
@@ -1175,12 +1175,47 @@ class Model implements \ArrayAccess, \Iterator {
 	 */
 	public function is_changed($property = null)
 	{
-		$property = (array) $property ?: array_keys(static::properties());
+		$properties = static::properties();
+		$relations = static::relations();
+		$property = (array) $property ?: array_merge(array_keys($properties), array_keys($relations));
 		foreach ($property as $p)
 		{
-			if ( ! isset($this->_original[$p]) or $this->{$p} !== $this->_original[$p])
+			if (isset($properties[$p])
+				and ( ! isset($this->_original[$p]) or $this->{$p} !== $this->_original[$p]))
 			{
 				return true;
+			}
+			elseif (isset($relations[$p]))
+			{
+				if ($relations[$p]->singular)
+				{
+					if (empty($this->_original_relations[$p]) !== empty($this->{$p})
+						or ( ! empty($this->_original_relations[$p])
+							and $this->_original_relations[$p] !== $this->{$p}->implode_pk($this->{$p})))
+					{
+						return true;
+					}
+				}
+				else
+				{
+					$orig_rels = $this->_original_relations[$p];
+					foreach ($this->{$p} as $rk => $r)
+					{
+						if ( ! in_array($r->implode_pk($r), $orig_rels))
+						{
+							return true;
+						}
+						unset($orig_rels[array_search($rk, $orig_rels)]);
+					}
+					if ( ! empty($orig_rels))
+					{
+						return true;
+					}
+				}
+			}
+			else
+			{
+				throw new \OutOfBoundsException('Unknown property or relation: '.$p);
 			}
 		}
 
