@@ -128,7 +128,7 @@ class Query
 						{
 							if (is_array($v_w) and ! empty($v_w[0]) and is_string($v_w[0]))
 							{
-								call_user_func_array(array($obj, ($k_w == 'or' ? 'or_' : '').'where'), $v_w);
+								call_user_func_array(array($obj, ($k_w === 'or' ? 'or_' : '').'where'), $v_w);
 							}
 							elseif (is_int($k_w) or $k_w == 'or')
 							{
@@ -880,6 +880,7 @@ class Query
 		// Build the query further
 		$tmp     = $this->build_query($query, $columns);
 		$query   = $tmp['query'];
+		exit((string) $query);
 		$models  = $tmp['models'];
 
 		// Make models hierarchical
