@@ -1180,10 +1180,12 @@ class Model implements \ArrayAccess, \Iterator {
 		$property = (array) $property ?: array_merge(array_keys($properties), array_keys($relations));
 		foreach ($property as $p)
 		{
-			if (isset($properties[$p])
-				and ( ! isset($this->_original[$p]) or $this->{$p} !== $this->_original[$p]))
+			if (isset($properties[$p]))
 			{
-				return true;
+				if ( ! isset($this->_original[$p]) or $this->{$p} !== $this->_original[$p])
+				{
+					return true;
+				}
 			}
 			elseif (isset($relations[$p]))
 			{
