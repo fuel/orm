@@ -59,6 +59,10 @@ class Observer_Typing
 			'before' => 'Orm\\Observer_Typing::type_json_encode',
 			'after'  => 'Orm\\Observer_Typing::type_json_decode',
 		),
+		'/^time_(unix|mysql)$' => array(
+			'before' => 'Orm\\Observer_Typing::type_time_encode',
+			'after'  => 'Orm\\Observer_Typing::type_time_decode',
+		),
 	);
 
 	/**
@@ -120,7 +124,7 @@ class Observer_Typing
 	 * @param   array
 	 * @return  string
 	 */
-	public static function type_string($var, $settings)
+	public static function type_string($var, array $settings)
 	{
 		if (is_array($var) or (is_object($var) and ! method_exists($var, '__toString')))
 		{
@@ -149,7 +153,7 @@ class Observer_Typing
 	 * @param   array
 	 * @return  int
 	 */
-	public static function type_integer($var, $settings)
+	public static function type_integer($var, array $settings)
 	{
 		if (is_array($var) or is_object($var))
 		{
@@ -173,7 +177,7 @@ class Observer_Typing
 	 * @param   array
 	 * @return  float
 	 */
-	public static function type_float($var, $settings)
+	public static function type_float($var)
 	{
 		if (is_array($var) or is_object($var))
 		{
@@ -191,7 +195,7 @@ class Observer_Typing
 	 * @param   array
 	 * @return  string
 	 */
-	public static function type_set($var, $settings)
+	public static function type_set($var, array $settings)
 	{
 		$var    = strval($var);
 		$values = array_filter(explode(',', trim($var)));
@@ -220,7 +224,7 @@ class Observer_Typing
 	 * @param   array
 	 * @return  int
 	 */
-	public static function type_bool_to_int($var, $settings)
+	public static function type_bool_to_int($var)
 	{
 		return $var ? 1 : 0;
 	}
@@ -245,7 +249,7 @@ class Observer_Typing
 	 * @param   array
 	 * @return  string
 	 */
-	public static function type_serialize($var, $settings)
+	public static function type_serialize($var, array $settings)
 	{
 		$var = serialize($var);
 
@@ -280,7 +284,7 @@ class Observer_Typing
 	 * @param   array
 	 * @return  string
 	 */
-	public static function type_json_encode($var, $settings)
+	public static function type_json_encode($var, array $settings)
 	{
 		$var = json_encode($var);
 
@@ -305,6 +309,46 @@ class Observer_Typing
 	public static function type_json_decode($var)
 	{
 		return json_decode($var);
+	}
+
+	/**
+	 * Takes a Date instance and transforms it into a DB timestamp
+	 *
+	 * @param   \Fuel\Core\Date  $var
+	 * @param   array            $settings
+	 * @return  int|string
+	 * @throws  InvalidContentType
+	 */
+	public static function type_time_encode(\Fuel\Core\Date $var, array $settings)
+	{
+		if ( ! $var instanceof \Fuel\Core\Date)
+		{
+			throw new InvalidContentType('Value must be an instance of the Date class.');
+		}
+
+		if ($settings['data_type'] == 'time_mysql')
+		{
+			return $var->format('mysql');
+		}
+
+		return $var->get_timestamp();
+	}
+
+	/**
+	 * Takes a DB timestamp and converts it into a Date object
+	 *
+	 * @param   string  $var
+	 * @param   array   $settings
+	 * @return  \Fuel\Core\Date
+	 */
+	public function type_time_decode($var, array $settings)
+	{
+		if ($settings['data_type'] == 'time_mysql')
+		{
+			return \Date::create_from_string($var);
+		}
+
+		return \Date::forge($var);
 	}
 }
 
