@@ -345,7 +345,7 @@ class Observer_Typing
 	{
 		if ($settings['data_type'] == 'time_mysql')
 		{
-			return \Date::create_from_string($var);
+			return \Date::create_from_string($var, 'mysql');
 		}
 
 		return \Date::forge($var);
