@@ -18,6 +18,8 @@ class InvalidContentType extends \UnexpectedValueException {}
 class Observer_Typing
 {
 
+	public static $date_format = 'mysql';
+	
 	/**
 	 * @var  array  types of events to act on and whether they are pre- or post-database
 	 */
@@ -58,6 +60,10 @@ class Observer_Typing
 		'/^json$/uiD' => array(
 			'before' => 'Orm\\Observer_Typing::type_json_encode',
 			'after'  => 'Orm\\Observer_Typing::type_json_decode',
+		),
+		'/^date$/uiD' => array(
+			'before' => 'Orm\\Observer_Typing::type_date_decode',
+			'after'  => 'Orm\\Observer_Typing::type_date_encode',
 		),
 	);
 
@@ -305,6 +311,34 @@ class Observer_Typing
 	public static function type_json_decode($var)
 	{
 		return json_decode($var);
+	}
+	
+	/**
+	 * Return a Fuel Date object on the base of a given format
+	 *
+	 * @param int value
+	 * @param array
+	 * @return \Fuel\Core\Date
+	 */
+	public static function type_date_encode($var)
+	{
+		if  ( ! $ret = \Date::create_from_string($var, static::$date_format))
+		{
+			throw new InvalidContentType('Input was not recognized by pattern.');
+		}
+		
+		return $ret;
+	}
+	
+	/**
+	 * Return a formated value of a given Fuel Date object
+	 *
+	 * @param \Fuel\Core\Date
+	 * @return mixed
+	 */
+	public static function type_date_decode(\Date $var)
+	{
+		return $var->format(static::$date_format);
 	}
 }
 
