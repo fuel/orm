@@ -92,11 +92,6 @@ class Query
 	protected $order_by = array();
 
 	/**
-	 * @var  array  group by clauses
-	 */
-	protected $group_by = array();
-
-	/**
 	 * @var  array  values for insert or update
 	 */
 	protected $values = array();
@@ -555,12 +550,6 @@ class Query
 					unset($order_by[$key]);
 				}
 			}
-		}
-
-		// Get the group
-		if ( ! empty($this->group_by))
-		{
-			$query->group_by($this->group_by);
 		}
 
 		$where_backup = $this->where;
@@ -1107,11 +1096,9 @@ class Query
 	 */
 	public function update()
 	{
-		// temporary disable relations and group_by
+		// temporary disable relations
 		$tmp_relations   = $this->relations;
 		$this->relations = array();
-		$tmp_group_by    = $this->group_by;
-		$this->group_by  = array();
 
 		// Build query and execute update
 		$query = \DB::update(call_user_func($this->model.'::table'));
@@ -1119,9 +1106,8 @@ class Query
 		$query = $tmp['query'];
 		$res = $query->set($this->values)->execute($this->connection);
 
-		// put back any relations/group_by settings
+		// put back any relations settings
 		$this->relations = $tmp_relations;
-		$this->group_by  = $tmp_group_by;
 
 		// Update can affect 0 rows when input types are different but outcome stays the same
 		return $res >= 0;
@@ -1135,11 +1121,9 @@ class Query
 	 */
 	public function delete()
 	{
-		// temporary disable relations and group_by
+		// temporary disable relations
 		$tmp_relations   = $this->relations;
 		$this->relations = array();
-		$tmp_group_by    = $this->group_by;
-		$this->group_by  = array();
 
 		// Build query and execute update
 		$query = \DB::delete(call_user_func($this->model.'::table'));
@@ -1147,9 +1131,8 @@ class Query
 		$query = $tmp['query'];
 		$res = $query->execute($this->connection);
 
-		// put back any relations/group_by settings
+		// put back any relations settings
 		$this->relations = $tmp_relations;
-		$this->group_by  = $tmp_group_by;
 
 		return $res > 0;
 	}
