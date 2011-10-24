@@ -666,7 +666,7 @@ class Query
 		}
 
 		// Add any additional order_by and where clauses from the relations
-		foreach ($models as $m)
+		foreach ($models as $m_name => $m)
 		{
 			if ( ! empty($m['order_by']))
 			{
@@ -674,11 +674,11 @@ class Query
 				{
 					if (is_int($k_ob))
 					{
-						$order_by[] = array($v_ob, 'ASC');
+						$order_by[] = array($m_name.'.'.$v_ob, 'ASC');
 					}
 					else
 					{
-						$order_by[] = array($k_ob, $v_ob);
+						$order_by[] = array($m_name.'.'.$k_ob, $v_ob);
 					}
 				}
 			}
@@ -705,6 +705,7 @@ class Query
 		// Get the order
 		if ( ! empty($order_by))
 		{
+			\Debug::dump($order_by);
 			foreach ($order_by as $ob)
 			{
 				// try to rewrite conditions on the relations to their table alias
@@ -712,10 +713,10 @@ class Query
 				$relation = substr($ob[0], 0, $dotpos);
 				if ($dotpos > 0 and array_key_exists($relation, $models))
 				{
-					$column = $models[$relation]['table'][1].substr($ob[0], $dotpos);
+					$ob[0] = $models[$relation]['table'][1].substr($ob[0], $dotpos);
 				}
 
-				$query->order_by($column, $ob[1]);
+				$query->order_by($ob[0], $ob[1]);
 			}
 		}
 
