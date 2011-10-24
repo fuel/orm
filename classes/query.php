@@ -119,32 +119,7 @@ class Query
 					$this->related($val);
 					break;
 				case 'where':
-					$obj = $this;
-					$where_func = null;
-					$where = function (array $val, $or = false) use (&$where_func, $obj)
-					{
-						$or and $obj->or_where_open();
-						foreach ($val as $k_w => $v_w)
-						{
-							if (is_array($v_w) and ! empty($v_w[0]) and is_string($v_w[0]))
-							{
-								call_user_func_array(array($obj, ($k_w === 'or' ? 'or_' : '').'where'), $v_w);
-							}
-							elseif (is_int($k_w) or $k_w == 'or')
-							{
-								$k_w == 'or' ? $obj->or_where_open() : $obj->where_open();
-								$where_func($v_w, $k_w == 'or');
-								$k_w == 'or' ? $obj->or_where_close() : $obj->where_close();
-							}
-							else
-							{
-								$obj->where($k_w, $v_w);
-							}
-						}
-						$or and $obj->or_where_close();
-					};
-					$where_func = $where;
-					$where($val);
+					$this->_parse_where_array($val);
 					break;
 				case 'order_by':
 					$val = (array) $val;
@@ -399,6 +374,30 @@ class Query
 		return $this;
 	}
 
+
+	protected function _parse_where_array(array $val, $base = '', $or = false)
+	{
+		$or and $this->or_where_open();
+		foreach ($val as $k_w => $v_w)
+		{
+			if (is_array($v_w) and ! empty($v_w[0]) and is_string($v_w[0]))
+			{
+				call_user_func_array(array($this, ($k_w === 'or' ? 'or_' : '').'where'), $v_w);
+			}
+			elseif (is_int($k_w) or $k_w == 'or')
+			{
+				$k_w == 'or' ? $this->or_where_open() : $this->where_open();
+				$this->_parse_where_array($v_w, $base, $k_w == 'or');
+				$k_w == 'or' ? $this->or_where_close() : $this->where_close();
+			}
+			else
+			{
+				$this->where($k_w, $v_w);
+			}
+		}
+		$or and $this->or_where_close();
+	}
+
 	/**
 	 * Set the order_by
 	 *
@@ -519,11 +518,11 @@ class Query
 	/**
 	 * Build a select, delete or update query
 	 *
-	 * @param   Database_Query
+	 * @param   \Fuel\Core\Database_Query_Builder_Where
 	 * @param   string|select  either array for select query or string update, delete, insert
 	 * @return  array          with keys query and relations
 	 */
-	public function build_query($query, $columns = array(), $type = 'select')
+	public function build_query(\Fuel\Core\Database_Query_Builder_Where $query, $columns = array(), $type = 'select')
 	{
 		// Get the limit
 		if ( ! is_null($this->limit))
@@ -557,11 +556,11 @@ class Query
 			$query->group_by($this->group_by);
 		}
 
-		$where = $this->where;
-		if ( ! empty($where))
+		$where_backup = $this->where;
+		if ( ! empty($this->where))
 		{
 			$open_nests = 0;
-			foreach ($where as $key => $w)
+			foreach ($this->where as $key => $w)
 			{
 				list($method, $conditional) = $w;
 
@@ -582,7 +581,7 @@ class Query
 						$conditional[0] = substr($conditional[0], strlen($this->alias.'.'));
 					}
 					call_user_func_array(array($query, $method), $conditional);
-					unset($where[$key]);
+					unset($this->where[$key]);
 				}
 			}
 		}
@@ -684,28 +683,12 @@ class Query
 			}
 			if ( ! empty($m['where']))
 			{
-				foreach ((array) $m['where'] as $k_w => $v_w)
-				{
-					if (is_int($k_w))
-					{
-						$v_w[0] = $m['table'][1].'.'.$v_w[0];
-						$where[] = array('and_where', array(
-							$v_w[0],
-							array_key_exists(2, $v_w) ? $v_w[1] : '=',
-							array_key_exists(2, $v_w) ? $v_w[2] : $v_w[1]
-						));
-					}
-					else
-					{
-						$where[] = array('and_where', array($m['table'][1].'.'.$k_w, '=', $v_w));
-					}
-				}
+				$this->_parse_where_array($m['where'], $m_name.'.');
 			}
 		}
 		// Get the order
 		if ( ! empty($order_by))
 		{
-			\Debug::dump($order_by);
 			foreach ($order_by as $ob)
 			{
 				// try to rewrite conditions on the relations to their table alias
@@ -721,9 +704,9 @@ class Query
 		}
 
 		// put omitted where conditions back
-		if ( ! empty($where))
+		if ( ! empty($this->where))
 		{
-			foreach ($where as $w)
+			foreach ($this->where as $w)
 			{
 				list($method, $conditional) = $w;
 
@@ -741,6 +724,8 @@ class Query
 				call_user_func_array(array($query, $method), $conditional);
 			}
 		}
+
+		$this->where = $where_backup;
 
 		// Set the row limit and offset, these are applied to the outer query when a subquery
 		// is used or overwrite limit/offset when it's a normal query
