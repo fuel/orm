@@ -410,13 +410,20 @@ class Query
 		{
 			foreach ($property as $p => $d)
 			{
-				is_int($p) ? $this->order_by($d, $direction) : $this->order_by($p, $d);
+				if (is_int($p))
+				{
+					is_array($d) ? $this->order_by($d[0], $d[1]) : $this->order_by($d, $direction);
+				}
+				else
+				{
+					$this->order_by($p, $d);
+				}
 			}
 			return $this;
 		}
 
 		// prefix table alias when not yet prefixed and not a DB expression object
-		if (strpos($property, '.') === false and ! $property instanceof \Fuel\Core\Database_Expression)
+		if ( ! $property instanceof \Fuel\Core\Database_Expression and strpos($property, '.') === false)
 		{
 			$property = $this->alias.'.'.$property;
 		}
@@ -542,7 +549,7 @@ class Query
 		{
 			foreach ($order_by as $key => $ob)
 			{
-				if (strpos($ob[0], $this->alias.'.') === 0)
+				if ( ! $ob[0] instanceof \Fuel\Core\Database_Expression and strpos($ob[0], $this->alias.'.') === 0)
 				{
 					$query->order_by($type == 'select' ? $ob[0] : substr($ob[0], strlen($this->alias.'.')), $ob[1]);
 					unset($order_by[$key]);
@@ -673,11 +680,19 @@ class Query
 				{
 					if (is_int($k_ob))
 					{
-						$order_by[] = array($m_name.'.'.$v_ob, 'ASC');
+						$v_dir = is_array($v_ob) ? $v_ob[1] : 'ASC';
+						$v_ob = is_array($v_ob) ? $v_ob[0] : $v_ob;
+						if ( ! $v_ob instanceof \Fuel\Core\Database_Expression and strpos($v_ob, '.') === false)
+						{
+							$v_ob = $m_name.'.'.$v_ob;
+						}
+
+						$order_by[] = array($v_ob, 'ASC');
 					}
 					else
 					{
-						$order_by[] = array($m_name.'.'.$k_ob, $v_ob);
+						strpos($k_ob, '.') === false and $k_ob = $m_name.'.'.$k_ob;
+						$order_by[] = array($k_ob, $v_ob);
 					}
 				}
 			}
@@ -691,12 +706,15 @@ class Query
 		{
 			foreach ($order_by as $ob)
 			{
-				// try to rewrite conditions on the relations to their table alias
-				$dotpos = strrpos($ob[0], '.');
-				$relation = substr($ob[0], 0, $dotpos);
-				if ($dotpos > 0 and array_key_exists($relation, $models))
+				if ( ! $ob[0] instanceof \Fuel\Core\Database_Expression)
 				{
-					$ob[0] = $models[$relation]['table'][1].substr($ob[0], $dotpos);
+					// try to rewrite conditions on the relations to their table alias
+					$dotpos = strrpos($ob[0], '.');
+					$relation = substr($ob[0], 0, $dotpos);
+					if ($dotpos > 0 and array_key_exists($relation, $models))
+					{
+						$ob[0] = $models[$relation]['table'][1].substr($ob[0], $dotpos);
+					}
 				}
 
 				$query->order_by($ob[0], $ob[1]);
