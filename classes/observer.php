@@ -28,12 +28,13 @@ abstract class Observer
 
 	public static function instance($model_class)
 	{
-		if (empty(static::$_instances[$model_class]))
+		$observer = get_called_class();
+		if (empty(static::$_instances[$observer][$model_class]))
 		{
-			static::$_instances[$model_class] = new static($model_class);
+			static::$_instances[$observer][$model_class] = new static($model_class);
 		}
 
-		return static::$_instances[$model_class];
+		return static::$_instances[$observer][$model_class];
 	}
 }
 
