@@ -59,7 +59,7 @@ class Observer_Typing
 			'before' => 'Orm\\Observer_Typing::type_json_encode',
 			'after'  => 'Orm\\Observer_Typing::type_json_decode',
 		),
-		'/^time_(unix|mysql)$' => array(
+		'/^time_(unix|mysql)$/' => array(
 			'before' => 'Orm\\Observer_Typing::type_time_encode',
 			'after'  => 'Orm\\Observer_Typing::type_time_decode',
 		),
@@ -341,11 +341,11 @@ class Observer_Typing
 	 * @param   array   $settings
 	 * @return  \Fuel\Core\Date
 	 */
-	public function type_time_decode($var, array $settings)
+	public static function type_time_decode($var, array $settings)
 	{
 		if ($settings['data_type'] == 'time_mysql')
 		{
-			return \Date::create_from_string($var);
+			return \Date::create_from_string($var, 'mysql');
 		}
 
 		return \Date::forge($var);
