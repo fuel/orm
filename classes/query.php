@@ -812,7 +812,6 @@ class Query
 
 		// start fetching relationships
 		$rel_objs = $obj->_relate();
-		$updated_relations = array();
 		foreach ($models as $m)
 		{
 			// when the expected model is empty, there's nothing to be done
@@ -824,28 +823,23 @@ class Query
 			// when not yet set, create the relation result var with null or array
 			if ( ! array_key_exists($m['rel_name'], $rel_objs))
 			{
-				$updated_relations[] = $m['rel_name'];
 				$rel_objs[$m['rel_name']] = $m['relation']->singular ? null : array();
 			}
 
-			// Only hydrate when relations weren't already fetched
-			if (in_array($m['rel_name'], $updated_relations))
-			{
-				// when result is array or singular empty, try to fetch the new relation from the row
-				$this->hydrate(
-					$row,
-					! empty($m['models']) ? $m['models'] : array(),
-					$rel_objs[$m['rel_name']],
-					$m['model'],
-					$m['columns'],
-					$m['primary_key']
-				);
-			}
+			// when result is array or singular empty, try to fetch the new relation from the row
+			$this->hydrate(
+				$row,
+				! empty($m['models']) ? $m['models'] : array(),
+				$rel_objs[$m['rel_name']],
+				$m['model'],
+				$m['columns'],
+				$m['primary_key']
+			);
 		}
 
 		// attach the retrieved relations to the object and update its original DB values
 		$obj->_relate($rel_objs);
-		$obj->_update_original_relations($updated_relations);
+		$obj->_update_original_relations();
 
 		return $obj;
 	}
