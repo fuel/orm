@@ -369,7 +369,13 @@ class Query
 		return $this;
 	}
 
-
+	/**
+	 * Parses an array of where conditions into the query
+	 *
+	 * @param   array   $val
+	 * @param   string  $base
+	 * @param   bool    $or
+	 */
 	protected function _parse_where_array(array $val, $base = '', $or = false)
 	{
 		$or and $this->or_where_open();
@@ -377,16 +383,18 @@ class Query
 		{
 			if (is_array($v_w) and ! empty($v_w[0]) and is_string($v_w[0]))
 			{
+				! $v_w[0] instanceof \Database_Expression and strpos($v_w[0], '.') === false and $v_w[0] = $base.$v_w[0];
 				call_user_func_array(array($this, ($k_w === 'or' ? 'or_' : '').'where'), $v_w);
 			}
 			elseif (is_int($k_w) or $k_w == 'or')
 			{
-				$k_w == 'or' ? $this->or_where_open() : $this->where_open();
-				$this->_parse_where_array($v_w, $base, $k_w == 'or');
-				$k_w == 'or' ? $this->or_where_close() : $this->where_close();
+				$k_w === 'or' ? $this->or_where_open() : $this->where_open();
+				$this->_parse_where_array($v_w, $base, $k_w === 'or');
+				$k_w === 'or' ? $this->or_where_close() : $this->where_close();
 			}
 			else
 			{
+				! $k_w instanceof \Database_Expression and strpos($k_w, '.') === false and $k_w = $base.$k_w;
 				$this->where($k_w, $v_w);
 			}
 		}
