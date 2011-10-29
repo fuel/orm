@@ -379,15 +379,25 @@ class Model implements \ArrayAccess, \Iterator {
 	 */
 	public static function find($id = null, array $options = array())
 	{
+		$this->observe('before_find');
+
 		// Return Query object
 		if (is_null($id))
 		{
-			return static::query($options);
+			$result = static::query($options)
+
+			$this->observe('after_find');
+
+			return $result;
 		}
 		// Return all that match $options array
 		elseif ($id == 'all')
 		{
-			return static::query($options)->get();
+			$result = static::query($options)->get()
+
+			$this->observe('after_find');
+
+			return $result;
 		}
 		// Return first or last row that matches $options array
 		elseif ($id == 'first' or $id == 'last')
@@ -399,7 +409,11 @@ class Model implements \ArrayAccess, \Iterator {
 				$query->order_by($pk, $id == 'first' ? 'ASC' : 'DESC');
 			}
 
-			return $query->get_one();
+			$result = $query->get_one()
+
+			$this->observe('after_find');
+
+			return $result;
 		}
 		// Return specific request row by ID
 		else
@@ -421,7 +435,11 @@ class Model implements \ArrayAccess, \Iterator {
 
 			array_key_exists('where', $options) and $where = array_merge($options['where'], $where);
 			$options['where'] = $where;
-			return static::query($options)->get_one();
+			$result = static::query($options)->get_one()
+
+			$this->observe('after_find');
+
+			return $result;
 		}
 	}
 
