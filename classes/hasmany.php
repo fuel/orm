@@ -12,7 +12,8 @@
 
 namespace Orm;
 
-class HasMany extends Relation {
+class HasMany extends Relation
+{
 
 	public function __construct($from, $name, array $config)
 	{
@@ -28,8 +29,9 @@ class HasMany extends Relation {
 
 		if ( ! class_exists($this->model_to))
 		{
-			throw new \Fuel_Exception('Related model not found by Has_Many relation "'.$this->name.'": '.$this->model_to);
+			throw new \FuelException('Related model not found by Has_Many relation "'.$this->name.'": '.$this->model_to);
 		}
+		$this->model_to = get_real_class($this->model_to);
 	}
 
 	public function get(Model $from)
@@ -54,7 +56,7 @@ class HasMany extends Relation {
 			'connection'   => call_user_func(array($this->model_to, 'connection')),
 			'table'        => array(call_user_func(array($this->model_to, 'table')), $alias_to),
 			'primary_key'  => call_user_func(array($this->model_to, 'primary_key')),
-			'join_type'    => 'left',
+			'join_type'    => array_key_exists('join_type', $conditions) ? $conditions['join_type'] : 'left',
 			'join_on'      => array(),
 			'columns'      => $this->select($alias_to),
 			'rel_name'     => strpos($rel_name, '.') ? substr($rel_name, strrpos($rel_name, '.') + 1) : $rel_name,
@@ -82,7 +84,7 @@ class HasMany extends Relation {
 
 		if ( ! is_array($models_to) and ($models_to = is_null($models_to) ? array() : $models_to) !== array())
 		{
-			throw new \Fuel_Exception('Assigned relationships must be an array or null, given relationship value for '.
+			throw new \FuelException('Assigned relationships must be an array or null, given relationship value for '.
 				$this->name.' is invalid.');
 		}
 		$original_model_ids === null and $original_model_ids = array();
@@ -91,7 +93,7 @@ class HasMany extends Relation {
 		{
 			if ( ! $model_to instanceof $this->model_to)
 			{
-				throw new \Fuel_Exception('Invalid Model instance added to relations in this model.');
+				throw new \FuelException('Invalid Model instance added to relations in this model.');
 			}
 
 			$current_model_id = ($model_to and ! $model_to->is_new()) ? $model_to->implode_pk($model_to) : null;
@@ -144,7 +146,7 @@ class HasMany extends Relation {
 			}
 
 			// Fix it if key isn't an imploded PK
-			if ($key != $current_model_id)
+			if ($key != ($current_model_id = $model_to->implode_pk($model_to)))
 			{
 				$model_from->unfreeze();
 				$rel = $model_from->_relate();

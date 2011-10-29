@@ -12,7 +12,8 @@
 
 namespace Orm;
 
-class ManyMany extends Relation {
+class ManyMany extends Relation
+{
 
 	protected $key_from = array('id');
 
@@ -68,8 +69,9 @@ class ManyMany extends Relation {
 
 		if ( ! class_exists($this->model_to))
 		{
-			throw new \Fuel_Exception('Related model not found by Many_Many relation "'.$this->name.'": '.$this->model_to);
+			throw new \FuelException('Related model not found by Many_Many relation "'.$this->name.'": '.$this->model_to);
 		}
+		$this->model_to = get_real_class($this->model_to);
 	}
 
 	public function get(Model $from)
@@ -130,7 +132,7 @@ class ManyMany extends Relation {
 				'connection'   => call_user_func(array($this->model_to, 'connection')),
 				'table'        => array($this->table_through, $alias_to.'_through'),
 				'primary_key'  => null,
-				'join_type'    => 'left',
+				'join_type'    => array_key_exists('join_type', $conditions) ? $conditions['join_type'] : 'left',
 				'join_on'      => array(),
 				'columns'      => $this->select_through($alias_to.'_through'),
 				'rel_name'     => $this->model_through,
@@ -141,7 +143,7 @@ class ManyMany extends Relation {
 				'connection'   => call_user_func(array($this->model_to, 'connection')),
 				'table'        => array(call_user_func(array($this->model_to, 'table')), $alias_to),
 				'primary_key'  => call_user_func(array($this->model_to, 'primary_key')),
-				'join_type'    => 'left',
+				'join_type'    => array_key_exists('join_type', $conditions) ? $conditions['join_type'] : 'left',
 				'join_on'      => array(),
 				'columns'      => $this->select($alias_to),
 				'rel_name'     => strpos($rel_name, '.') ? substr($rel_name, strrpos($rel_name, '.') + 1) : $rel_name,
@@ -177,7 +179,7 @@ class ManyMany extends Relation {
 
 		if ( ! is_array($models_to) and ($models_to = is_null($models_to) ? array() : $models_to) !== array())
 		{
-			throw new \Fuel_Exception('Assigned relationships must be an array or null, given relationship value for '.
+			throw new \FuelException('Assigned relationships must be an array or null, given relationship value for '.
 				$this->name.' is invalid.');
 		}
 		$original_model_ids === null and $original_model_ids = array();
@@ -187,7 +189,7 @@ class ManyMany extends Relation {
 		{
 			if ( ! $model_to instanceof $this->model_to)
 			{
-				throw new \Fuel_Exception('Invalid Model instance added to relations in this model.');
+				throw new \FuelException('Invalid Model instance added to relations in this model.');
 			}
 
 			// Save if it's a yet unsaved object

@@ -12,7 +12,8 @@
 
 namespace Orm;
 
-class BelongsTo extends Relation {
+class BelongsTo extends Relation
+{
 
 	protected $singular = true;
 
@@ -34,8 +35,9 @@ class BelongsTo extends Relation {
 
 		if ( ! class_exists($this->model_to))
 		{
-			throw new \Fuel_Exception('Related model not found by Belongs_To relation "'.$this->name.'": '.$this->model_to);
+			throw new \FuelException('Related model not found by Belongs_To relation "'.$this->name.'": '.$this->model_to);
 		}
+		$this->model_to = get_real_class($this->model_to);
 	}
 
 	public function get(Model $from)
@@ -60,7 +62,7 @@ class BelongsTo extends Relation {
 			'connection'   => call_user_func(array($this->model_to, 'connection')),
 			'table'        => array(call_user_func(array($this->model_to, 'table')), $alias_to),
 			'primary_key'  => call_user_func(array($this->model_to, 'primary_key')),
-			'join_type'    => 'left',
+			'join_type'    => array_key_exists('join_type', $conditions) ? $conditions['join_type'] : 'left',
 			'join_on'      => array(),
 			'columns'      => $this->select($alias_to),
 			'rel_name'     => strpos($rel_name, '.') ? substr($rel_name, strrpos($rel_name, '.') + 1) : $rel_name,
@@ -88,7 +90,7 @@ class BelongsTo extends Relation {
 
 		if ( ! $model_to instanceof $this->model_to and $model_to !== null)
 		{
-			throw new \Fuel_Exception('Invalid Model instance added to relations in this model.');
+			throw new \FuelException('Invalid Model instance added to relations in this model.');
 		}
 
 		// Save if it's a yet unsaved object
@@ -143,7 +145,7 @@ class BelongsTo extends Relation {
 					$rel_obj = call_user_func(array($this->model_to, 'find'), $new_rel_id);
 					if (empty($rel_obj))
 					{
-						throw new \Fuel_Exception('New relation set on '.$this->model_from.' object wasn\'t found.');
+						throw new \FuelException('New relation set on '.$this->model_from.' object wasn\'t found.');
 					}
 				}
 				else

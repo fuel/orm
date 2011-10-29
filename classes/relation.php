@@ -12,7 +12,8 @@
 
 namespace Orm;
 
-abstract class Relation {
+abstract class Relation
+{
 
 	/**
 	 * @var  string  name of the relationship in the model_from
@@ -137,7 +138,7 @@ abstract class Relation {
 	{
 		if (strncmp($property, '_', 1) == 0 or ! property_exists($this, $property))
 		{
-			throw new \Fuel_Exception('Invalid relation property: '.$property);
+			throw new \FuelException('Invalid relation property: '.$property);
 		}
 
 		return $this->{$property};
