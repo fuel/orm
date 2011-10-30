@@ -42,6 +42,11 @@ class Query
 	protected $connection;
 
 	/**
+	 * @var  array  database view to use with keys 'view' and 'columns'
+	 */
+	protected $view;
+
+	/**
 	 * @var  string  table alias
 	 */
 	protected $alias = 't0';
@@ -113,6 +118,9 @@ class Query
 					$val = (array) $val;
 					$this->related($val);
 					break;
+				case 'use_view':
+					$this->use_view($val);
+					break;
 				case 'where':
 					$this->_parse_where_array($val);
 					break;
@@ -160,6 +168,14 @@ class Query
 				{
 					$this->select($field);
 				}
+
+				if ($this->view)
+				{
+					foreach ($this->view['columns'] as $field)
+					{
+						$this->select($field);
+					}
+				}
 			}
 
 			// ensure all PKs are being selected
@@ -188,6 +204,25 @@ class Query
 			$this->select[$this->alias.'_c'.$i++] = (strpos($val, '.') === false ? $this->alias.'.' : '').$val;
 		}
 
+		return $this;
+	}
+
+	/**
+	 * Set a view to use instead of the table
+	 *
+	 * @param   string
+	 * @return  Query
+	 */
+	public function use_view($view)
+	{
+		$views = call_user_func(array($this->model, 'views'));
+		if ( ! array_key_exists($view, $views))
+		{
+			throw new \OutOfBoundsException('Cannot use undefined database view, must be defined with Model.');
+		}
+
+		$this->view = $views[$view];
+		$this->view['_name'] = $view;
 		return $this;
 	}
 
@@ -828,7 +863,7 @@ class Query
 				$obj[substr($s[0], strpos($s[0], '.') + 1)] = $row[$s[1]];
 				unset($row[$s[1]]);
 			}
-			$obj = $model::forge($obj, false);
+			$obj = $model::forge($obj, false, $this->view ? $this->view['_name'] : null);
 		}
 
 		// if the result to be generated is an array and the current object is not yet in there
@@ -898,8 +933,9 @@ class Query
 		}
 		$query = call_user_func_array('DB::select', $select);
 
-		// Set from table
-		$query->from(array(call_user_func($this->model.'::table'), $this->alias));
+		// Set from view/table
+		$table = $this->view ? $this->view['view'] : call_user_func($this->model.'::table');
+		$query->from(array($table, $this->alias));
 
 		// Build the query further
 		$tmp     = $this->build_query($query, $columns);
@@ -1160,3 +1196,5 @@ class Query
 		return $res > 0;
 	}
 }
+
+/* End of file query.php */

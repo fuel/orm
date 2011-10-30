@@ -117,9 +117,9 @@ class Model implements \ArrayAccess, \Iterator {
 		return static::forge($data, $new);
 	}
 
-	public static function forge($data = array(), $new = true)
+	public static function forge($data = array(), $new = true, $view = null)
 	{
-		return new static($data, $new);
+		return new static($data, $new, $view);
 	}
 
 	/**
@@ -301,7 +301,20 @@ class Model implements \ArrayAccess, \Iterator {
 			static::$_views_cached[$class] = array();
 			if (property_exists($class, '_views'))
 			{
-				static::$_views_cached[$class] = $class::$_views;
+				$views = $class::$_views;
+				foreach ($views as $k => $v)
+				{
+					if ( ! isset($v['columns']))
+					{
+						throw new \InvalidArgumentException('Database view '.$k.' is defined without columns.');
+					}
+					$v['columns'] = (array) $v['columns'];
+					if ( ! isset($v['view']))
+					{
+						$v['view'] = $k;
+					}
+					static::$_views_cached[$class][$k] = $v;
+				}
 			}
 		}
 
@@ -625,7 +638,7 @@ class Model implements \ArrayAccess, \Iterator {
 	 * @param  array
 	 * @param  bool
 	 */
-	public function __construct(array $data = array(), $new = true)
+	public function __construct(array $data = array(), $new = true, $view = null)
 	{
 		// This is to deal with PHP's native hydration from that happens before constructor is called
 		// for example using the DB's as_object() function
@@ -654,6 +667,11 @@ class Model implements \ArrayAccess, \Iterator {
 		{
 			$this->_update_original($data);
 			$this->_data = array_merge($this->_data, $data);
+
+			if ($view and array_key_exists($view, $this->views()))
+			{
+				$this->_view = $view;
+			}
 		}
 
 		if ($new === false)
@@ -838,7 +856,7 @@ class Model implements \ArrayAccess, \Iterator {
 			}
 			return $this->_data_relations[$property];
 		}
-		elseif ($this->_view and array_key_exists($property, static::$_views_cached[get_class($this)][$this->_view]))
+		elseif ($this->_view and in_array($property, static::$_views_cached[get_class($this)][$this->_view]['columns']))
 		{
 			return $this->_data[$property];
 		}
