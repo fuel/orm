@@ -194,7 +194,8 @@ class Query
 	/**
 	 * Set the limit
 	 *
-	 * @param  int
+	 * @param   int
+	 * @return  Query
 	 */
 	public function limit($limit)
 	{
@@ -206,7 +207,8 @@ class Query
 	/**
 	 * Set the offset
 	 *
-	 * @param  int
+	 * @param   int
+	 * @return  Query
 	 */
 	public function offset($offset)
 	{
@@ -218,7 +220,8 @@ class Query
 	/**
 	 * Set the limit of rows requested
 	 *
-	 * @param  int
+	 * @param   int
+	 * @return  Query
 	 */
 	public function rows_limit($limit)
 	{
@@ -230,7 +233,8 @@ class Query
 	/**
 	 * Set the offset of rows requested
 	 *
-	 * @param  int
+	 * @param   int
+	 * @return  Query
 	 */
 	public function rows_offset($offset)
 	{
@@ -242,9 +246,10 @@ class Query
 	/**
 	 * Set where condition
 	 *
-	 * @param	string	property
-	 * @param	string	comparison type (can be omitted)
-	 * @param	string	comparison value
+	 * @param   string  property
+	 * @param   string  comparison type (can be omitted)
+	 * @param   string  comparison value
+	 * @return  Query
 	 */
 	public function where()
 	{
@@ -257,9 +262,10 @@ class Query
 	/**
 	 * Set or_where condition
 	 *
-	 * @param  string  property
-	 * @param  string  comparison type (can be omitted)
-	 * @param  string  comparison value
+	 * @param   string  property
+	 * @param   string  comparison type (can be omitted)
+	 * @param   string  comparison value
+	 * @return  Query
 	 */
 	public function or_where()
 	{
@@ -272,8 +278,9 @@ class Query
 	/**
 	 * Does the work for where() and or_where()
 	 *
-	 * @param  array
-	 * @param  string
+	 * @param   array
+	 * @param   string
+	 * @return  Query
 	 */
 	public function _where($condition, $type = 'and_where')
 	{
@@ -311,6 +318,8 @@ class Query
 
 	/**
 	 * Open a nested and_where condition
+	 *
+	 * @return  Query
 	 */
 	public function and_where_open()
 	{
@@ -321,6 +330,8 @@ class Query
 
 	/**
 	 * Close a nested and_where condition
+	 *
+	 * @return  Query
 	 */
 	public function and_where_close()
 	{
@@ -331,6 +342,8 @@ class Query
 
 	/**
 	 * Alias to and_where_open()
+	 *
+	 * @return  Query
 	 */
 	public function where_open()
 	{
@@ -341,6 +354,8 @@ class Query
 
 	/**
 	 * Alias to and_where_close()
+	 *
+	 * @return  Query
 	 */
 	public function where_close()
 	{
@@ -351,6 +366,8 @@ class Query
 
 	/**
 	 * Open a nested or_where condition
+	 *
+	 * @return  Query
 	 */
 	public function or_where_open()
 	{
@@ -361,6 +378,8 @@ class Query
 
 	/**
 	 * Close a nested or_where condition
+	 *
+	 * @return  Query
 	 */
 	public function or_where_close()
 	{
@@ -404,8 +423,9 @@ class Query
 	/**
 	 * Set the order_by
 	 *
-	 * @param  string|array
-	 * @param  string|null
+	 * @param   string|array
+	 * @param   string|null
+	 * @return  Query
 	 */
 	public function order_by($property, $direction = 'ASC')
 	{
@@ -439,7 +459,8 @@ class Query
 	/**
 	 * Set a relation to include
 	 *
-	 * @param  string
+	 * @param   string
+	 * @return  Query
 	 */
 	public function related($relation, $conditions = array())
 	{
@@ -494,7 +515,8 @@ class Query
 	/**
 	 * Add a table to join, consider this a protect method only for Orm package usage
 	 *
-	 * @param  array
+	 * @param   array
+	 * @return  Query
 	 */
 	public function _join(array $join)
 	{
@@ -506,8 +528,9 @@ class Query
 	/**
 	 * Set any properties for insert or update
 	 *
-	 * @param  string|array
-	 * @param  mixed
+	 * @param   string|array
+	 * @param   mixed
+	 * @return  Query
 	 */
 	public function set($property, $value = null)
 	{
@@ -763,11 +786,12 @@ class Query
 	/**
 	 * Hydrate model instances with retrieved data
 	 *
-	 * @param  array   row from the database
-	 * @param  array   relations to be expected
-	 * @param  array   current result array (by reference)
-	 * @param  string  model classname to hydrate
-	 * @param  array   columns to use
+	 * @param   array   row from the database
+	 * @param   array   relations to be expected
+	 * @param   array   current result array (by reference)
+	 * @param   string  model classname to hydrate
+	 * @param   array   columns to use
+	 * @return  Model
 	 */
 	public function hydrate(&$row, $models, &$result, $model = null, $select = null, $primary_key = null)
 	{
@@ -918,7 +942,7 @@ class Query
 	/**
 	 * Get the Query as it's been build up to this point and return it as an object
 	 *
-	 * @return Database_Query
+	 * @return  Database_Query
 	 */
 	public function get_query()
 	{
@@ -1073,7 +1097,6 @@ class Query
 	 * Run INSERT with the current values
 	 *
 	 * @return  mixed  last inserted ID or false on failure
-	 * @todo    work with relations
 	 */
 	public function insert()
 	{
@@ -1094,7 +1117,6 @@ class Query
 	 * Run UPDATE with the current values
 	 *
 	 * @return  bool  success of update operation
-	 * @todo    work with relations
 	 */
 	public function update()
 	{
@@ -1119,7 +1141,6 @@ class Query
 	 * Run DELETE with the current values
 	 *
 	 * @return  bool  success of delete operation
-	 * @todo    cascade option and for relations and make sure they're removed
 	 */
 	public function delete()
 	{
@@ -1139,5 +1160,3 @@ class Query
 		return $res > 0;
 	}
 }
-
-/* End of file query.php */
