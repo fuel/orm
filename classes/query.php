@@ -606,7 +606,7 @@ class Query
 
 		// Get the order
 		$order_by = $this->order_by;
-		if ( ! empty($order_by))
+		if (($type != 'select' or ! $this->use_subquery()) and ! empty($order_by))
 		{
 			foreach ($order_by as $key => $ob)
 			{
@@ -1196,5 +1196,3 @@ class Query
 		return $res > 0;
 	}
 }
-
-/* End of file query.php */
