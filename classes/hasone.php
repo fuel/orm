@@ -82,8 +82,9 @@ class HasOne extends Relation
 			! is_array($condition) and $condition = array($key, '=', $condition);
 			if ( ! $condition[0] instanceof \Fuel\Core\Database_Expression and strpos($condition[0], '.') === false)
 			{
-				$condition[0] = $alias_from.'.'.$condition[0];
+				$condition[0] = $alias_to.'.'.$condition[0];
 			}
+			is_string($condition[2]) and $condition[2] = \Db::quote($condition[2], $model['connection']);
 
 			$model['join_on'][] = $condition;
 		}
