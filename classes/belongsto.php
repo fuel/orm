@@ -25,13 +25,19 @@ class BelongsTo extends Relation
 	{
 		$this->name        = $name;
 		$this->model_from  = $from;
-		$this->model_to    = array_key_exists('model_to', $config) ? $config['model_to'] : \Inflector::get_namespace($from).'Model_'.\Inflector::classify($name);
-		$this->key_from    = array_key_exists('key_from', $config) ? (array) $config['key_from'] : (array) \Inflector::foreign_key($this->model_to);
-		$this->key_to      = array_key_exists('key_to', $config) ? (array) $config['key_to'] : $this->key_to;
-		$this->conditions  = array_key_exists('conditions', $config) ? (array) $config['conditions'] : array();
+		$this->model_to    = array_key_exists('model_to', $config)
+			? $config['model_to'] : \Inflector::get_namespace($from).'Model_'.\Inflector::classify($name);
+		$this->key_from    = array_key_exists('key_from', $config)
+			? (array) $config['key_from'] : (array) \Inflector::foreign_key($this->model_to);
+		$this->key_to      = array_key_exists('key_to', $config)
+			? (array) $config['key_to'] : $this->key_to;
+		$this->conditions  = array_key_exists('conditions', $config)
+			? (array) $config['conditions'] : array();
 
-		$this->cascade_save    = array_key_exists('cascade_save', $config) ? $config['cascade_save'] : $this->cascade_save;
-		$this->cascade_delete  = array_key_exists('cascade_delete', $config) ? $config['cascade_delete'] : $this->cascade_delete;
+		$this->cascade_save    = array_key_exists('cascade_save', $config)
+			? $config['cascade_save'] : $this->cascade_save;
+		$this->cascade_delete  = array_key_exists('cascade_delete', $config)
+			? $config['cascade_delete'] : $this->cascade_delete;
 
 		if ( ! class_exists($this->model_to))
 		{
@@ -54,21 +60,19 @@ class BelongsTo extends Relation
 
 	public function join($alias_from, $rel_name, $alias_to_nr, $conditions = array())
 	{
-		$conditions = array_merge($this->conditions, $conditions);
-
 		$alias_to = 't'.$alias_to_nr;
 		$model = array(
 			'model'        => $this->model_to,
 			'connection'   => call_user_func(array($this->model_to, 'connection')),
 			'table'        => array(call_user_func(array($this->model_to, 'table')), $alias_to),
 			'primary_key'  => call_user_func(array($this->model_to, 'primary_key')),
-			'join_type'    => array_key_exists('join_type', $conditions) ? $conditions['join_type'] : 'left',
+			'join_type'    => \Arr::get($conditions, 'join_type') ?: \Arr::get($this->conditions, 'join_type', 'left'),
 			'join_on'      => array(),
 			'columns'      => $this->select($alias_to),
 			'rel_name'     => strpos($rel_name, '.') ? substr($rel_name, strrpos($rel_name, '.') + 1) : $rel_name,
 			'relation'     => $this,
-			'where'        => array_key_exists('where', $conditions)    ? $conditions['where']    : array(),
-			'order_by'     => array_key_exists('order_by', $conditions) ? $conditions['order_by'] : array(),
+			'where'        => \Arr::get($conditions, 'where', array()),
+			'order_by'     => \Arr::get($conditions, 'order_by') ?: \Arr::get($this->conditions, 'order_by', array()),
 		);
 
 		reset($this->key_to);
@@ -76,6 +80,16 @@ class BelongsTo extends Relation
 		{
 			$model['join_on'][] = array($alias_from.'.'.$key, '=', $alias_to.'.'.current($this->key_to));
 			next($this->key_to);
+		}
+		foreach (\Arr::get($this->conditions, 'where', array()) as $key => $condition)
+		{
+			! is_array($condition) and $condition = array($key, '=', $condition);
+			if ( ! $condition[0] instanceof \Fuel\Core\Database_Expression and strpos($condition[0], '.') === false)
+			{
+				$condition[0] = $alias_from.'.'.$condition[0];
+			}
+
+			$model['join_on'][] = $condition;
 		}
 
 		return array($rel_name => $model);
@@ -194,5 +208,3 @@ class BelongsTo extends Relation
 		}
 	}
 }
-
-/* End of file hasone.php */
