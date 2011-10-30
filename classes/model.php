@@ -44,6 +44,11 @@ class Model implements \ArrayAccess, \Iterator {
 	// protected static $_properties;
 
 	/**
+	 * @var  array  array of views with additional properties
+	 */
+	// protected static $_views;
+
+	/**
 	 * @var  array  array of observer classes to use
 	 */
 	// protected static $_observers;
@@ -70,6 +75,11 @@ class Model implements \ArrayAccess, \Iterator {
 	 * @var  array  cached properties
 	 */
 	protected static $_properties_cached = array();
+
+	/**
+	 * @var  array  cached properties
+	 */
+	protected static $_views_cached = array();
 
 	/**
 	 * @var  string  relationships
@@ -275,6 +285,27 @@ class Model implements \ArrayAccess, \Iterator {
 		}
 
 		return \Arr::get(static::$_properties_cached[$class], $key, $default);
+	}
+
+	/**
+	 * Fetch the model's views
+	 *
+	 * @return  array
+	 */
+	public static function views()
+	{
+		$class = get_called_class();
+
+		if ( ! isset(static::$_views_cached[$class]))
+		{
+			static::$_views_cached[$class] = array();
+			if (property_exists($class, '_views'))
+			{
+				static::$_views_cached[$class] = $class::$_views;
+			}
+		}
+
+		return static::$_views_cached[$class];
 	}
 
 	/**
@@ -579,9 +610,14 @@ class Model implements \ArrayAccess, \Iterator {
 	private $_data_relations = array();
 
 	/**
-	 * @var  arrayy  keeps a copy of the relation ids that were originally retrieved from the database
+	 * @var  array  keeps a copy of the relation ids that were originally retrieved from the database
 	 */
 	private $_original_relations = array();
+
+	/**
+	 * @var  string  view name when used
+	 */
+	private $_view;
 
 	/**
 	 * Constructor
@@ -802,6 +838,10 @@ class Model implements \ArrayAccess, \Iterator {
 			}
 			return $this->_data_relations[$property];
 		}
+		elseif ($this->_view and array_key_exists($property, static::$_views_cached[get_class($this)][$this->_view]))
+		{
+			return $this->_data[$property];
+		}
 		else
 		{
 			throw new \OutOfBoundsException('Property "'.$property.'" not found for '.get_called_class().'.');
@@ -957,7 +997,7 @@ class Model implements \ArrayAccess, \Iterator {
 		{
 			if ( ! (in_array($p, $primary_key) and is_null($this->{$p})))
 			{
-				$query->set($p, $this->{$p});
+				$query->set($p, $this->_data[$p]);
 			}
 		}
 
@@ -968,9 +1008,9 @@ class Model implements \ArrayAccess, \Iterator {
 		if (count($primary_key) == 1 and $id !== false)
 		{
 			$pk = reset($primary_key);
-			if ($this->{$pk} === null)
+			if ($this->_data[$pk] === null)
 			{
-				$this->{$pk} = $id;
+				$this->_data[$pk] = $id;
 			}
 		}
 
@@ -1008,7 +1048,7 @@ class Model implements \ArrayAccess, \Iterator {
 		$properties  = array_keys(static::properties());
 		foreach ($primary_key as $pk)
 		{
-			$query->where($pk, '=', $this->{$pk});
+			$query->where($pk, '=', $this->_data[$pk]);
 		}
 
 		// Set all current values
@@ -1016,7 +1056,7 @@ class Model implements \ArrayAccess, \Iterator {
 		{
 			if ( ! in_array($p, $primary_key))
 			{
-				$query->set($p, $this->{$p});
+				$query->set($p, $this->_data[$p]);
 			}
 		}
 
