@@ -606,14 +606,13 @@ class Query
 
 		// Get the order
 		$order_by = $this->order_by;
-		if (($type != 'select' or ! $this->use_subquery()) and ! empty($order_by))
+		if ( ! empty($order_by))
 		{
 			foreach ($order_by as $key => $ob)
 			{
 				if ( ! $ob[0] instanceof \Fuel\Core\Database_Expression and strpos($ob[0], $this->alias.'.') === 0)
 				{
 					$query->order_by($type == 'select' ? $ob[0] : substr($ob[0], strlen($this->alias.'.')), $ob[1]);
-					unset($order_by[$key]);
 				}
 			}
 		}
