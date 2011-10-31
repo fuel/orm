@@ -77,6 +77,10 @@ class Observer_Validation extends Observer
 		$properties = is_object($obj) ? $obj->properties() : $class::properties();
 		foreach ($properties as $p => $settings)
 		{
+			if (isset($settings['form']['include']) and ! $settings['form']['include'])
+			{
+				continue;
+			}
 			if (isset($settings['form']['options']))
 			{
 				foreach ($settings['form']['options'] as $key => $value)
