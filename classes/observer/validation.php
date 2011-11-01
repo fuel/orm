@@ -74,9 +74,15 @@ class Observer_Validation extends Observer
 		}
 		$_generated[$class][] = $fieldset;
 
+		$primary_keys = is_object($obj) ? $obj->primary_key() : $class::primary_key();
 		$properties = is_object($obj) ? $obj->properties() : $class::properties();
 		foreach ($properties as $p => $settings)
 		{
+			if (in_array($p, $primary_keys))
+			{
+				continue;
+			}
+
 			if (isset($settings['form']['options']))
 			{
 				foreach ($settings['form']['options'] as $key => $value)
