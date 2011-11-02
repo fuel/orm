@@ -1015,7 +1015,7 @@ class Model implements \ArrayAccess, \Iterator {
 		{
 			if ( ! (in_array($p, $primary_key) and is_null($this->{$p})))
 			{
-				$query->set($p, $this->_data[$p]);
+				$query->set($p, $this->{$p});
 			}
 		}
 
@@ -1026,9 +1026,9 @@ class Model implements \ArrayAccess, \Iterator {
 		if (count($primary_key) == 1 and $id !== false)
 		{
 			$pk = reset($primary_key);
-			if ($this->_data[$pk] === null)
+			if ($this->{$pk} === null)
 			{
-				$this->_data[$pk] = $id;
+				$this->{$pk} = $id;
 			}
 		}
 
@@ -1074,7 +1074,7 @@ class Model implements \ArrayAccess, \Iterator {
 		{
 			if ( ! in_array($p, $primary_key))
 			{
-				$query->set($p, $this->_data[$p]);
+				$query->set($p, isset($this->_data[$p]) ? $this->_data[$p] : null);
 			}
 		}
 
