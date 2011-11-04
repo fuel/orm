@@ -1245,13 +1245,13 @@ class Model implements \ArrayAccess, \Iterator {
 					return true;
 				}
 			}
-			elseif (isset($relations[$p]))
+			elseif (isset($relations[$p]) and isset($this->_original_relations[$p]))
 			{
 				if ($relations[$p]->singular)
 				{
-					if (empty($this->_original_relations[$p]) !== empty($this->{$p})
+					if (empty($this->_original_relations[$p]) !== empty($this->_data_relations[$p])
 						or ( ! empty($this->_original_relations[$p])
-							and $this->_original_relations[$p] !== $this->{$p}->implode_pk($this->{$p})))
+							and $this->_original_relations[$p] !== $this->_data_relations[$p]->implode_pk($this->{$p})))
 					{
 						return true;
 					}
