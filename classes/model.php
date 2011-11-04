@@ -1314,9 +1314,10 @@ class Model implements \ArrayAccess, \Iterator {
 			$rel = static::relations($key);
 			if ($rel->singular)
 			{
-				if (($new_pk = $val->implode_pk($val)) != $this->_original_relations[$key])
+				if ((($new_pk = $val->implode_pk($val)) and ! isset($this->_original_relations[$key]))
+					or $new_pk != $this->_original_relations[$key])
 				{
-					$diff[0][$key] = $this->_original_relations[$key];
+					$diff[0][$key] = isset($this->_original_relations[$key]) ? $this->_original_relations[$key] : null;
 					$diff[1][$key] = $new_pk;
 				}
 			}
