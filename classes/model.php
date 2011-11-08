@@ -964,7 +964,7 @@ class Model implements \ArrayAccess, \Iterator {
 			$this->unfreeze();
 
 			// Insert or update
-			$return = $this->_is_new ? $this->create() : $this->update();
+			$return = $this->_is_new ? $this->_create() : $this->update();
 
 			$this->freeze();
 			foreach($this->relations() as $rel_name => $rel)
@@ -993,11 +993,23 @@ class Model implements \ArrayAccess, \Iterator {
 
 		return $return;
 	}
-
+	
+	/*
+	* 'create' a new record from a single function call
+	*/
+	public static function create($data = array())
+	{
+		// be shure to remove any primary key from the main object
+		$data = array_diff_key((array)$data, array_flip(static::primary_key()));
+		
+		return static::forge($data)->_create();
+	}
+	
 	/**
 	 * Save using INSERT
+	 * prefixed with _ to leave the place to the new create method.
 	 */
-	protected function create()
+	protected function _create()
 	{
 		// Only allow creation with new object, otherwise: clone first, create later
 		if ( ! $this->is_new())
