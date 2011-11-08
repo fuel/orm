@@ -178,12 +178,14 @@ class Query
 				}
 			}
 
-			// ensure all PKs are being selected
+			// backup select before adding PKs
 			$select = $this->select;
+
+			// ensure all PKs are being selected
 			$pks = call_user_func($this->model.'::primary_key');
 			foreach($pks as $pk)
 			{
-				if ( ! in_array($this->alias.'.'.$pk, $select))
+				if ( ! in_array($this->alias.'.'.$pk, $this->select))
 				{
 					$this->select($pk);
 				}
@@ -191,10 +193,14 @@ class Query
 
 			// convert selection array for DB class
 			$out = array();
-			foreach($select as $k => $v)
+			foreach($this->select as $k => $v)
 			{
 				$out[] = array($v, $k);
 			}
+
+			// set select back to before the PKs were added
+			$this->select = $select;
+
 			return $out;
 		}
 
