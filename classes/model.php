@@ -1002,7 +1002,11 @@ class Model implements \ArrayAccess, \Iterator {
 		// be shure to remove any primary key from the main object
 		$data = array_diff_key((array)$data, array_flip(static::primary_key()));
 		
-		return static::forge($data)->_create();
+		// Create our Record
+		$obj = static::forge($data);
+		$obj->_create();
+		
+		return $obj;
 	}
 	
 	/**
