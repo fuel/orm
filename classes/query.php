@@ -622,6 +622,9 @@ class Query
 				}
 			}
 		}
+		
+		// order by has been updated to Database_Query_Builder_Where instance, set it to empty to avoid duplicate entries
+		$order_by = array();
 
 		$where_backup = $this->where;
 		if ( ! empty($this->where))
