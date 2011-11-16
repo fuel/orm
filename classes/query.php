@@ -612,6 +612,9 @@ class Query
 
 		// Get the order
 		$order_by = $this->order_by;
+
+		// create a backup for subquery
+		$order_by_backup = $order_by;
 		if ( ! empty($order_by))
 		{
 			foreach ($order_by as $key => $ob)
@@ -619,12 +622,14 @@ class Query
 				if ( ! $ob[0] instanceof \Fuel\Core\Database_Expression and strpos($ob[0], $this->alias.'.') === 0)
 				{
 					$query->order_by($type == 'select' ? $ob[0] : substr($ob[0], strlen($this->alias.'.')), $ob[1]);
+
+					// order by has been updated to Database_Query_Builder_Where instance, set it to empty to avoid duplicate entries
+					unset($order_by[$key]);
 				}
 			}
 		}
+
 		
-		// order by has been updated to Database_Query_Builder_Where instance, set it to empty to avoid duplicate entries
-		$order_by = array();
 
 		$where_backup = $this->where;
 		if ( ! empty($this->where))
@@ -698,6 +703,9 @@ class Query
 			// make current query subquery of ultimate query
 			$new_query = call_user_func_array('DB::select', $columns);
 			$query = $new_query->from(array($query, $this->alias));
+
+			// set order_by from backup
+			$order_by = $order_by_backup;
 		}
 		else
 		{
