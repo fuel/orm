@@ -87,7 +87,7 @@ class Observer_Validation extends Observer
 			{
 				foreach ($settings['form']['options'] as $key => $value)
 				{
-					$settings['form']['options'][$key] = __($value) ?: $value;
+					$settings['form']['options'][$key] = \Lang::line($value) ?: $value;
 				}
 			}
 
