@@ -415,6 +415,18 @@ class Model implements \ArrayAccess, \Iterator {
 	}
 
 	/**
+	 * Register an observer
+	 *
+	 * @param   string  class name of the observer (including namespace)
+	 * @param   mixed   observer options
+	 * @return  void
+	 */
+	public static function register_observer($class, $options = null)
+	{
+		static::$_observers[] = is_null($options) ? array($class) : array($class => $options);
+	}
+
+	/**
 	 * Find one or more entries
 	 *
 	 * @param   mixed
