@@ -105,6 +105,31 @@ class Model implements \ArrayAccess, \Iterator {
 		'has_many'      => 'Orm\\HasMany',
 		'many_many'     => 'Orm\\ManyMany',
 	);
+	
+	public static function clear_cached_table_names()
+	{
+		static::$_table_names_cached = array();
+	}
+
+	public static function clear_cached_properties()
+	{
+		static::$_properties_cached = array();
+	}
+
+	public static function clear_cached_relations()
+	{
+		static::$_relations_cached = array();
+	}
+
+	public static function clear_cached_observers()
+	{
+		static::$_observers_cached = array();
+	}
+
+	public static function clear_cached_objects()
+	{
+		static::$_cached_objects = array();
+	}
 
 	/**
 	 * This method is deprecated...use forge() instead.
