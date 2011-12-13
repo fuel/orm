@@ -44,6 +44,11 @@ class Model implements \ArrayAccess, \Iterator {
 	// protected static $_properties;
 
 	/**
+	 * @var  array  array of views with additional properties
+	 */
+	// protected static $_views;
+
+	/**
 	 * @var  array  array of observer classes to use
 	 */
 	// protected static $_observers;
@@ -70,6 +75,11 @@ class Model implements \ArrayAccess, \Iterator {
 	 * @var  array  cached properties
 	 */
 	protected static $_properties_cached = array();
+
+	/**
+	 * @var  array  cached properties
+	 */
+	protected static $_views_cached = array();
 
 	/**
 	 * @var  string  relationships
@@ -107,9 +117,9 @@ class Model implements \ArrayAccess, \Iterator {
 		return static::forge($data, $new);
 	}
 
-	public static function forge($data = array(), $new = true)
+	public static function forge($data = array(), $new = true, $view = null)
 	{
-		return new static($data, $new);
+		return new static($data, $new, $view);
 	}
 
 	/**
@@ -275,6 +285,40 @@ class Model implements \ArrayAccess, \Iterator {
 		}
 
 		return \Arr::get(static::$_properties_cached[$class], $key, $default);
+	}
+
+	/**
+	 * Fetch the model's views
+	 *
+	 * @return  array
+	 */
+	public static function views()
+	{
+		$class = get_called_class();
+
+		if ( ! isset(static::$_views_cached[$class]))
+		{
+			static::$_views_cached[$class] = array();
+			if (property_exists($class, '_views'))
+			{
+				$views = $class::$_views;
+				foreach ($views as $k => $v)
+				{
+					if ( ! isset($v['columns']))
+					{
+						throw new \InvalidArgumentException('Database view '.$k.' is defined without columns.');
+					}
+					$v['columns'] = (array) $v['columns'];
+					if ( ! isset($v['view']))
+					{
+						$v['view'] = $k;
+					}
+					static::$_views_cached[$class][$k] = $v;
+				}
+			}
+		}
+
+		return static::$_views_cached[$class];
 	}
 
 	/**
@@ -579,9 +623,14 @@ class Model implements \ArrayAccess, \Iterator {
 	private $_data_relations = array();
 
 	/**
-	 * @var  arrayy  keeps a copy of the relation ids that were originally retrieved from the database
+	 * @var  array  keeps a copy of the relation ids that were originally retrieved from the database
 	 */
 	private $_original_relations = array();
+
+	/**
+	 * @var  string  view name when used
+	 */
+	private $_view;
 
 	/**
 	 * Constructor
@@ -589,7 +638,7 @@ class Model implements \ArrayAccess, \Iterator {
 	 * @param  array
 	 * @param  bool
 	 */
-	public function __construct(array $data = array(), $new = true)
+	public function __construct(array $data = array(), $new = true, $view = null)
 	{
 		// This is to deal with PHP's native hydration from that happens before constructor is called
 		// for example using the DB's as_object() function
@@ -618,6 +667,11 @@ class Model implements \ArrayAccess, \Iterator {
 		{
 			$this->_update_original($data);
 			$this->_data = array_merge($this->_data, $data);
+
+			if ($view and array_key_exists($view, $this->views()))
+			{
+				$this->_view = $view;
+			}
 		}
 
 		if ($new === false)
@@ -801,6 +855,10 @@ class Model implements \ArrayAccess, \Iterator {
 				$this->_update_original_relations(array($property));
 			}
 			return $this->_data_relations[$property];
+		}
+		elseif ($this->_view and in_array($property, static::$_views_cached[get_class($this)][$this->_view]['columns']))
+		{
+			return $this->_data[$property];
 		}
 		else
 		{
@@ -1008,7 +1066,7 @@ class Model implements \ArrayAccess, \Iterator {
 		$properties  = array_keys(static::properties());
 		foreach ($primary_key as $pk)
 		{
-			$query->where($pk, '=', $this->{$pk});
+			$query->where($pk, '=', $this->_data[$pk]);
 		}
 
 		// Set all current values
@@ -1016,7 +1074,7 @@ class Model implements \ArrayAccess, \Iterator {
 		{
 			if ( ! in_array($p, $primary_key))
 			{
-				$query->set($p, $this->{$p});
+				$query->set($p, isset($this->_data[$p]) ? $this->_data[$p] : null);
 			}
 		}
 
@@ -1191,15 +1249,24 @@ class Model implements \ArrayAccess, \Iterator {
 			{
 				if ($relations[$p]->singular)
 				{
-					if (empty($this->_original_relations[$p]) !== empty($this->{$p})
+					if (empty($this->_original_relations[$p]) !== empty($this->_data_relations[$p])
 						or ( ! empty($this->_original_relations[$p])
-							and $this->_original_relations[$p] !== $this->{$p}->implode_pk($this->{$p})))
+							and $this->_original_relations[$p] !== $this->_data_relations[$p]->implode_pk($this->{$p})))
 					{
 						return true;
 					}
 				}
 				else
 				{
+					if (empty($this->_original_relations[$p]))
+					{
+						if ( ! empty($this->_data_relations[$p]))
+						{
+							return true;
+						}
+						continue;
+					}
+
 					$orig_rels = $this->_original_relations[$p];
 					foreach ($this->{$p} as $rk => $r)
 					{
@@ -1247,9 +1314,10 @@ class Model implements \ArrayAccess, \Iterator {
 			$rel = static::relations($key);
 			if ($rel->singular)
 			{
-				if (($new_pk = $val->implode_pk($val)) != $this->_original_relations[$key])
+				if ((($new_pk = $val->implode_pk($val)) and ! isset($this->_original_relations[$key]))
+					or $new_pk != $this->_original_relations[$key])
 				{
-					$diff[0][$key] = $this->_original_relations[$key];
+					$diff[0][$key] = isset($this->_original_relations[$key]) ? $this->_original_relations[$key] : null;
 					$diff[1][$key] = $new_pk;
 				}
 			}

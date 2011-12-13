@@ -114,6 +114,11 @@ class Observer_Typing
 				}
 			}
 		}
+
+		if ($event_type == 'after')
+		{
+			$instance->_update_original();
+		}
 	}
 
 	/**
