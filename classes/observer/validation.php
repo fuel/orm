@@ -87,7 +87,7 @@ class Observer_Validation extends Observer
 			{
 				foreach ($settings['form']['options'] as $key => $value)
 				{
-					$settings['form']['options'][$key] = \Lang::get($value) ?: $value;
+					is_array($value) or $settings['form']['options'][$key] = \Lang::get($value) ?: $value;
 				}
 			}
 
