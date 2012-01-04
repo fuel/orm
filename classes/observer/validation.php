@@ -91,9 +91,14 @@ class Observer_Validation extends Observer
 				}
 			}
 
-			$label       = isset($settings['label']) ? $settings['label'] : $p;
-			$attributes  = isset($settings['form']) ? $settings['form'] : array();
-			$field       = $fieldset->add($p, $label, $attributes);
+			// field attributes can be passed in form key
+			$attributes = isset($settings['form']) ? $settings['form'] : array();
+			// label is either set in property setting, as part of form attributes or defaults to fieldname
+			$label = isset($settings['label']) ?
+				$settings['label'] : (isset($attributes['label']) ? $attributes['label'] : $p);
+
+			// create the field and add validation rules
+			$field = $fieldset->add($p, $label, $attributes);
 			if ( ! empty($settings['validation']))
 			{
 				foreach ($settings['validation'] as $rule => $args)
