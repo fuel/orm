@@ -6,7 +6,7 @@
  * @version		1.0
  * @author		Fuel Development Team
  * @license		MIT License
- * @copyright	2010 - 2011 Fuel Development Team
+ * @copyright	2010 - 2012 Fuel Development Team
  * @link		http://fuelphp.com
  */
 
@@ -14,7 +14,6 @@ namespace Orm;
 
 abstract class Observer
 {
-
 	protected static $_instances = array();
 
 	public static function orm_notify($instance, $event)
@@ -37,5 +36,3 @@ abstract class Observer
 		return static::$_instances[$observer][$model_class];
 	}
 }
-
-/* End of file observer.php */

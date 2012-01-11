@@ -6,7 +6,7 @@
  * @version		1.0
  * @author		Fuel Development Team
  * @license		MIT License
- * @copyright	2010 - 2011 Fuel Development Team
+ * @copyright	2010 - 2012 Fuel Development Team
  * @link		http://fuelphp.com
  */
 
@@ -22,8 +22,8 @@ class RecordNotFound extends \OutOfBoundsException {}
  */
 class FrozenObject extends \RuntimeException {}
 
-class Model implements \ArrayAccess, \Iterator {
-
+class Model implements \ArrayAccess, \Iterator
+{
 	/* ---------------------------------------------------------------------------
 	 * Static usage
 	 * --------------------------------------------------------------------------- */

@@ -6,7 +6,7 @@
  * @version		1.0
  * @author		Fuel Development Team
  * @license		MIT License
- * @copyright	2010 - 2011 Fuel Development Team
+ * @copyright	2010 - 2012 Fuel Development Team
  * @link		http://fuelphp.com
  */
 
@@ -17,7 +17,6 @@ class InvalidContentType extends \UnexpectedValueException {}
 
 class Observer_Typing
 {
-
 	/**
 	 * @var  array  types of events to act on and whether they are pre- or post-database
 	 */
@@ -356,5 +355,3 @@ class Observer_Typing
 		return \Date::forge($var);
 	}
 }
-
-// End of file typing.php
