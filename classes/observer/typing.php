@@ -32,20 +32,22 @@ class Observer_Typing
 	 */
 	public static $type_methods = array(
 		'/^varchar/uiD' => array(
-			'before' => 'Orm\\Observer_Typing::type_string'
+			'before' => 'Orm\\Observer_Typing::type_string',
 		),
 		'/^(tiny|small|medium|big)?int(eger)?/uiD'
 			=> 'Orm\\Observer_Typing::type_integer',
 		'/^(float|double|decimal)/uiD'
 			=> 'Orm\\Observer_Typing::type_float',
 		'/^(tiny|medium|long)?text/' => array(
-			'before' => 'Orm\\Observer_Typing::type_string'
+			'before' => 'Orm\\Observer_Typing::type_string',
 		),
 		'/^set/uiD' => array(
-			'before' => 'Orm\\Observer_Typing::type_set'
+			'before' => 'Orm\\Observer_Typing::type_set_before',
+			'after' => 'Orm\\Observer_Typing::type_set_after',
 		),
 		'/^enum/uiD' => array(
-			'before' => 'Orm\\Observer_Typing::type_set'
+			'before' => 'Orm\\Observer_Typing::type_set_before',
+			'after' => 'Orm\\Observer_Typing::type_set_after',
 		),
 		'/^bool(ean)?$/uiD' => array(
 			'before' => 'Orm\\Observer_Typing::type_bool_to_int',
@@ -200,9 +202,9 @@ class Observer_Typing
 	 * @param   array
 	 * @return  string
 	 */
-	public static function type_set($var, array $settings)
+	public static function type_set_before($var, array $settings)
 	{
-		$var    = strval($var);
+		$var    = is_array($var) ? implode(',', $var) : strval($var);
 		$values = array_filter(explode(',', trim($var)));
 
 		if ($settings['data_type'] == 'enum' and count($values) > 1)
@@ -220,6 +222,17 @@ class Observer_Typing
 		}
 
 		return $var;
+	}
+
+	/**
+	 * Casts to string when necessary and checks if it's a valid value
+	 *
+	 * @param   string  value
+	 * @return  array
+	 */
+	public static function type_set_after($var)
+	{
+		return explode(',', $var);
 	}
 
 	/**
