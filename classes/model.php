@@ -1335,7 +1335,7 @@ class Model implements \ArrayAccess, \Iterator
 					{
 						$original_pks = array_diff($original_pks, array($new_pk));
 					}
-					$diff[0][$key] += $original_pks;
+					isset($diff[0][$key]) ? $diff[0][$key] += $original_pks : $diff[0][$key] = $original_pks;
 				}
 			}
 		}
