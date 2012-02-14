@@ -596,7 +596,7 @@ class Query
 	 * @param   string|select  either array for select query or string update, delete, insert
 	 * @return  array          with keys query and relations
 	 */
-	public function build_query(\Fuel\Core\Database_Query_Builder_Where $query, $columns = array(), $type = 'select')
+	public function build_query(\Fuel\Core\Database_Query_Builder_Where $query, $columns = array(), $type = 'select', $count = false)
 	{
 		// Get the limit
 		if ( ! is_null($this->limit))
@@ -689,32 +689,35 @@ class Query
 			$models = array_merge($models, $rel[0]->join($alias, $name, $i++, $rel[1]));
 		}
 
-		if ($this->use_subquery())
+		if ($count === false)
 		{
-			// Get the columns for final select
-			foreach ($models as $m)
+			if ($this->use_subquery())
 			{
-				foreach ($m['columns'] as $c)
+				// Get the columns for final select
+				foreach ($models as $m)
 				{
-					$columns[] = $c;
+					foreach ($m['columns'] as $c)
+					{
+						$columns[] = $c;
+					}
 				}
+	
+				// make current query subquery of ultimate query
+				$new_query = call_user_func_array('DB::select', $columns);
+				$query = $new_query->from(array($query, $this->alias));
+	
+				// set order_by from backup
+				$order_by = $order_by_backup;
 			}
-
-			// make current query subquery of ultimate query
-			$new_query = call_user_func_array('DB::select', $columns);
-			$query = $new_query->from(array($query, $this->alias));
-
-			// set order_by from backup
-			$order_by = $order_by_backup;
-		}
-		else
-		{
-			// add additional selected columns
-			foreach ($models as $m)
+			else
 			{
-				foreach ($m['columns'] as $c)
+				// add additional selected columns
+				foreach ($models as $m)
 				{
-					$query->select($c);
+					foreach ($m['columns'] as $c)
+					{
+						$query->select($c);
+					}
 				}
 			}
 		}
@@ -1064,7 +1067,7 @@ class Query
 		// Set from table
 		$query->from(array(call_user_func($this->model.'::table'), $this->alias));
 
-		$tmp   = $this->build_query($query, $columns, 'select');
+		$tmp   = $this->build_query($query, $columns, 'select', true);
 		$query = $tmp['query'];
 		$count = $query->execute($this->connection)->get('count_result');
 
