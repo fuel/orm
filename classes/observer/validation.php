@@ -6,14 +6,15 @@
  * @version		1.0
  * @author		Fuel Development Team
  * @license		MIT License
- * @copyright	2010 - 2011 Fuel Development Team
+ * @copyright	2010 - 2012 Fuel Development Team
  * @link		http://fuelphp.com
  */
 
 namespace Orm;
 
 // Exception to throw when validation failed
-class ValidationFailed extends \FuelException {
+class ValidationFailed extends \FuelException
+{
 	protected $fieldset;
 
 	/**
@@ -168,5 +169,3 @@ class Observer_Validation extends Observer
 		}
 	}
 }
-
-// End of file validation.php
