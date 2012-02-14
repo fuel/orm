@@ -47,7 +47,6 @@ class Observer_Typing
 		),
 		'/^enum/uiD' => array(
 			'before' => 'Orm\\Observer_Typing::type_set_before',
-			'after' => 'Orm\\Observer_Typing::type_set_after',
 		),
 		'/^bool(ean)?$/uiD' => array(
 			'before' => 'Orm\\Observer_Typing::type_bool_to_int',
