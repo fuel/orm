@@ -428,6 +428,20 @@ class Model implements \ArrayAccess, \Iterator
 		{
 			return static::query($options);
 		}
+		elseif(is_array($id))
+		{
+			$where = array();
+			$ids = (array) $id;
+					
+			foreach(static::primary_key() as $pk)
+			{
+				$where[] = array($pk, 'IN', $ids);
+			}
+			
+			$options['where'] = $where;
+			
+			return static::find('all', $options);
+		}
 		// Return all that match $options array
 		elseif ($id == 'all')
 		{
