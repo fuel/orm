@@ -79,7 +79,7 @@ class Observer_Validation extends Observer
 		$properties = is_object($obj) ? $obj->properties() : $class::properties();
 		foreach ($properties as $p => $settings)
 		{
-			if (in_array($p, $primary_keys))
+			if (\Arr::get($settings, 'skip', in_array($p, $primary_keys)))
 			{
 				continue;
 			}
