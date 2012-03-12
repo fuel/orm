@@ -1138,13 +1138,6 @@ class Model implements \ArrayAccess, \Iterator
 				return false;
 			}
 
-			$this->freeze();
-			foreach($this->relations() as $rel_name => $rel)
-			{
-				$rel->delete($this, $this->{$rel_name}, true, is_array($cascade) ? in_array($rel_name, $cascade) : $cascade);
-			}
-			$this->unfreeze();
-
 			// Perform cleanup:
 			// remove from internal object cache, remove PK's, set to non saved object, remove db original values
 			if (array_key_exists(get_called_class(), static::$_cached_objects)
