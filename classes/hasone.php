@@ -205,14 +205,22 @@ class HasOne extends Relation
 		{
 			foreach ($this->key_to as $fk)
 			{
+
 				$model_to->{$fk} = null;
 			}
 		}
 
-		$cascade = is_null($cascade) ? $this->cascade_delete : (bool) $cascade;
-		if ($cascade and ! empty($model_to))
+		if ( ! empty($model_to))
 		{
-			$model_to->delete();
+			$cascade = is_null($cascade) ? $this->cascade_delete : (bool) $cascade;
+			if ($cascade)
+			{
+				$model_to->delete();
+			}
+			else
+			{
+				$model_to->is_changed() and $model_to->save();
+			}
 		}
 	}
 }

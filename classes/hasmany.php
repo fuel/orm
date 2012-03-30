@@ -229,12 +229,19 @@ class HasMany extends Relation
 			}
 		}
 
-		$cascade = is_null($cascade) ? $this->cascade_delete : (bool) $cascade;
-		if ($cascade and ! empty($models_to))
+		if ( ! empty($models_to))
 		{
+			$cascade = is_null($cascade) ? $this->cascade_delete : (bool) $cascade;
 			foreach ($models_to as $m)
 			{
-				$m->delete();
+				if ($cascade)
+				{
+					$m->delete();
+				}
+				else
+				{
+					$m->is_changed() and $m->save();
+				}
 			}
 		}
 	}
