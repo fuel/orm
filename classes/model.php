@@ -895,6 +895,10 @@ class Model implements \ArrayAccess, \Iterator
 		}
 		elseif (static::relations($property))
 		{
+			if ( ! $this->is_fetched($property))
+			{
+				static::relations($property)->delete($this, $this->{$property}, false, false);
+			}
 			$this->_data_relations[$property] = $value;
 		}
 		else
