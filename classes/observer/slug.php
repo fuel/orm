@@ -60,7 +60,7 @@ class Observer_Slug extends Observer
 			{
 				if (preg_match('/^'.$slug.'(?:-([0-9]+))?$/', $record->{$this->_property}, $matches))
 				{
-					$index = (int) $matches[1];
+					$index = isset($matches[1]) ? (int) $matches[1] : 0;
 					$max < $index and $max = $index;
 				}
 			}
