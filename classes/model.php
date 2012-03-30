@@ -628,6 +628,11 @@ class Model implements \ArrayAccess, \Iterator
 	private $_original_relations = array();
 
 	/**
+	 * @var  array  keeps track of relations that need to be reset before saving the new ones
+	 */
+	private $_reset_relations = array();
+
+	/**
 	 * @var  string  view name when used
 	 */
 	private $_view;
@@ -895,10 +900,7 @@ class Model implements \ArrayAccess, \Iterator
 		}
 		elseif (static::relations($property))
 		{
-			if ( ! $this->is_fetched($property))
-			{
-				static::relations($property)->delete($this, $this->{$property}, false, false);
-			}
+			$this->is_fetched($property) or $this->_reset_relations[$property] = true;
 			$this->_data_relations[$property] = $value;
 		}
 		else
@@ -957,6 +959,11 @@ class Model implements \ArrayAccess, \Iterator
 			$this->freeze();
 			foreach($this->relations() as $rel_name => $rel)
 			{
+				if (array_key_exists($rel_name, $this->_reset_relations))
+				{
+					$rel->delete($this, null, true, false);
+					unset($this->_reset_relations[$rel_name]);
+				}
 				if (array_key_exists($rel_name, $this->_data_relations))
 				{
 					$rel->save($this, $this->{$rel_name},
