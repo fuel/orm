@@ -1344,6 +1344,21 @@ class Model implements \ArrayAccess, \Iterator
 	}
 
 	/***
+	 * Returns whether the given relation is fetched. If no relation is
+	 *
+	 * @return  bool
+	 */
+	public function is_fetched($relation)
+	{
+		if (static::relations($relation))
+		{
+			return array_key_exists($relation, $this->_data_relations);
+		}
+
+		return false;
+	}
+
+	/***
 	 * Returns whether this is a saved or a new object
 	 *
 	 * @return  bool
