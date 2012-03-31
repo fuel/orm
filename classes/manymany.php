@@ -304,14 +304,7 @@ class ManyMany extends Relation
 		$model_from->freeze();
 
 		// Delete all relationship entries for the model_from
-		$query = \DB::delete($this->table_through);
-		reset($this->key_from);
-		foreach ($this->key_through_from as $key)
-		{
-			$query->where($key, '=', $model_from->{current($this->key_from)});
-			next($this->key_from);
-		}
-		$query->execute(call_user_func(array($model_from, 'connection')));
+		$this->delete_related($model_from);
 
 		$cascade = is_null($cascade) ? $this->cascade_delete : (bool) $cascade;
 		if ($cascade and ! empty($model_to))
@@ -321,5 +314,18 @@ class ManyMany extends Relation
 				$m->delete();
 			}
 		}
+	}
+
+	public function delete_related($model_from)
+	{
+		// Delete all relationship entries for the model_from
+		$query = \DB::delete($this->table_through);
+		reset($this->key_from);
+		foreach ($this->key_through_from as $key)
+		{
+			$query->where($key, '=', $model_from->{current($this->key_from)});
+			next($this->key_from);
+		}
+		$query->execute(call_user_func(array($model_from, 'connection')));
 	}
 }
