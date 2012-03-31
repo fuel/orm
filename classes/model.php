@@ -961,7 +961,7 @@ class Model implements \ArrayAccess, \Iterator
 			{
 				if (array_key_exists($rel_name, $this->_reset_relations))
 				{
-					$rel->delete($this, null, true, false);
+					$rel->delete($this, null, true, false, false);
 					unset($this->_reset_relations[$rel_name]);
 				}
 				if (array_key_exists($rel_name, $this->_data_relations))

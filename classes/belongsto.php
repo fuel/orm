@@ -201,13 +201,10 @@ class BelongsTo extends Relation
 		}
 		$model_from->freeze();
 
-		if ( ! empty($model_to))
+		$cascade = is_null($cascade) ? $this->cascade_delete : (bool) $cascade;
+		if ($cascade and ! empty($model_to))
 		{
-			$cascade = is_null($cascade) ? $this->cascade_delete : (bool) $cascade;
-			if ($cascade)
-			{
-				$model_to->delete();
-			}
+			$model_to->delete();
 		}
 	}
 }

@@ -313,19 +313,12 @@ class ManyMany extends Relation
 		}
 		$query->execute(call_user_func(array($model_from, 'connection')));
 
-		if ( ! empty($model_to))
+		$cascade = is_null($cascade) ? $this->cascade_delete : (bool) $cascade;
+		if ($cascade and ! empty($model_to))
 		{
-			$cascade = is_null($cascade) ? $this->cascade_delete : (bool) $cascade;
 			foreach ($models_to as $m)
 			{
-				if ($cascade)
-				{
-					$m->delete();
-				}
-				else
-				{
-					$m->is_changed() and $m->save();
-				}
+				$m->delete();
 			}
 		}
 	}
