@@ -429,12 +429,12 @@ class Model implements \ArrayAccess, \Iterator
 			return static::query($options);
 		}
 		// Return all that match $options array
-		elseif ($id == 'all')
+		elseif ($id === 'all')
 		{
 			return static::query($options)->get();
 		}
 		// Return first or last row that matches $options array
-		elseif ($id == 'first' or $id == 'last')
+		elseif ($id === 'first' or $id === 'last')
 		{
 			$query = static::query($options);
 
