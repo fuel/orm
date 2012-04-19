@@ -600,42 +600,42 @@ class Model implements \ArrayAccess, \Iterator
 	/**
 	 * @var  bool  keeps track of whether it's a new object
 	 */
-	private $_is_new = true;
+	protected $_is_new = true;
 
 	/**
 	 * @var  bool  keeps to object frozen
 	 */
-	private $_frozen = false;
+	protected $_frozen = false;
 
 	/**
 	 * @var  array  keeps the current state of the object
 	 */
-	private $_data = array();
+	protected $_data = array();
 
 	/**
 	 * @var  array  keeps a copy of the object as it was retrieved from the database
 	 */
-	private $_original = array();
+	protected $_original = array();
 
 	/**
 	 * @var  array
 	 */
-	private $_data_relations = array();
+	protected $_data_relations = array();
 
 	/**
 	 * @var  array  keeps a copy of the relation ids that were originally retrieved from the database
 	 */
-	private $_original_relations = array();
+	protected $_original_relations = array();
 
 	/**
 	 * @var  array  keeps track of relations that need to be reset before saving the new ones
 	 */
-	private $_reset_relations = array();
+	protected $_reset_relations = array();
 
 	/**
 	 * @var  string  view name when used
 	 */
-	private $_view;
+	protected $_view;
 
 	/**
 	 * Constructor
