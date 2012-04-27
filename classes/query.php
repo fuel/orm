@@ -857,7 +857,7 @@ class Query
 				$s[0] === $prefix.$pk and $pk_c = $s[1];
 			}
 
-			if (is_null($row[$pk_c]))
+			if ( ! isset($row[$pk_c]))
 			{
 				return false;
 			}
