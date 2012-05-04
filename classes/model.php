@@ -106,17 +106,6 @@ class Model implements \ArrayAccess, \Iterator
 		'many_many'     => 'Orm\\ManyMany',
 	);
 
-	/**
-	 * This method is deprecated...use forge() instead.
-	 *
-	 * @deprecated until 1.2
-	 */
-	public static function factory($data = array(), $new = true)
-	{
-		logger(\Fuel::L_WARNING, 'This method is deprecated.  Please use a forge() instead.', __METHOD__);
-		return static::forge($data, $new);
-	}
-
 	public static function forge($data = array(), $new = true, $view = null)
 	{
 		return new static($data, $new, $view);

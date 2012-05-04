@@ -14,17 +14,6 @@ namespace Orm;
 
 class Query
 {
-	/**
-	 * This method is deprecated...use forge() instead.
-	 *
-	 * @deprecated until 1.2
-	 */
-	public static function factory($model, $connection = null, $options = array())
-	{
-		logger(\Fuel::L_WARNING, 'This method is deprecated.  Please use a forge() instead.', __METHOD__);
-		return static::forge($model, $connection, $options);
-	}
-
 	public static function forge($model, $connection = null, $options = array())
 	{
 		return new static($model, $connection, $options);
@@ -628,7 +617,7 @@ class Query
 			}
 		}
 
-		
+
 
 		$where_backup = $this->where;
 		if ( ! empty($this->where))
