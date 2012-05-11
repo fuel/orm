@@ -335,11 +335,17 @@ class Observer_Typing
 	 * @return  int|string
 	 * @throws  InvalidContentType
 	 */
-	public static function type_time_encode(\Fuel\Core\Date $var, array $settings)
+	public static function type_time_encode($var, array $settings)
 	{
+
+		// if needed, try to convert to \Fuel\Core\Date object
 		if ( ! $var instanceof \Fuel\Core\Date)
 		{
-			throw new InvalidContentType('Value must be an instance of the Date class.');
+			try {
+				$var = \Date::forge($var);
+			} catch (\Exception $e) {
+				throw new InvalidContentType('Conversion to Date object failed. ' . $e->getMessage());
+			}
 		}
 
 		if ($settings['data_type'] == 'time_mysql')
