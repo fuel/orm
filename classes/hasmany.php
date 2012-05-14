@@ -49,10 +49,31 @@ class HasMany extends Relation
 			next($this->key_to);
 		}
 		
+		// check for where conditions
 		foreach (\Arr::get($this->conditions, 'where', array()) as $key => $condition)
 		{
 			!is_array($condition) and $condition = array($key, '=', $condition);
 			$query->where($condition);
+		}
+
+		// check for order_by conditions
+		$order_by_conditions = \Arr::get($this->conditions, 'order_by', array());
+		// check to see how they defined the ordering. per documentation: http://docs.fuelphp.com/packages/orm/relations/intro.html#config
+		if ($order_by_conditions == array_values($order_by_conditions))
+		{
+			// defined by simple array with field names
+			foreach ($order_by_conditions as $field)
+			{
+				$query->order_by($field);
+			}
+		}
+		else
+		{
+			// defined by associative array, field_name => direction
+			foreach ($order_by_conditions as $field => $direction)
+			{
+				$query->order_by($field,$direction);
+			}
 		}
 		
 		return $query->get();
