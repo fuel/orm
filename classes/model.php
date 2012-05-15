@@ -1316,7 +1316,7 @@ class Model implements \ArrayAccess, \Iterator
 		{
 			if ($this->is_changed($key))
 			{
-				$diff[0][$key] = $this->_original[$key];
+				$diff[0][$key] = array_key_exists($key, $this->_original) ? $this->_original[$key] : null;
 				$diff[1][$key] = $val;
 			}
 		}
