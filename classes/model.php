@@ -1332,18 +1332,21 @@ class Model implements \ArrayAccess, \Iterator
 			else
 			{
 				$original_pks = $this->_original_relations[$key];
+				$new_pks = array();
 				foreach ($val as $v)
 				{
 					if ( ! in_array(($new_pk = $v->implode_pk($v)), $original_pks))
 					{
-						$diff[0][$key] = null;
-						$diff[1][$key] = $new_pk;
+						$new_pks[] = $new_pk;
 					}
 					else
 					{
 						$original_pks = array_diff($original_pks, array($new_pk));
 					}
-					isset($diff[0][$key]) ? $diff[0][$key] += $original_pks : $diff[0][$key] = $original_pks;
+				}
+				if ( ! empty($original_pks) or ! empty($new_pks)) {
+					$diff[0][$key] = empty($original_pks) ? null : $original_pks;
+					$diff[1][$key] = empty($new_pks) ? null : $new_pks;
 				}
 			}
 		}
