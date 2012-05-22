@@ -720,6 +720,7 @@ class Model implements \ArrayAccess, \Iterator
 		{
 			if (is_array($data))
 			{
+				$this->_original_relations[$rel] = array();
 				foreach ($data as $obj)
 				{
 					$this->_original_relations[$rel][] = $obj ? $obj->implode_pk($obj) : null;
