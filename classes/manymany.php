@@ -108,6 +108,15 @@ class ManyMany extends Relation
 
 		$query->_join($join);
 
+		if ($where = \Arr::get($this->conditions, 'where')) 
+		{
+			$query->where($where);
+		}
+		if ($order_by = \Arr::get($this->conditions, 'order_by'))
+		{
+			$query->order_by($order_by);
+		}
+
 		return $query->get();
 	}
 
