@@ -1576,6 +1576,18 @@ class Model implements \ArrayAccess, \Iterator
 		return $array;
 	}
 
+
+	/**
+	 * Allow converting this object to a real object
+	 *
+	 * @return  object
+	 */
+	public function to_object()
+	{
+		return (object) $this->to_array();
+	}
+
+
 	/**
 	 * Allow for getter, setter and unset methods
 	 *
