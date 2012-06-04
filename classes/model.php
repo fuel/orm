@@ -642,25 +642,31 @@ class Model implements \ArrayAccess, \Iterator
 			$new = false;
 		}
 
-		if ($new)
+		if( $new )
 		{
 			$properties = $this->properties();
 			foreach ($properties as $prop => $settings)
 			{
 				if (array_key_exists($prop, $data))
 				{
-					$this->_data[$prop] = $data[$prop];
+					$this->__set( $prop, $data[$prop] );
 				}
 				elseif (array_key_exists('default', $settings))
 				{
-					$this->_data[$prop] = $settings['default'];
+					$this->__set( $prop, $settings['default'] );
 				}
 			}
 		}
 		else
 		{
 			$this->_update_original($data);
-			$this->_data = array_merge($this->_data, $data);
+			
+			$properties = $this->properties();
+			foreach( $properties as $prop => $settings )
+			{
+				$this->__set( $prop, $data[$prop] );
+			}
+			//$this->_data = array_merge($this->_data, $data);
 
 			if ($view and array_key_exists($view, $this->views()))
 			{
@@ -768,7 +774,17 @@ class Model implements \ArrayAccess, \Iterator
 	 */
 	public function & __get($property)
 	{
-		return $this->get($property);
+		// Not a storable property
+		if( ! array_key_exists( $key, $this->properties() ) && ! static::relations( $key ) )
+			return $this->{$key};
+		// If there is a getter method
+		if( method_exists( $this, $key ) ) {
+			$reflection = new ReflectionMethod( $this, $key );
+			if( $reflection->getNumberOfParameters() == 0 )
+				return $this->{$key}();
+		}
+		// Return the primative value
+		return $this->get( $key );
 	}
 
 	/**
@@ -779,7 +795,19 @@ class Model implements \ArrayAccess, \Iterator
 	 */
 	public function __set($property, $value)
 	{
-		return $this->set($property, $value);
+		// Not a storable property
+		if( ! array_key_exists( $key, $this->properties() ) && ! static::relations( $key ) )
+			return $this->{$key} = $value;
+		// Create the method name
+		$method = sprintf( 'set_%s', $key );
+		// If there is a setter method
+		if( method_exists( $this, $method ) ) {
+			$reflection = new ReflectionMethod( $this, $method );
+			if( $reflection->getNumberOfParameters() == 1 )
+				return $this->{$method}( $value );
+		}
+		// If there is a setter method
+		return $this->set( $key, $value );
 	}
 
 	/**
