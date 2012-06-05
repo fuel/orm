@@ -1441,7 +1441,7 @@ class Model implements \ArrayAccess, \Iterator
 	public static function set_form_fields($form, $instance = null)
 	{
 		Observer_Validation::set_fields($instance instanceof static ? $instance : get_called_class(), $form);
-		$instance and $form->repopulate($instance);
+		$instance and $form->populate($instance, true);
 	}
 
 	/**
