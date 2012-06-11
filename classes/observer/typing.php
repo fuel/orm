@@ -322,9 +322,14 @@ class Observer_Typing
 	 * @param   string
 	 * @return  mixed
 	 */
-	public static function type_json_decode($var)
+	public static function type_json_decode($var, $settings)
 	{
-		return json_decode($var);
+		$assoc = false;
+		if (array_key_exists('json_assoc', $settings))
+		{
+			$assoc = (bool)$settings['json_assoc'];
+		}
+		return json_decode($var, $assoc);
 	}
 
 	/**
