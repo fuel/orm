@@ -514,10 +514,10 @@ class Model implements \ArrayAccess, \Iterator
 		}
 
 		// Otherwise, lets find stuff
-		elseif (strpos($method, 'find_') === 0)
+		elseif (preg_match('/^find_(?P<type>all|((all_by_|by_)(?P<fields>[a-z_]+)))$/', $method, $match) === 1)
 		{
-			$find_type = strncmp($method, 'find_all_by_', 12) === 0 ? 'all' : (strncmp($method, 'find_by_', 8) === 0 ? 'first' : false);
-			$fields = $find_type === 'first' ? substr($method, 8) : substr($method, 12);
+			$find_type = strncmp($match['type'], 'all', 3) === 0 ? 'all' : 'first';
+			$fields = isset($match['fields']) ? $match['fields'] : false;
 		}
 
 		// God knows, complain
@@ -528,7 +528,7 @@ class Model implements \ArrayAccess, \Iterator
 
 		$where = $or_where = array();
 
-		if (($and_parts = explode('_and_', $fields)))
+		if ($fields and ($and_parts = explode('_and_', $fields)))
 		{
 			foreach ($and_parts as $and_part)
 			{
