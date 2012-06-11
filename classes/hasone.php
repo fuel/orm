@@ -50,6 +50,14 @@ class HasOne extends Relation
 			$query->where(current($this->key_to), $from->{$key});
 			next($this->key_to);
 		}
+		if ($where = \Arr::get($this->conditions, 'where')) 
+		{
+			$query->where($where);
+		}
+		if ($order_by = \Arr::get($this->conditions, 'order_by'))
+		{
+			$query->order_by($order_by);
+		}
 		return $query->get_one();
 	}
 
