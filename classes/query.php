@@ -1047,7 +1047,7 @@ class Query
 			') AS count_result');
 
 		// Remove the current select and
-		$query = call_user_func('DB::select', $columns);
+		$query = \DB::select($columns);
 
 		// Set from table
 		$query->from(array(call_user_func($this->model.'::table'), $this->alias));
@@ -1081,7 +1081,7 @@ class Query
 			') AS max_result');
 
 		// Remove the current select and
-		$query = call_user_func('DB::select', $columns);
+		$query = \DB::select($columns);
 
 		// Set from table
 		$query->from(array(call_user_func($this->model.'::table'), $this->alias));
@@ -1115,7 +1115,7 @@ class Query
 			') AS min_result');
 
 		// Remove the current select and
-		$query = call_user_func('DB::select', $columns);
+		$query = \DB::select($columns);
 
 		// Set from table
 		$query->from(array(call_user_func($this->model.'::table'), $this->alias));
