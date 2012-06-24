@@ -404,6 +404,40 @@ class Model implements \ArrayAccess, \Iterator
 	}
 
 	/**
+	 * Register an observer
+	 *
+	 * @param	string	class name of the observer (including namespace)
+	 * @param	mixed	observer options
+	 *
+	 * @return	void
+	 */
+	public static function register_observer($name, $options = null)
+	{
+		$class = get_called_class();
+		$new_observer = is_null($options) ? array($name) : array($name => $options);
+
+		static::$_observers_cached[$class] = static::observers() + $new_observer;
+	}
+
+	/**
+	 * Unregister an observer
+	 *
+	 * @param string class name of the observer (including namespace)
+	 * @return void
+	 */
+	public static function unregister_observer($name)
+	{
+		$class = get_called_class();
+		foreach (static::observers() as $key => $value)
+		{
+			if ((is_array($value) and $key == $name) or $value == $name)
+			{
+				unset(static::$_observers_cached[$class][$key]);
+			}
+		}
+	}
+
+	/**
 	 * Find one or more entries
 	 *
 	 * @param   mixed
@@ -853,7 +887,7 @@ class Model implements \ArrayAccess, \Iterator
 				{
 					$this->_data_relations[$property] = $rel->get($this);
 				}
-				
+
 				$this->_update_original_relations(array($property));
 			}
 			return $this->_data_relations[$property];
