@@ -911,34 +911,50 @@ class Model implements \ArrayAccess, \Iterator
 	 * object
 	 *
 	 * @access  public
-	 * @param   string  $property
-	 * @param   string  $value
+	 * @param   string|array  $property
+	 * @param   string  $value in case $property is a string
 	 * @return  Orm\Model
 	 */
-	public function set($property, $value)
+	public function set($property, $value = null)
 	{
 		if ($this->_frozen)
 		{
 			throw new FrozenObject('No changes allowed.');
 		}
 
-		if (in_array($property, static::primary_key()) and $this->{$property} !== null)
+		if (is_array($property))
 		{
-			throw new \FuelException('Primary key cannot be changed.');
-		}
-		if (array_key_exists($property, static::properties()))
-		{
-			$this->_data[$property] = $value;
-		}
-		elseif (static::relations($property))
-		{
-			$this->is_fetched($property) or $this->_reset_relations[$property] = true;
-			$this->_data_relations[$property] = $value;
+			foreach ($property as $p => $v)
+			{
+				$this->set($p, $v);
+			}
 		}
 		else
 		{
-			throw new \OutOfBoundsException('Property "'.$property.'" not found for '.get_called_class().'.');
+			if (func_num_args() < 2)
+			{
+				throw new \InvalidArgumentException('You need to pass both a property name and a value to set().');
+			}
+
+			if (in_array($property, static::primary_key()) and $this->{$property} !== null)
+			{
+				throw new \FuelException('Primary key cannot be changed.');
+			}
+			if (array_key_exists($property, static::properties()))
+			{
+				$this->_data[$property] = $value;
+			}
+			elseif (static::relations($property))
+			{
+				$this->is_fetched($property) or $this->_reset_relations[$property] = true;
+				$this->_data_relations[$property] = $value;
+			}
+			else
+			{
+				throw new \OutOfBoundsException('Property "'.$property.'" not found for '.get_called_class().'.');
+			}
 		}
+
 		return $this;
 	}
 
@@ -952,15 +968,12 @@ class Model implements \ArrayAccess, \Iterator
 	 * @access  public
 	 * @param   array  $values
 	 * @return  Orm\Model
+	 *
+	 * @deprecated since 1.3, use set() instead
 	 */
 	public function values(Array $data)
 	{
-		foreach ($data as $property => $value)
-		{
-			$this->set($property, $value);
-		}
-
-		return $this;
+		return $this->set($data);
 	}
 
 	/**
