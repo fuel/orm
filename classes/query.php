@@ -869,7 +869,6 @@ class Query
 				if (in_array($f, $primary_key))
 				{
 					$obj[$f] = \Orm\Observer_Typing::typecast($f, $obj[$f], call_user_func($model.'::property', $f));
-					var_dump($f, $obj[$f]);
 				}
 				unset($row[$s[1]]);
 			}
