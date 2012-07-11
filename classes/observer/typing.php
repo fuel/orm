@@ -122,6 +122,49 @@ class Observer_Typing
 	}
 
 	/**
+	 * Typecast a single column value based on the model properties for that column
+	 *
+	 * @param  string  $column	name of the column
+	 * @param  string  $value	value
+	 * @param  string  $type	column settings from the model
+	 */
+	public static function typecast($column, $value, $settings)
+	{
+		if ($value === null) // add check if null is allowed
+		{
+			if (array_key_exists('null', $settings) and $settings['null'] === false)
+			{
+				throw new InvalidContentType('The property "'.$column.'" cannot be NULL.');
+			}
+		}
+
+		if (isset($settings['data_type']))
+		{
+			foreach (static::$type_methods as $match => $method)
+			{
+				if (is_array($method))
+				{
+					if ( ! empty($method['before']))
+					{
+						$method = $method['before'];
+					}
+					else
+					{
+						continue;
+					}
+				}
+				if ($method and preg_match($match, $settings['data_type']) > 0)
+				{
+					$value = call_user_func($method, $value, $settings);
+					break;
+				}
+			}
+		}
+
+		return $value;
+	}
+
+	/**
 	 * Casts to string when necessary and checks if within max length
 	 *
 	 * @throws  InvalidContentType

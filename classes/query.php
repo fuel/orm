@@ -864,7 +864,13 @@ class Query
 			$obj = array();
 			foreach ($select as $s)
 			{
-				$obj[substr($s[0], strpos($s[0], '.') + 1)] = $row[$s[1]];
+				$f = substr($s[0], strpos($s[0], '.') + 1);
+				$obj[$f] = $row[$s[1]];
+				if (in_array($f, $primary_key))
+				{
+					$obj[$f] = \Orm\Observer_Typing::typecast($f, $obj[$f], call_user_func($model.'::property', $f));
+					var_dump($f, $obj[$f]);
+				}
 				unset($row[$s[1]]);
 			}
 			$obj = $model::forge($obj, false, $this->view ? $this->view['_name'] : null);
