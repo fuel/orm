@@ -973,6 +973,7 @@ class Model implements \ArrayAccess, \Iterator
 	 */
 	public function values(Array $data)
 	{
+		logger(\Fuel::L_WARNING, 'This method is deprecated.  Please use a set() instead.', __METHOD__);
 		return $this->set($data);
 	}
 
