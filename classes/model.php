@@ -1118,7 +1118,7 @@ class Model implements \ArrayAccess, \Iterator
 		$this->observe('before_update');
 
 		// Create the query and limit to primary key(s)
-		$query       = Query::forge(get_called_class(), static::connection())->limit(1);
+		$query       = Query::forge(get_called_class(), static::connection());
 		$primary_key = static::primary_key();
 		$properties  = array_keys(static::properties());
 		foreach ($primary_key as $pk)
