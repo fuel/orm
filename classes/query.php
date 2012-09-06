@@ -746,7 +746,7 @@ class Query
 							$v_ob = $m_name.'.'.$v_ob;
 						}
 
-						$order_by[] = array($v_ob, 'ASC');
+						$order_by[] = array($v_ob, $v_dir);
 					}
 					else
 					{
