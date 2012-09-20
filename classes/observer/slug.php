@@ -42,16 +42,19 @@ class Observer_Slug extends Observer
 	 */
 	public function before_insert(Model $obj)
 	{
+		// determine the slug
 		$properties = (array) $this->_source;
 		$source = '';
 		foreach ($properties as $property)
 		{
 			$source .= '-'.$obj->{$property};
 		}
-
 		$slug = \Inflector::friendly_title(substr($source, 1), '-', true);
+
+		// do we have records with this slug?
 		$same = $obj->query()->where($this->_property, 'like', $slug.'%')->get();
 
+		// make sure our slug is unique
 		if ( ! empty($same))
 		{
 			$max = -1;
@@ -69,5 +72,26 @@ class Observer_Slug extends Observer
 		}
 
 		$obj->{$this->_property} = $slug;
+	}
+
+	/**
+	 * Creates a new unique slug and update the object
+	 *
+	 * @param   Model  The object
+	 * @return  void
+	 */
+	public function before_update(Model $obj)
+	{
+		// determine the slug
+		$properties = (array) $this->_source;
+		$source = '';
+		foreach ($properties as $property)
+		{
+			$source .= '-'.$obj->{$property};
+		}
+		$slug = \Inflector::friendly_title(substr($source, 1), '-', true);
+
+		// update it if it's different from the current one
+		$obj->{$this->_property} === $slug or $this->before_insert($obj);
 	}
 }
