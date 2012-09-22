@@ -1616,9 +1616,14 @@ class Model implements \ArrayAccess, \Iterator
 	 *
 	 * @return  array
 	 */
-	public function to_array()
+	public function to_array($recurse = false)
 	{
+		static $references = array();
+
 		$array = array();
+
+		// reset the references array on first call
+		$recurse or $references = array();
 
 		// make sure all data is scalar or array
 		foreach ($this->_data as $key => $val)
@@ -1643,14 +1648,29 @@ class Model implements \ArrayAccess, \Iterator
 			if (is_array($rel))
 			{
 				$array[$name] = array();
-				foreach ($rel as $id => $r)
+				if ( ! empty($rel))
 				{
-					$array[$name][$id] = $r->to_array();
+					foreach ($rel as $id => $r)
+					{
+						$array[$name][$id] = $r->to_array(true);
+					}
+					$references[] = get_class($r);
 				}
 			}
 			else
 			{
-				$array[$name] = is_null($rel) ? null : $rel->to_array();
+				if ( ! in_array(get_class($rel), $references))
+				{
+					if (is_null($rel))
+					{
+						$array[$name] = null;
+					}
+					else
+					{
+						$array[$name] = $rel->to_array(true);
+						$references[] = get_class($rel);
+					}
+				}
 			}
 		}
 
