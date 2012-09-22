@@ -140,6 +140,8 @@ class Query
 	 */
 	public function select()
 	{
+		static $field_filter = array();
+
 		$fields = func_get_args();
 
 		if (empty($fields))
@@ -154,7 +156,7 @@ class Query
 				}
 				foreach ($fields as $field)
 				{
-					$this->select($field);
+					in_array($field, $field_filter) or $this->select($field);
 				}
 
 				if ($this->view)
@@ -195,7 +197,19 @@ class Query
 		$i = count($this->select);
 		foreach ($fields as $val)
 		{
-			$this->select[$this->alias.'_c'.$i++] = (strpos($val, '.') === false ? $this->alias.'.' : '').$val;
+			is_array($val) or $val = array($val => true);
+
+			foreach ($val as $field => $include)
+			{
+				if ($include)
+				{
+					$this->select[$this->alias.'_c'.$i++] = (strpos($field, '.') === false ? $this->alias.'.' : '').$field;
+				}
+				else
+				{
+					$field_filter[] = $field;
+				}
+			}
 		}
 
 		return $this;

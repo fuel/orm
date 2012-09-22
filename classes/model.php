@@ -899,7 +899,9 @@ class Model implements \ArrayAccess, \Iterator
 		{
 			if ( ! array_key_exists($property, $this->_data))
 			{
-				$this->_data[$property] = null;
+				// avoid a notice, we're returning by reference
+				$var = null;
+				return $var;
 			}
 
 			return $this->_data[$property];
@@ -1155,7 +1157,7 @@ class Model implements \ArrayAccess, \Iterator
 		// Set all current values
 		foreach ($properties as $p)
 		{
-			if ( ! in_array($p, $primary_key))
+			if ( ! in_array($p, $primary_key) and (array_key_exists($p, $this->_data) or array_key_exists($p, $this->_original)))
 			{
 				$query->set($p, isset($this->_data[$p]) ? $this->_data[$p] : null);
 			}
@@ -1319,11 +1321,12 @@ class Model implements \ArrayAccess, \Iterator
 		$properties = static::properties();
 		$relations = static::relations();
 		$property = (array) $property ?: array_merge(array_keys($properties), array_keys($relations));
+
 		foreach ($property as $p)
 		{
 			if (isset($properties[$p]))
 			{
-				if ( ! array_key_exists($p, $this->_original) or $this->{$p} !== $this->_original[$p])
+				if ((array_key_exists($p, $this->_original) and $this->{$p} !== $this->_original[$p]) or array_key_exists($p, $this->_data))
 				{
 					return true;
 				}
