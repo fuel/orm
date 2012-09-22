@@ -883,6 +883,18 @@ class Query
 			}
 			$obj = $model::forge($obj, false, $this->view ? $this->view['_name'] : null);
 		}
+		else
+		{
+			// add fields not present in the already cached version
+			foreach ($select as $s)
+			{
+				$f = substr($s[0], strpos($s[0], '.') + 1);
+				if ($obj->{$f} === null and $row[$s[1]] !== null)
+				{
+					$obj->{$f} = $row[$s[1]];
+				}
+			}
+		}
 
 		// if the result to be generated is an array and the current object is not yet in there
 		if (is_array($result) and ! array_key_exists($pk, $result))
