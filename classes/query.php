@@ -598,26 +598,6 @@ class Query
 			$query->offset($this->offset);
 		}
 
-		// Get the order, if none set see if we have an order_by condition set
-		empty($this->order_by) and $this->order_by(call_user_func($this->model.'::condition', 'order_by'));
-		$order_by = $this->order_by;
-
-		// create a backup for subquery
-		$order_by_backup = $order_by;
-		if ( ! empty($order_by))
-		{
-			foreach ($order_by as $key => $ob)
-			{
-				if ( ! $ob[0] instanceof \Fuel\Core\Database_Expression and strpos($ob[0], $this->alias.'.') === 0)
-				{
-					$query->order_by($type == 'select' ? $ob[0] : substr($ob[0], strlen($this->alias.'.')), $ob[1]);
-
-					// order by has been updated to Database_Query_Builder_Where instance, set it to empty to avoid duplicate entries
-					unset($order_by[$key]);
-				}
-			}
-		}
-
 		$this->where(call_user_func($this->model.'::condition', 'where'));
 
 		$where_backup = $this->where;
@@ -692,9 +672,6 @@ class Query
 			// make current query subquery of ultimate query
 			$new_query = call_user_func_array('DB::select', $columns);
 			$query = $new_query->from(array($query, $this->alias));
-
-			// set order_by from backup
-			$order_by = $order_by_backup;
 		}
 		else
 		{
@@ -731,6 +708,10 @@ class Query
 			}
 		}
 
+		// Get the order, if none set see if we have an order_by condition set
+		empty($this->order_by) and $this->order_by(call_user_func($this->model.'::condition', 'order_by'));
+		$order_by = $order_by_backup = $this->order_by;
+
 		// Add any additional order_by and where clauses from the relations
 		foreach ($models as $m_name => $m)
 		{
@@ -761,6 +742,7 @@ class Query
 				$this->_parse_where_array($m['where'], $m_name.'.');
 			}
 		}
+
 		// Get the order
 		if ( ! empty($order_by))
 		{
@@ -768,15 +750,22 @@ class Query
 			{
 				if ( ! $ob[0] instanceof \Fuel\Core\Database_Expression)
 				{
-					// try to rewrite conditions on the relations to their table alias
-					$dotpos = strrpos($ob[0], '.');
-					$relation = substr($ob[0], 0, $dotpos);
-					if ($dotpos > 0 and array_key_exists($relation, $models))
+					if (strpos($ob[0], $this->alias.'.') === 0)
 					{
-						$ob[0] = $models[$relation]['table'][1].substr($ob[0], $dotpos);
+						// order by on the current model
+						$type == 'select' or $ob[0] = substr($ob[0], strlen($this->alias.'.'));
+					}
+					else
+					{
+						// try to rewrite conditions on the relations to their table alias
+						$dotpos = strrpos($ob[0], '.');
+						$relation = substr($ob[0], 0, $dotpos);
+						if ($dotpos > 0 and array_key_exists($relation, $models))
+						{
+							$ob[0] = $models[$relation]['table'][1].substr($ob[0], $dotpos);
+						}
 					}
 				}
-
 				$query->order_by($ob[0], $ob[1]);
 			}
 		}
@@ -804,6 +793,7 @@ class Query
 		}
 
 		$this->where = $where_backup;
+		$this->order_by = $order_by_backup;
 
 		// Set the row limit and offset, these are applied to the outer query when a subquery
 		// is used or overwrite limit/offset when it's a normal query
