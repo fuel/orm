@@ -89,6 +89,11 @@ class Query
 	 */
 	protected $values = array();
 
+	/**
+	 * @var  array  select filters
+	 */
+	protected $select_filter = array();
+
 	protected function __construct($model, $connection, $options, $table_alias = null)
 	{
 		$this->model = $model;
@@ -140,8 +145,6 @@ class Query
 	 */
 	public function select()
 	{
-		static $field_filter = array();
-
 		$fields = func_get_args();
 
 		if (empty($fields))
@@ -156,7 +159,7 @@ class Query
 				}
 				foreach ($fields as $field)
 				{
-					in_array($field, $field_filter) or $this->select($field);
+					in_array($field, $this->select_filter) or $this->select($field);
 				}
 
 				if ($this->view)
@@ -207,7 +210,7 @@ class Query
 				}
 				else
 				{
-					$field_filter[] = $field;
+					$this->select_filter[] = $field;
 				}
 			}
 		}
