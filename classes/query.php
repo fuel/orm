@@ -612,7 +612,8 @@ class Query
 			$query->offset($this->offset);
 		}
 
-		$this->where(call_user_func($this->model.'::condition', 'where'));
+		$where_conditions = call_user_func($this->model.'::condition', 'where');
+		empty($where_conditions) or $this->where($where_conditions);
 
 		$where_backup = $this->where;
 		if ( ! empty($this->where))
