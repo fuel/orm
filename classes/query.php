@@ -598,7 +598,8 @@ class Query
 			$query->offset($this->offset);
 		}
 
-		// Get the order
+		// Get the order, if none set see if we have an order_by condition set
+		empty($this->order_by) and $this->order_by(call_user_func($this->model.'::condition', 'order_by'));
 		$order_by = $this->order_by;
 
 		// create a backup for subquery
@@ -617,7 +618,7 @@ class Query
 			}
 		}
 
-
+		$this->where(call_user_func($this->model.'::condition', 'where'));
 
 		$where_backup = $this->where;
 		if ( ! empty($this->where))

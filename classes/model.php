@@ -150,6 +150,34 @@ class Model implements \ArrayAccess, \Iterator
 	}
 
 	/**
+	 * Get a defined condition for this class
+	 *
+	 * @param	string	type of condition to return
+	 * @return  array
+	 */
+	public static function condition($type = null)
+	{
+		$class = get_called_class();
+
+		// a specific condition requested?
+		if (property_exists($class, '_conditions'))
+		{
+			if ($type !== null)
+			{
+				return isset(static::$_conditions[$type]) ? static::$_conditions[$type] : array();
+			}
+			else
+			{
+				return static::$_conditions;
+			}
+		}
+		else
+		{
+			return array();
+		}
+	}
+
+	/**
 	 * Attempt to retrieve an earlier loaded object
 	 *
 	 * @param   array|Model  $obj
