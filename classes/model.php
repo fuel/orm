@@ -1631,9 +1631,10 @@ class Model implements \ArrayAccess, \Iterator
 	/**
 	 * Allow converting this object to an array
 	 *
+	 * @param	bool	whether or not to include the custom data array
 	 * @return  array
 	 */
-	public function to_array($recurse = false)
+	public function to_array($custom = false, $recurse = false)
 	{
 		static $references = array();
 
@@ -1643,20 +1644,23 @@ class Model implements \ArrayAccess, \Iterator
 		$recurse or $references = array();
 
 		// make sure all data is scalar or array
-		foreach ($this->_custom_data as $key => $val)
+		if ($custom)
 		{
-			if (is_object($val))
+			foreach ($this->_custom_data as $key => $val)
 			{
-				if (method_exists($val, '__toString'))
+				if (is_object($val))
 				{
-					$val = (string) $val;
+					if (method_exists($val, '__toString'))
+					{
+						$val = (string) $val;
+					}
+					else
+					{
+						$val = get_object_vars($val);
+					}
 				}
-				else
-				{
-					$val = get_object_vars($val);
-				}
+				$array[$key] = $val;
 			}
-			$array[$key] = $val;
 		}
 
 		// make sure all data is scalar or array
@@ -1686,7 +1690,7 @@ class Model implements \ArrayAccess, \Iterator
 				{
 					foreach ($rel as $id => $r)
 					{
-						$array[$name][$id] = $r->to_array(true);
+						$array[$name][$id] = $r->to_array($custom, true);
 					}
 					$references[] = get_class($r);
 				}
@@ -1701,7 +1705,7 @@ class Model implements \ArrayAccess, \Iterator
 					}
 					else
 					{
-						$array[$name] = $rel->to_array(true);
+						$array[$name] = $rel->to_array($custom, true);
 						$references[] = get_class($rel);
 					}
 				}
