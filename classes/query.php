@@ -1043,15 +1043,28 @@ class Query
 	 */
 	public function get_one()
 	{
-		// get current limit and save it while fetching the first result
+		// save the current limits
 		$limit = $this->limit;
-		$this->limit = 1;
+		$rows_limit = $this->rows_limit;
+
+		// if a row limit is set, use that
+		if ($this->rows_limit !== null)
+		{
+			$this->limit = null;
+			$this->rows_limit = 1;
+		}
+		else
+		{
+			$this->limit = 1;
+			$this->rows_limit = null;
+		}
 
 		// get the result using normal find
 		$result = $this->get();
 
-		// put back the old limit
+		// put back the old limits
 		$this->limit = $limit;
+		$this->rows_limit = $rows_limit;
 
 		return $result ? reset($result) : null;
 	}
