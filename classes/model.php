@@ -664,6 +664,11 @@ class Model implements \ArrayAccess, \Iterator
 	protected $_data = array();
 
 	/**
+	 * @var  array  storage for custom properties on this object
+	 */
+	protected $_custom_data = array();
+
+	/**
 	 * @var  array  keeps a copy of the object as it was retrieved from the database
 	 */
 	protected $_original = array();
@@ -846,7 +851,7 @@ class Model implements \ArrayAccess, \Iterator
 	}
 
 	/**
-	 * Check whether a property exists, only return true for table columns and relations
+	 * Check whether a property exists, only return true for table columns, relations and custom data
 	 *
 	 * @param   string  $property
 	 * @return  bool
@@ -861,12 +866,16 @@ class Model implements \ArrayAccess, \Iterator
 		{
 			return true;
 		}
+		elseif (array_key_exists($property, $this->_custom_data))
+		{
+			return true;
+		}
 
 		return false;
 	}
 
 	/**
-	 * Empty a property or relation
+	 * Empty a property, relation or custom data
 	 *
 	 * @param   string  $property
 	 */
@@ -879,6 +888,10 @@ class Model implements \ArrayAccess, \Iterator
 		elseif ($rel = static::relations($property))
 		{
 			$this->_data_relations[$property] = $rel->singular ? null : array();
+		}
+		elseif (array_key_exists($property, $this->_custom_data))
+		{
+			unset($this->_custom_data[$property]);
 		}
 	}
 
@@ -926,6 +939,10 @@ class Model implements \ArrayAccess, \Iterator
 		elseif ($this->_view and in_array($property, static::$_views_cached[get_class($this)][$this->_view]['columns']))
 		{
 			return $this->_data[$property];
+		}
+		elseif (array_key_exists($property, $this->_custom_data))
+		{
+				return $this->_custom_data[$property];
 		}
 		else
 		{
@@ -981,7 +998,7 @@ class Model implements \ArrayAccess, \Iterator
 			}
 			else
 			{
-				throw new \OutOfBoundsException('Property "'.$property.'" not found for '.get_called_class().'.');
+				$this->_custom_data[$property] = $value;
 			}
 		}
 
@@ -1571,7 +1588,7 @@ class Model implements \ArrayAccess, \Iterator
 
 	public function rewind()
 	{
-		$this->_iterable = array_merge($this->_data, $this->_data_relations);
+		$this->_iterable = array_merge($this->_custom_data, $this->_data, $this->_data_relations);
 		reset($this->_iterable);
 	}
 
@@ -1624,6 +1641,23 @@ class Model implements \ArrayAccess, \Iterator
 
 		// reset the references array on first call
 		$recurse or $references = array();
+
+		// make sure all data is scalar or array
+		foreach ($this->_custom_data as $key => $val)
+		{
+			if (is_object($val))
+			{
+				if (method_exists($val, '__toString'))
+				{
+					$val = (string) $val;
+				}
+				else
+				{
+					$val = get_object_vars($val);
+				}
+			}
+			$array[$key] = $val;
+		}
 
 		// make sure all data is scalar or array
 		foreach ($this->_data as $key => $val)
