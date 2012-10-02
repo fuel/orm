@@ -1174,9 +1174,20 @@ class Model implements \ArrayAccess, \Iterator
 		// Set all current values
 		foreach ($properties as $p)
 		{
+			if ( ! in_array($p, $primary_key))
+			{
+				if (array_key_exists($p, $this->_original))
+				{
+					$this->{$p} !== $this->_original[$p] and $query->set($p, isset($this->_data[$p]) ? $this->_data[$p] : null);
+				}
+				else
+				{
+					array_key_exists($p, $this->_data) and $query->set($p, $this->_data[$p]);
+				}
+			}
+
 			if ( ! in_array($p, $primary_key) and (array_key_exists($p, $this->_data) or array_key_exists($p, $this->_original)))
 			{
-				$query->set($p, isset($this->_data[$p]) ? $this->_data[$p] : null);
 			}
 		}
 
@@ -1343,9 +1354,19 @@ class Model implements \ArrayAccess, \Iterator
 		{
 			if (isset($properties[$p]))
 			{
-				if ((array_key_exists($p, $this->_original) and $this->{$p} !== $this->_original[$p]) or array_key_exists($p, $this->_data))
+				if (array_key_exists($p, $this->_original))
 				{
-					return true;
+					if ($this->{$p} !== $this->_original[$p])
+					{
+						return true;
+					}
+				}
+				else
+				{
+					if (array_key_exists($p, $this->_data))
+					{
+						return true;
+					}
 				}
 			}
 			elseif (isset($relations[$p]))
