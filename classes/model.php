@@ -1343,7 +1343,7 @@ class Model implements \ArrayAccess, \Iterator
 		{
 			if (isset($properties[$p]))
 			{
-				if ((array_key_exists($p, $this->_original) and $this->{$p} !== $this->_original[$p]) or array_key_exists($p, $this->_data))
+				if ((array_key_exists($p, $this->_original) and $this->{$p} !== $this->_original[$p]))
 				{
 					return true;
 				}
