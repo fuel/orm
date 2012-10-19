@@ -88,7 +88,7 @@ class Observer_Validation extends Observer
 			{
 				foreach ($settings['form']['options'] as $key => $value)
 				{
-					is_array($value) or $settings['form']['options'][$key] = \Lang::get($value) ?: $value;
+					is_array($value) or $settings['form']['options'][$key] = \Lang::get($value, array(), false) ?: $value;
 				}
 			}
 
@@ -96,7 +96,7 @@ class Observer_Validation extends Observer
 			$attributes = isset($settings['form']) ? $settings['form'] : array();
 			// label is either set in property setting, as part of form attributes or defaults to fieldname
 			$label = isset($settings['label']) ? $settings['label'] : (isset($attributes['label']) ? $attributes['label'] : $p);
-			$label = \Lang::get($label) ?: $label;
+			$label = \Lang::get($label, array(), false) ?: $label;
 
 			// create the field and add validation rules
 			$field = $fieldset->add($p, $label, $attributes);
