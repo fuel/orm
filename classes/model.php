@@ -60,6 +60,7 @@ class Model implements \ArrayAccess, \Iterator
 	// protected static $_belongs_to;
 	// protected static $_has_many;
 	// protected static $_many_many;
+	// protected static $_eav;
 
 	/**
 	 * @var  array  name or names of the primary keys
@@ -896,6 +897,62 @@ class Model implements \ArrayAccess, \Iterator
 	}
 
 	/**
+	 * Allow for getter, setter and unset methods
+	 *
+	 * @param   string  $method
+	 * @param   array   $args
+	 * @return  mixed
+	 * @throws  \BadMethodCallException
+	 */
+	public function __call($method, $args)
+	{
+		if (substr($method, 0, 4) == 'get_')
+		{
+			return $this->get(substr($method, 4));
+		}
+		elseif (substr($method, 0, 4) == 'set_')
+		{
+			return $this->set(substr($method, 4), reset($args));
+		}
+		elseif (substr($method, 0, 6) == 'unset_')
+		{
+			return $this->__unset(substr($method, 6));
+		}
+
+		// Throw an exception
+		throw new \BadMethodCallException('Call to undefined method '.get_class($this).'::'.$method.'()');
+	}
+
+	/**
+	 * Allow object cloning to new object
+	 */
+	public function __clone()
+	{
+		// Reset primary keys
+		foreach (static::$_primary_key as $pk)
+		{
+			$this->_data[$pk] = null;
+		}
+
+		// This is a new object
+		$this->_is_new = true;
+		$this->_original = array();
+		$this->_original_relations = array();
+
+		// Cleanup relations
+		foreach ($this->relations() as $name => $rel)
+		{
+			// singular relations (hasone, belongsto) can't be copied, neither can HasMany
+			if ($rel->singular or $rel instanceof HasMany)
+			{
+				unset($this->_data_relations[$name]);
+			}
+		}
+
+		$this->observe('after_clone');
+	}
+
+	/**
 	 * Get
 	 *
 	 * Gets a property or
@@ -935,6 +992,10 @@ class Model implements \ArrayAccess, \Iterator
 				$this->_update_original_relations(array($property));
 			}
 			return $this->_data_relations[$property];
+		}
+		elseif ($value = $this->_get_eav($property))
+		{
+			return $value;
 		}
 		elseif ($this->_view and in_array($property, static::$_views_cached[get_class($this)][$this->_view]['columns']))
 		{
@@ -996,7 +1057,7 @@ class Model implements \ArrayAccess, \Iterator
 				$this->is_fetched($property) or $this->_reset_relations[$property] = true;
 				$this->_data_relations[$property] = $value;
 			}
-			else
+			elseif ( ! $this->_set_eav($property, $value))
 			{
 				$this->_custom_data[$property] = $value;
 			}
@@ -1522,36 +1583,6 @@ class Model implements \ArrayAccess, \Iterator
 	}
 
 	/**
-	 * Allow object cloning to new object
-	 */
-	public function __clone()
-	{
-		// Reset primary keys
-		foreach (static::$_primary_key as $pk)
-		{
-			$this->_data[$pk] = null;
-		}
-
-		// This is a new object
-		$this->_is_new = true;
-		$this->_original = array();
-		$this->_original_relations = array();
-
-		// Cleanup relations
-		foreach ($this->relations() as $name => $rel)
-		{
-			// singular relations (hasone, belongsto) can't be copied, neither can HasMany
-			if ($rel->singular or $rel instanceof HasMany)
-			{
-				unset($this->_data_relations[$name]);
-			}
-		}
-
-		$this->observe('after_clone');
-	}
-
-
-	/**
 	 * Method for use with Fieldset::add_model()
 	 *
 	 * @param   Fieldset     Fieldset instance to add fields to
@@ -1563,75 +1594,6 @@ class Model implements \ArrayAccess, \Iterator
 		$instance and $form->populate($instance, true);
 	}
 
-	/**
-	 * Implementation of ArrayAccess
-	 */
-
-	public function offsetSet($offset, $value)
-	{
-		try
-		{
-			$this->__set($offset, $value);
-		}
-		catch (\Exception $e)
-		{
-			return false;
-		}
-	}
-
-	public function offsetExists($offset)
-	{
-		return $this->__isset($offset);
-	}
-
-	public function offsetUnset($offset)
-	{
-		$this->__unset($offset);
-	}
-
-	public function offsetGet($offset)
-	{
-		try
-		{
-			return $this->__get($offset);
-		}
-		catch (\Exception $e)
-		{
-			return false;
-		}
-	}
-
-	/**
-	 * Implementation of Iterable
-	 */
-
-	protected $_iterable = array();
-
-	public function rewind()
-	{
-		$this->_iterable = array_merge($this->_custom_data, $this->_data, $this->_data_relations);
-		reset($this->_iterable);
-	}
-
-	public function current()
-	{
-		return current($this->_iterable);
-	}
-
-	public function key()
-	{
-		return key($this->_iterable);
-	}
-
-	public function next()
-	{
-		return next($this->_iterable);
-	}
-
-	public function valid()
-	{
-		return key($this->_iterable) !== null;
-	}
 
 	/**
 	 * Allow populating this object from an array
@@ -1747,31 +1709,188 @@ class Model implements \ArrayAccess, \Iterator
 		return (object) $this->to_array();
 	}
 
+	/**
+	 * EAV attribute getter
+	 *
+	 * @param   string  $attribute, the attribute value to get
+	 *
+	 * @return  mixed
+	 * @throws	OutOfBoundsException if the defined EAV relation does not exist or of the wrong type
+	 */
+	protected function _get_eav($attribute)
+	{
+		// get the current class name
+		$class = get_called_class();
+
+		// don't do anything unless we actually have an EAV container
+		if (property_exists($class, '_eav'))
+		{
+			// loop through the defined EAV containers
+			foreach (static::$_eav as $rel => $settings)
+			{
+				// normalize the container definition, could be string or array
+				if (is_string($settings))
+				{
+					$rel = $settings;
+					$settings = array();
+				}
+
+				// fetch the relation object for this EAV container
+				if ( ! $rel = static::relations($rel))
+				{
+					throw new \OutOfBoundsException('EAV container defines a relation that does not exist in '.get_called_class().'.');
+				}
+
+				// EAV containers must be of the "Many type"
+				if ($rel instanceOf \Orm\HasOne or $rel instanceOf \Orm\BelongsTo )
+				{
+					throw new \OutOfBoundsException('EAV containers can only be defined on "HasMany" or "ManyMany" relations in '.get_called_class().'.');
+				}
+
+				// determine attribute and value column names
+				$attr = isset($settings['attribute']) ? $settings['attribute'] : 'attribute';
+				$val = isset($settings['value']) ? $settings['value'] : 'value';
+
+				// loop over the resultset
+				foreach ($this->{$rel->name} as $key => $record)
+				{
+					// and return the value if found
+					if ($record->{$attr} === $attribute)
+					{
+						return $record->{$val};
+					}
+				}
+			}
+		}
+
+		return false;
+	}
 
 	/**
-	 * Allow for getter, setter and unset methods
+	 * EAV attribute setter
 	 *
-	 * @param   string  $method
-	 * @param   array   $args
+	 * @param   string  $attribute
+	 * @param   string  $value
+	 *
 	 * @return  mixed
-	 * @throws  \BadMethodCallException
 	 */
-	public function __call($method, $args)
+	protected function _set_eav($attribute, $value)
 	{
-		if (substr($method, 0, 4) == 'get_')
+		// get the current class name
+		$class = get_called_class();
+
+		// don't do anything unless we actually have an EAV container
+		if (property_exists($class, '_eav'))
 		{
-			return $this->get(substr($method, 4));
-		}
-		elseif (substr($method, 0, 4) == 'set_')
-		{
-			return $this->set(substr($method, 4), reset($args));
-		}
-		elseif (substr($method, 0, 6) == 'unset_')
-		{
-			return $this->__unset(substr($method, 6));
+			// loop through the defined EAV containers
+			foreach (static::$_eav as $rel => $settings)
+			{
+				// normalize the container definition, could be string or array
+				if (is_string($settings))
+				{
+					$rel = $settings;
+					$settings = array();
+				}
+
+				// fetch the relation object for this EAV container
+				if ( ! $rel = static::relations($rel))
+				{
+					throw new \OutOfBoundsException('EAV container defines a relation that does not exist in '.get_called_class().'.');
+				}
+
+				// EAV containers must be of the "Many type"
+				if ($rel instanceOf \Orm\HasOne or $rel instanceOf \Orm\BelongsTo )
+				{
+					throw new \OutOfBoundsException('EAV containers can only be defined on "HasMany" or "ManyMany" relations in '.get_called_class().'.');
+				}
+
+				// determine attribute and value column names
+				$attr = isset($settings['attribute']) ? $settings['attribute'] : 'attribute';
+				$val = isset($settings['value']) ? $settings['value'] : 'value';
+
+				// loop over the resultset
+				foreach ($this->{$rel->name} as $key => $record)
+				{
+					if ($record->{$attr} === $attribute)
+					{
+						$record->{$val} = $value;
+						return true;
+					}
+				}
+			}
 		}
 
-		// Throw an exception
-		throw new \BadMethodCallException('Call to undefined method '.get_class($this).'::'.$method.'()');
+		return false;
 	}
+
+	/***************************************************************************
+	 * Implementation of ArrayAccess
+	 **************************************************************************/
+
+	public function offsetSet($offset, $value)
+	{
+		try
+		{
+			$this->__set($offset, $value);
+		}
+		catch (\Exception $e)
+		{
+			return false;
+		}
+	}
+
+	public function offsetExists($offset)
+	{
+		return $this->__isset($offset);
+	}
+
+	public function offsetUnset($offset)
+	{
+		$this->__unset($offset);
+	}
+
+	public function offsetGet($offset)
+	{
+		try
+		{
+			return $this->__get($offset);
+		}
+		catch (\Exception $e)
+		{
+			return false;
+		}
+	}
+
+	/***************************************************************************
+	 * Implementation of Iterable
+	 **************************************************************************/
+
+	protected $_iterable = array();
+
+	public function rewind()
+	{
+		$this->_iterable = array_merge($this->_custom_data, $this->_data, $this->_data_relations);
+		reset($this->_iterable);
+	}
+
+	public function current()
+	{
+		return current($this->_iterable);
+	}
+
+	public function key()
+	{
+		return key($this->_iterable);
+	}
+
+	public function next()
+	{
+		return next($this->_iterable);
+	}
+
+	public function valid()
+	{
+		return key($this->_iterable) !== null;
+	}
+
 }
