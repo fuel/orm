@@ -85,6 +85,11 @@ class Query
 	protected $order_by = array();
 
 	/**
+	 * @var  array  group by clauses
+	 */
+	protected $group_by = array();
+
+	/**
 	 * @var  array  values for insert or update
 	 */
 	protected $values = array();
@@ -234,6 +239,22 @@ class Query
 
 		$this->view = $views[$view];
 		$this->view['_name'] = $view;
+		return $this;
+	}
+
+	/**
+	 * Creates a "GROUP BY ..." filter.
+	 *
+	 * @param   mixed   column name or array($column, $alias) or object
+	 * @param   ...
+	 * @return  $this
+	 */
+	public function group_by($columns)
+	{
+		$columns = func_get_args();
+
+		$this->group_by = array_merge($this->group_by, $columns);
+
 		return $this;
 	}
 
@@ -786,6 +807,12 @@ class Query
 				}
 				$query->order_by($ob[0], $ob[1]);
 			}
+		}
+
+		// Get the grouping
+		if ( ! empty($this->group_by))
+		{
+			call_user_func_array(array($query, 'group_by'), $this->group_by);
 		}
 
 		// put omitted where conditions back
