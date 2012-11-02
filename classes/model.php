@@ -70,7 +70,7 @@ class Model implements \ArrayAccess, \Iterator
 	/**
 	 * @var  array  name or columns that need to be excluded from any to_array() result
 	 */
-	protected static $_to_array_filter = array();
+	protected static $_to_array_exclude = array();
 
 	/**
 	 * @var  array  cached tables
@@ -1695,7 +1695,7 @@ class Model implements \ArrayAccess, \Iterator
 		}
 
 		// strip any excluded values from the array
-		foreach (static::$_to_array_filter as $key)
+		foreach (static::$_to_array_exclude as $key)
 		{
 			if (array_key_exists($key, $array))
 			{
