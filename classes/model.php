@@ -68,6 +68,11 @@ class Model implements \ArrayAccess, \Iterator
 	protected static $_primary_key = array('id');
 
 	/**
+	 * @var  array  name or columns that need to be excluded from any to_array() result
+	 */
+	protected static $_to_array_filter = array();
+
+	/**
 	 * @var  array  cached tables
 	 */
 	protected static $_table_names_cached = array();
@@ -1686,6 +1691,15 @@ class Model implements \ArrayAccess, \Iterator
 						$references[] = get_class($rel);
 					}
 				}
+			}
+		}
+
+		// strip any excluded values from the array
+		foreach (static::$_to_array_filter as $key)
+		{
+			if (array_key_exists($key, $array))
+			{
+				unset($array[$key]);
 			}
 		}
 
