@@ -92,10 +92,14 @@ class Model_Soft extends Model
 	{
 		if (strpos($method, 'find_deleted') === 0)
 		{
-			$options = count($args) > 0 ? array_pop($args) : array();
-			return static::deleted('all', $options);
+			$tempArgs = $args;
+			
+			$findType = count($tempArgs) > 0 ? array_pop($tempArgs) : 'all';
+			$options = count($tempArgs) > 0 ? array_pop($tempArgs) : array();
+			
+			return static::deleted($findType, $options);
 		}
-		
+
 		parent::__callStatic($method, $args);
 	}
 
@@ -115,6 +119,26 @@ class Model_Soft extends Model
 		$this->save();
 
 		return $this;
+	}
+	
+	/**
+	 * Allows a soft deleted entry to be restored.
+	 */
+	public function restore()
+	{
+		$deletedColumn = static::soft_delete_property('deleted_field', self::$_default_field_name);
+		$this->{$deletedColumn} = null;
+		$this->save();
+
+		return $this;
+	}
+	
+	/**
+	 * Alias of restore()
+	 */
+	public function undelete()
+	{
+		return $this->restore();
 	}
 
 	/**
