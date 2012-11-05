@@ -34,6 +34,8 @@ class Model_Soft extends Model
 	 * @var array
 	 */
 	protected static $_soft_delete_cached = array();
+	
+	protected static $_disable_filter = array();
 
 	/**
 	 * Gets the soft delete properties.
@@ -64,6 +66,33 @@ class Model_Soft extends Model
 		static::$_soft_delete_cached[$class] = $properties;
 
 		return static::$_soft_delete_cached[$class];
+	}
+	
+	/**
+	 * Disables filtering of deleted entries.
+	 */
+	public static function disable_filter()
+	{
+		$class = get_called_class();
+		static::$_disable_filter[$class] = false;
+	}
+	
+	/**
+	 * Enables filtering of deleted entries.
+	 */
+	public static function enable_filter()
+	{
+		$class = get_called_class();
+		static::$_disable_filter[$class] = true;
+	}
+	
+	/**
+	 * @return boolean True if the deleted items are to be filtered out.
+	 */
+	public static function get_filter_status()
+	{
+		$class = get_called_class();
+		return \Arr::get(static::$_disable_filter, $class, true);
 	}
 
 	/**
@@ -153,7 +182,7 @@ class Model_Soft extends Model
 					//Loop through and call delete on all the models
 					foreach($rel->get($this) as $model)
 					{
-						$model->delete();
+						$model->delete($cascade);
 					}
 				}
 			}
@@ -173,10 +202,44 @@ class Model_Soft extends Model
 	/**
 	 * Allows a soft deleted entry to be restored.
 	 */
-	public function restore()
+	public function restore($cascade_restore = null)
 	{
 		$deletedColumn = static::soft_delete_property('deleted_field', self::$_default_field_name);
 		$this->{$deletedColumn} = null;
+		
+		//Loop through all relations and delete if we are cascading.
+		$this->freeze();
+		foreach ($this->relations() as $rel_name => $rel)
+		{
+			//get the cascade delete status
+			$relCascade = is_null($cascade_restore) ? $rel->cascade_delete : (bool) $cascade_restore;
+
+			//Make sure that the other model is soft delete too
+			if ($relCascade)
+			{
+				if (!is_subclass_of($rel->model_to, 'Orm\Model_Soft'))
+				{
+					//Throw if other is not soft
+					throw new RelationNotSoft('Both sides of the relation must be subclasses of Model_Soft if cascade delete is true');
+				}
+
+				if(get_class($rel) != 'Orm\ManyMany')
+				{
+					$model_to = $rel->model_to;
+					$model_to::disable_filter();
+					
+					//Loop through and call restore on all the models
+					foreach($rel->get($this) as $model)
+					{
+						$model->restore($cascade_restore);
+					}
+					
+					$model_to::enable_filter();
+				}
+			}
+		}
+		$this->unfreeze();
+		
 		$this->save();
 
 		return $this;
@@ -195,9 +258,12 @@ class Model_Soft extends Model
 	 */
 	public static function find($id = null, array $options = array())
 	{
-		//Make sure we are filtering out soft deleted items
-		$deletedColumn = static::soft_delete_property('deleted_field', self::$_default_field_name);
-		$options['where'][] = array($deletedColumn, null);
+		if(static::get_filter_status())
+		{
+			//Make sure we are filtering out soft deleted items
+			$deletedColumn = static::soft_delete_property('deleted_field', self::$_default_field_name);
+			$options['where'][] = array($deletedColumn, null);
+		}
 
 		return parent::find($id, $options);
 	}
