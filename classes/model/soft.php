@@ -16,7 +16,7 @@ class Model_Soft extends Model
 	 * Default column name that contains the deleted timestamp
 	 * @var string
 	 */
-	private static $_default_field_name = 'delete_at';
+	private static $_default_field_name = 'deleted_at';
 
 	/**
 	 * Default value for if a mysql timestamp should be used.
