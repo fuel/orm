@@ -30,6 +30,8 @@ class Model_Soft extends Model
 			return static::$_soft_delete_cached[$class];
 		}
 
+		$properties = array();
+		
 		// Try to grab the properties from the class...
 		if (property_exists($class, '_soft_delete'))
 		{
