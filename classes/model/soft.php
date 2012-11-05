@@ -2,6 +2,11 @@
 
 namespace Orm;
 
+class RelationNotSoft extends \Exception
+{
+	
+}
+
 /**
  * Defines a model that can be "soft" deleted. A timestamp is used to indicate
  * that the data has been deleted but the data itself is not removed from the 
@@ -93,10 +98,10 @@ class Model_Soft extends Model
 		if (strpos($method, 'find_deleted') === 0)
 		{
 			$tempArgs = $args;
-			
+
 			$findType = count($tempArgs) > 0 ? array_pop($tempArgs) : 'all';
 			$options = count($tempArgs) > 0 ? array_pop($tempArgs) : array();
-			
+
 			return static::deleted($findType, $options);
 		}
 
@@ -114,25 +119,54 @@ class Model_Soft extends Model
 		$deletedColumn = static::soft_delete_property('deleted_field', self::$_default_field_name);
 		$mysql_timestamp = static::soft_delete_property('mysql_timestamp', self::$_default_mysql_timestamp);
 
+		//If we are using a transcation then make sure it's started
 		if ($use_transaction)
 		{
 			$db = \Database_Connection::instance(static::connection());
 			$db->start_transaction();
 		}
 
+		//Call the observers
 		$this->observe('before_delete');
-		
+
+		//Generate the correct timestamp and save it
 		$this->{$deletedColumn} = $mysql_timestamp ? \Date::forge()->format('mysql') : \Date::forge()->get_timestamp();
 
+		//Loop through all relations and delete if we are cascading.
+		$this->freeze();
+		foreach ($this->relations() as $rel_name => $rel)
+		{
+			//get the cascade delete status
+			$relCascade = is_null($cascade) ? $rel->cascade_delete : (bool) $cascade;
+
+			//Make sure that the other model is soft delete too
+			if ($relCascade)
+			{
+				if (!is_subclass_of($rel->model_to, 'Orm\Model_Soft'))
+				{
+					//Throw if other is not soft
+					throw new RelationNotSoft('Both sides of the relation must be subclasses of Model_Soft if cascade delete is true');
+				}
+
+				//Loop through and call delete on all the models
+				foreach($rel->get($this) as $model)
+				{
+					$model->delete();
+				}
+			}
+		}
+		$this->unfreeze();
+
 		$this->save();
-		
+
 		$this->observe('after_delete');
 
+		//Make sure the transaction is commited if needed
 		$use_transaction and $db->commit_transaction();
 
 		return $this;
 	}
-	
+
 	/**
 	 * Allows a soft deleted entry to be restored.
 	 */
@@ -144,7 +178,7 @@ class Model_Soft extends Model
 
 		return $this;
 	}
-	
+
 	/**
 	 * Alias of restore()
 	 */
