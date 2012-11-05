@@ -148,10 +148,13 @@ class Model_Soft extends Model
 					throw new RelationNotSoft('Both sides of the relation must be subclasses of Model_Soft if cascade delete is true');
 				}
 
-				//Loop through and call delete on all the models
-				foreach($rel->get($this) as $model)
+				if(get_class($rel) != 'Orm\ManyMany')
 				{
-					$model->delete();
+					//Loop through and call delete on all the models
+					foreach($rel->get($this) as $model)
+					{
+						$model->delete();
+					}
 				}
 			}
 		}
