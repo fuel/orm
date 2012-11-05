@@ -114,9 +114,21 @@ class Model_Soft extends Model
 		$deletedColumn = static::soft_delete_property('deleted_field', self::$_default_field_name);
 		$mysql_timestamp = static::soft_delete_property('mysql_timestamp', self::$_default_mysql_timestamp);
 
+		if ($use_transaction)
+		{
+			$db = \Database_Connection::instance(static::connection());
+			$db->start_transaction();
+		}
+
+		$this->observe('before_delete');
+		
 		$this->{$deletedColumn} = $mysql_timestamp ? \Date::forge()->format('mysql') : \Date::forge()->get_timestamp();
 
 		$this->save();
+		
+		$this->observe('after_delete');
+
+		$use_transaction and $db->commit_transaction();
 
 		return $this;
 	}
