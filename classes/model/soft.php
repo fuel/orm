@@ -30,18 +30,6 @@ class Model_Soft extends Model
 	protected static $_soft_delete_cached = array();
 	
 	/**
-	 * Allows results to be filtered to hide soft deleted entries.
-	 */
-	protected static $_conditions = array(
-		'where' => array(),
-	);
-	
-	public static function _init()
-	{
-		
-	}
-	
-	/**
 	 * Gets the soft delete properties.
 	 * Mostly stolen from the parent class properties() function
 	 * 
@@ -111,11 +99,23 @@ class Model_Soft extends Model
 		return $this;
 	}
 	
+	/**
+	 * Overrides the find method to allow soft deleted items to be filtered out.
+	 */
 	public static function find($id = null, array $options = array())
 	{
 		//Make sure we are filtering out soft deleted items
 		$deletedColumn = static::soft_delete_property('deleted_field', self::$_default_field_name);
-		static::$_conditions['where'][] = array($deletedColumn, null);
+		$options['where'][] = array($deletedColumn, null);
+		
+		return parent::find($id, $options);
+	}
+	
+	public static function deleted($id = null, array $options = array())
+	{
+		//Make sure we are filtering out soft deleted items
+		$deletedColumn = static::soft_delete_property('deleted_field', self::$_default_field_name);
+		$options['where'][] = array($deletedColumn, 'IS NOT', null);
 		
 		return parent::find($id, $options);
 	}
