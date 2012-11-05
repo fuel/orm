@@ -11,24 +11,25 @@ namespace Orm;
  */
 class Model_Soft extends Model
 {
-	
+
 	/**
 	 * Default column name that contains the deleted timestamp
 	 * @var string
 	 */
 	private static $_default_field_name = 'delete_at';
+
 	/**
 	 * Default value for if a mysql timestamp should be used.
 	 * @var boolean
 	 */
 	private static $_default_mysql_timestamp = true;
-	
+
 	/**
 	 * Contains cached soft delete properties.
 	 * @var array
 	 */
 	protected static $_soft_delete_cached = array();
-	
+
 	/**
 	 * Gets the soft delete properties.
 	 * Mostly stolen from the parent class properties() function
@@ -46,20 +47,20 @@ class Model_Soft extends Model
 		}
 
 		$properties = array();
-		
+
 		// Try to grab the properties from the class...
 		if (property_exists($class, '_soft_delete'))
 		{
 			//Load up the info
 			$properties = static::$_soft_delete;
 		}
-		
+
 		// cache the properties for next usage
 		static::$_soft_delete_cached[$class] = $properties;
 
 		return static::$_soft_delete_cached[$class];
 	}
-	
+
 	/**
 	 * Fetches a soft delete property description array, or specific data from it.
 	 * Stolen from parent class.
@@ -73,12 +74,29 @@ class Model_Soft extends Model
 		$class = get_called_class();
 
 		// If already determined
-		if ( ! array_key_exists($class, static::$_soft_delete_cached))
+		if (!array_key_exists($class, static::$_soft_delete_cached))
 		{
 			static::soft_delete_properties();
 		}
-		
+
 		return \Arr::get(static::$_soft_delete_cached[$class], $key, $default);
+	}
+
+	/**
+	 * Do some php magic to allow static::find_deleted() to work
+	 * 
+	 * @param type $method
+	 * @param type $args
+	 */
+	public static function __callStatic($method, $args)
+	{
+		if (strpos($method, 'find_deleted') === 0)
+		{
+			$options = count($args) > 0 ? array_pop($args) : array();
+			return static::deleted('all', $options);
+		}
+		
+		parent::__callStatic($method, $args);
 	}
 
 	/**
@@ -91,14 +109,14 @@ class Model_Soft extends Model
 	{
 		$deletedColumn = static::soft_delete_property('deleted_field', self::$_default_field_name);
 		$mysql_timestamp = static::soft_delete_property('mysql_timestamp', self::$_default_mysql_timestamp);
-		
+
 		$this->{$deletedColumn} = $mysql_timestamp ? \Date::forge()->format('mysql') : \Date::forge()->get_timestamp();
-		
+
 		$this->save();
-		
+
 		return $this;
 	}
-	
+
 	/**
 	 * Overrides the find method to allow soft deleted items to be filtered out.
 	 */
@@ -107,16 +125,21 @@ class Model_Soft extends Model
 		//Make sure we are filtering out soft deleted items
 		$deletedColumn = static::soft_delete_property('deleted_field', self::$_default_field_name);
 		$options['where'][] = array($deletedColumn, null);
-		
+
 		return parent::find($id, $options);
 	}
-	
+
+	/**
+	 * Alisas of find() but selects only deleted entries rather than non-deleted
+	 * ones.
+	 */
 	public static function deleted($id = null, array $options = array())
 	{
 		//Make sure we are filtering out soft deleted items
 		$deletedColumn = static::soft_delete_property('deleted_field', self::$_default_field_name);
 		$options['where'][] = array($deletedColumn, 'IS NOT', null);
-		
+
 		return parent::find($id, $options);
 	}
+
 }
