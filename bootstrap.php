@@ -18,6 +18,9 @@ Autoloader::add_classes(array(
 	'Orm\\HasOne'       => __DIR__.'/classes/hasone.php',
 	'Orm\\ManyMany'     => __DIR__.'/classes/manymany.php',
 	'Orm\\Relation'     => __DIR__.'/classes/relation.php',
+	
+	//Speclised models
+	'Orm\\Model_Soft'   => __DIR__.'/classes/model/soft.php',
 
 	// Observers
 	'Orm\\Observer'             => __DIR__.'/classes/observer.php',
