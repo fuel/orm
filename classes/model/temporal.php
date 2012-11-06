@@ -78,9 +78,24 @@ class Model_Temporal extends Model
 	public static function find_revision($id, $timestamp = null)
 	{
 		if ($timestamp == null)
-			$timestamp = 0;
-
-		return static::find(array($id, $timestamp));
+		{
+			return parent::find(array($id, 0));
+		}
+		
+		$timestamp_field = static::temporal_property('timestamp_name', self::$_default_timestamp_field);
+		
+		$options = array(
+			'limit' => array(0, 1),
+			'order_by' => array(
+				array($timestamp_field, 'DESC')
+			),
+			'where' => array(
+				array('id', '3'),
+				array($timestamp_field, '<=', $timestamp)
+			)
+		);
+		
+		return parent::find('all', $options);
 	}
 	
 	/**
