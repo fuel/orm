@@ -82,6 +82,38 @@ class Model_Temporal extends Model
 
 		return static::find(array($id, $timestamp));
 	}
+	
+	/**
+	 * Overrides the default find method to allow the latest revision to be found
+	 * by default.
+	 * 
+	 * If any new options to find are added the switch statement will have to be
+	 * updated too.
+	 * 
+	 * @param type $id
+	 * @param array $options
+	 * @return type
+	 */
+	public static function find($id = null, array $options = array())
+	{
+		$timestamp_field = static::temporal_property('timestamp_name', self::$_default_timestamp_field);
+		
+		switch($id)
+		{
+			case NULL:
+			case 'all':
+			case 'first':
+			case 'last':
+				$options['where'][] = array($timestamp_field, 0);
+				break;
+			default:
+				$id = (array) $id;
+				$id[] = 0; //Add the 0 timestamp
+				break;
+		}
+		
+		return parent::find($id, $options);
+	}
 
 	/**
 	 * Overrides the save method to allow temporal models to be 
