@@ -120,12 +120,20 @@ class Model_Temporal extends Model
 				parent::save();
 
 				//Construct a copy of this model and save that with a 0 timestamp
-				$newModel->id = $this->id; //TODO: unhardcode this
+				foreach($this->primary_key() as $pk)
+				{
+					if($pk != $timestamp_field)
+					{
+						$newModel->{$pk} = $this->{$pk};
+					}
+				}
 				$newModel->{$timestamp_field} = 0;
 
 				return $newModel->save();
 			}
 		}
+		
+		return $this;
 	}
 
 	/**
