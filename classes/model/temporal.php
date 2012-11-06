@@ -86,12 +86,7 @@ class Model_Temporal extends Model
 		
 		//If this is new then just call the parent and let everything happen as normal
 		if($this->is_new())
-		{	
-			$this->{$timestamp_field} = 0;
-			$this->$_is_new = true;
-			echo '<pre>';
-			print_r($this);
-			exit;
+		{
 			return parent::save($cascade, $use_transaction);
 		}
 		//If this is an update then set a new PK, save and then insert a new row
@@ -116,10 +111,6 @@ class Model_Temporal extends Model
 				//Construct a copy of this model and save that with a 0 timestamp
 				$newModel->id = $this->id; //TODO: unhardcode this
 				$newModel->{$timestamp_field} = 0;
-				
-				echo '<pre>';
-				print_r($newModel);
-				exit;
 				
 				return $newModel->save();
 			}
