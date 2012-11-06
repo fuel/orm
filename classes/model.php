@@ -1220,15 +1220,13 @@ class Model implements \ArrayAccess, \Iterator
 		$query       = Query::forge(get_called_class(), static::connection(true));
 		$primary_key = static::primary_key();
 		$properties  = array_keys(static::properties());
-		foreach ($primary_key as $pk)
-		{
-			$query->where($pk, '=', $this->_data[$pk]);
-		}
+		//Add the primary keys to the where
+		$this->add_primary_keys_to_where($query);
 
 		// Set all current values
 		foreach ($properties as $p)
 		{
-			if ( ! in_array($p, $primary_key))
+			if ( ! in_array($p, $primary_key) )
 			{
 				if (array_key_exists($p, $this->_original))
 				{
@@ -1251,6 +1249,20 @@ class Model implements \ArrayAccess, \Iterator
 		$this->observe('after_update');
 
 		return true;
+	}
+	
+	/**
+	 * Adds the primary keys in where clauses to the given query.
+	 * 
+	 * @param Query $query
+	 */
+	protected function add_primary_keys_to_where($query)
+	{
+		$primary_key = static::primary_key();
+		foreach ($primary_key as $pk)
+		{
+			$query->where($pk, '=', $this->_original[$pk]);
+		}
 	}
 
 	/**
