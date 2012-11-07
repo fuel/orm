@@ -85,17 +85,96 @@ class Model_Temporal extends Model
 		$timestamp_field = static::temporal_property('timestamp_name', self::$_default_timestamp_field);
 		
 		$options = array(
-			'limit' => array(0, 1),
+			'limit' => 2,
 			'order_by' => array(
-				array($timestamp_field, 'DESC')
+				array($timestamp_field, '= \'0000-00-00 00:00:00\' DESC'),
+				array($timestamp_field, 'DESC'),
 			),
 			'where' => array(
-				array('id', '3'),
-				array($timestamp_field, '<=', $timestamp)
-			)
+				array('id', $id),
+				array($timestamp_field, '<=', $timestamp),
+				'or' => array(
+					array($timestamp_field, '0000-00-00 00:00:00'),
+				),
+			),
 		);
 		
-		return parent::find('all', $options);
+		$sql = "
+SELECT *
+FROM `temporal`
+
+WHERE `id` = '$id'
+AND `$timestamp_field` <= '$timestamp'
+OR `$timestamp_field` = '0000-00-00 00:00:00'
+OR `id` = (
+	SELECT `id`
+	FROM `temporal`
+	WHERE `id` = '$id'
+	AND `$timestamp_field` >= '$timestamp'
+	OR `$timestamp_field` = '0000-00-00 00:00:00'
+	ORDER BY `$timestamp_field` ASC
+)
+
+ORDER BY
+    `timestamp` = '0000-00-00 00:00:00' DESC,
+    `$timestamp_field` DESC 
+
+LIMIT 2";
+		
+		$sql = "SELECT *
+FROM `temporal`
+
+WHERE `id` = 3
+AND `timestamp` < (
+
+SELECT
+`timestamp`
+
+FROM `temporal`
+
+WHERE `id` =3
+
+AND `timestamp` >= '2012-11-06 16:22:23'
+
+OR `timestamp` = '0000-00-00 00:00:00'
+
+ORDER BY
+`timestamp` = '0000-00-00 00:00:00' ASC ,
+`timestamp` ASC 
+LIMIT 1
+)
+
+OR `timestamp` = '0000-00-00 00:00:00'
+
+ORDER BY
+    `timestamp` DESC 
+
+LIMIT 1	";
+		
+		return \DB::query($sql)->as_object(get_called_class())->execute()->as_array();
+		
+		$result = parent::find('all', $options);
+		
+		if(count($result) == 1)
+		{
+			return array_pop($result);
+		}
+		
+		//Grab the most current revision and the next latest
+		$current = array_pop($result);
+		$nextLatest = array_pop($result);
+	}
+	
+	/**
+	 * Returns a list of revisions between the given times.
+	 * 
+	 * @param type $id
+	 * @param type $start
+	 * @param type $end
+	 */
+	public static function find_revisions_between($id, $start=null, $end=null)
+	{
+		
 	}
 	
 	/**
