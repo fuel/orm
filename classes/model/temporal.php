@@ -14,7 +14,13 @@ class Model_Temporal extends Model
 	private static $_default_mysql_timestamp = true;
 	private static $_default_timestamp_field = 'temporal';
 	private static $_pk_check_disabled = array();
+	protected static $_timestamp_zero = null;
 
+	public static function _init()
+	{
+		static::$_timestamp_zero = static::temporal_property('mysql_timestamp', self::$_default_mysql_timestamp)? '0000-00-00 00:00:00' : 0 ;
+	}
+	
 	/**
 	 * Gets the temporal properties.
 	 * Mostly stolen from the parent class properties() function
@@ -91,15 +97,15 @@ class Model_Temporal extends Model
 			->select($timestamp_field)
 			->where('id', $id)
 			->where($timestamp_field, '>=', $timestamp)
-			->or_where($timestamp_field, 0)
-			->order_by($timestamp_field, '= 0 ASC')
+			->or_where($timestamp_field, static::$_timestamp_zero)
+			->order_by($timestamp_field, '= \''.static::$_timestamp_zero.'\' ASC')
 			->order_by($timestamp_field, 'ASC')
 			->limit(1);
 		
 		$queryResult = static::query()
 			->where('id', $id)
 			->where($timestamp_field, '<', $subQuery->get_query())
-			->or_where($timestamp_field, 0)
+			->or_where($timestamp_field, static::$_timestamp_zero)
 			->order_by($timestamp_field, 'DESC')
 			->limit(1)
 			->get();
@@ -152,7 +158,7 @@ class Model_Temporal extends Model
 				break;
 			default:
 				$id = (array) $id;
-				$id[] = 0; //Add the 0 timestamp
+				$id[] = static::$_timestamp_zero;
 				break;
 		}
 		
@@ -203,7 +209,7 @@ class Model_Temporal extends Model
 						$newModel->{$pk} = $this->{$pk};
 					}
 				}
-				$newModel->{$timestamp_field} = 0;
+				$newModel->{$timestamp_field} = static::$_timestamp_zero;
 
 				return $newModel->save();
 			}
