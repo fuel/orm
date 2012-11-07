@@ -84,85 +84,35 @@ class Model_Temporal extends Model
 		
 		$timestamp_field = static::temporal_property('timestamp_name', self::$_default_timestamp_field);
 		
-		$options = array(
-			'limit' => 2,
-			'order_by' => array(
-				array($timestamp_field, '= \'0000-00-00 00:00:00\' DESC'),
-				array($timestamp_field, 'DESC'),
-			),
-			'where' => array(
-				array('id', $id),
-				array($timestamp_field, '<=', $timestamp),
-				'or' => array(
-					array($timestamp_field, '0000-00-00 00:00:00'),
-				),
-			),
-		);
+		//Select the next latest revision after the requested one then use that
+		//to get the revision before.
+		self::disable_primary_key_check();
+		$subQuery = static::query()
+			->select($timestamp_field)
+			->where('id', $id)
+			->where($timestamp_field, '>=', $timestamp)
+			->or_where($timestamp_field, 0)
+			->order_by($timestamp_field, '= 0 ASC')
+			->order_by($timestamp_field, 'ASC')
+			->limit(1);
 		
-		$sql = "
-SELECT *
-FROM `temporal`
-
-WHERE `id` = '$id'
-AND `$timestamp_field` <= '$timestamp'
-OR `$timestamp_field` = '0000-00-00 00:00:00'
-OR `id` = (
-	SELECT `id`
-	FROM `temporal`
-	WHERE `id` = '$id'
-	AND `$timestamp_field` >= '$timestamp'
-	OR `$timestamp_field` = '0000-00-00 00:00:00'
-	ORDER BY `$timestamp_field` ASC
-)
-
-ORDER BY
-    `timestamp` = '0000-00-00 00:00:00' DESC,
-    `$timestamp_field` DESC 
-
-LIMIT 2";
+		$queryResult = static::query()
+			->where('id', $id)
+			->where($timestamp_field, '<', $subQuery->get_query())
+			->or_where($timestamp_field, 0)
+			->order_by($timestamp_field, 'DESC')
+			->limit(1)
+			->get();
+		self::enable_primary_key_check();
 		
-		$sql = "SELECT *
-FROM `temporal`
-
-WHERE `id` = 3
-AND `timestamp` < (
-
-SELECT
-`timestamp`
-
-FROM `temporal`
-
-WHERE `id` =3
-
-AND `timestamp` >= '2012-11-06 16:22:23'
-
-OR `timestamp` = '0000-00-00 00:00:00'
-
-ORDER BY
-`timestamp` = '0000-00-00 00:00:00' ASC ,
-`timestamp` ASC 
-LIMIT 1
-)
-
-OR `timestamp` = '0000-00-00 00:00:00'
-
-ORDER BY
-    `timestamp` DESC 
-
-LIMIT 1	";
+		$singleItem = array_pop($queryResult);
 		
-		return \DB::query($sql)->as_object(get_called_class())->execute()->as_array();
-		
-		$result = parent::find('all', $options);
-		
-		if(count($result) == 1)
+		if($singleItem->id !=  $id)
 		{
-			return array_pop($result);
+			return null;
 		}
 		
-		//Grab the most current revision and the next latest
-		$current = array_pop($result);
-		$nextLatest = array_pop($result);
+		return $singleItem;
 	}
 	
 	/**
