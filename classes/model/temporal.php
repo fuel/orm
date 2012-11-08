@@ -145,13 +145,24 @@ class Model_Temporal extends Model
 			->where('id', $id)
 			->max($timestamp_field);
 		
+		static::disable_primary_key_check();
+		//Sub query to select a single revision that is the current state at the given start time
+		$startState = static::query()
+			->select($timestamp_field)
+			->where('id', $id)
+			->where($timestamp_field, '<=', $earliestTime)
+			->order_by($timestamp_field, 'DESC')
+			->limit(1);
+		
 		//Select all revisions within the given range.
 		$query = static::query()
 			->where('id', $id)
 			->where($timestamp_field, '>=', $earliestTime)
+			->or_where($timestamp_field, $startState->get_query())
 			//This makes sure that the latest (0 timestamped) revision is at the top of the list
 			->order_by($timestamp_field, '= \'' . static::$_timestamp_zero . '\' DESC')
 			->order_by($timestamp_field, 'DESC');
+		static::enable_primary_key_check();
 		
 		if ($latestTime != null)
 		{
