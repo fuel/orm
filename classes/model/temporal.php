@@ -18,9 +18,9 @@ class Model_Temporal extends Model
 
 	public static function _init()
 	{
-		static::$_timestamp_zero = static::temporal_property('mysql_timestamp', self::$_default_mysql_timestamp)? '0000-00-00 00:00:00' : 0 ;
+		static::$_timestamp_zero = static::temporal_property('mysql_timestamp', self::$_default_mysql_timestamp) ? '0000-00-00 00:00:00' : 0;
 	}
-	
+
 	/**
 	 * Gets the temporal properties.
 	 * Mostly stolen from the parent class properties() function
@@ -87,9 +87,9 @@ class Model_Temporal extends Model
 		{
 			return parent::find(array($id, 0));
 		}
-		
+
 		$timestamp_field = static::temporal_property('timestamp_name', self::$_default_timestamp_field);
-		
+
 		//Select the next latest revision after the requested one then use that
 		//to get the revision before.
 		self::disable_primary_key_check();
@@ -98,10 +98,10 @@ class Model_Temporal extends Model
 			->where('id', $id)
 			->where($timestamp_field, '>=', $timestamp)
 			->or_where($timestamp_field, static::$_timestamp_zero)
-			->order_by($timestamp_field, '= \''.static::$_timestamp_zero.'\' ASC')
+			->order_by($timestamp_field, '= \'' . static::$_timestamp_zero . '\' ASC')
 			->order_by($timestamp_field, 'ASC')
 			->limit(1);
-		
+
 		$queryResult = static::query()
 			->where('id', $id)
 			->where($timestamp_field, '<', $subQuery->get_query())
@@ -110,29 +110,80 @@ class Model_Temporal extends Model
 			->limit(1)
 			->get();
 		self::enable_primary_key_check();
-		
+
 		$singleItem = array_pop($queryResult);
-		
-		if($singleItem->id !=  $id)
+
+		if ($singleItem->id != $id)
 		{
 			return null;
 		}
-		
+
 		return $singleItem;
 	}
-	
+
 	/**
-	 * Returns a list of revisions between the given times.
+	 * Returns a list of revisions between the given times with the most recent
+	 * first.
 	 * 
 	 * @param type $id
-	 * @param type $start
-	 * @param type $end
+	 * @param type $earliestTime
+	 * @param type $latestTime
 	 */
-	public static function find_revisions_between($id, $start=null, $end=null)
+	public static function find_revisions_between($id, $earliestTime = null, $latestTime = null)
 	{
+		//Must also slect +1 earliest times to make sure the entity state
+		//at the earliestTime is included.
 		
+		$timestamp_field = static::temporal_property('timestamp_name', self::$_default_timestamp_field);
+		
+		if($earliestTime == null)
+		{
+			$earliestTime = 1;
+		}
+		
+		$maxTimestamp = static::query()
+			->where('id', $id)
+			->max($timestamp_field);
+		
+		//Select all revisions within the given range.
+		$query = static::query()
+			->where('id', $id)
+			->where($timestamp_field, '>=', $earliestTime)
+			//This makes sure that the latest (0 timestamped) revision is at the top of the list
+			->order_by($timestamp_field, '= \'' . static::$_timestamp_zero . '\' DESC')
+			->order_by($timestamp_field, 'DESC');
+		
+		if ($latestTime != null)
+		{
+			$query->where($timestamp_field, '<=', $latestTime);
+		}
+		
+		//This must be the last or/where added to ensure the correct ordering
+		$query->or_where($timestamp_field, static::$_timestamp_zero);
+		
+		$revisions = $query->get();
+		
+		//If there is not more than one we don't need to worry about popping 0 off the list
+		if(count($revisions) > 1)
+		{
+			$selectMax = static::query()
+				->where('id', $id)
+				->where($timestamp_field, $maxTimestamp)
+				->order_by($timestamp_field, '= \'' . $maxTimestamp . '\' DESC')
+				->get_one();
+			
+			$latest = array_slice($revisions, 1, 1);
+			$latest = array_pop($latest);
+			
+			if($latest->{$timestamp_field} != $selectMax->{$timestamp_field})
+			{
+				array_shift($revisions);
+			}
+		}
+		
+		return $revisions;
 	}
-	
+
 	/**
 	 * Overrides the default find method to allow the latest revision to be found
 	 * by default.
@@ -147,8 +198,8 @@ class Model_Temporal extends Model
 	public static function find($id = null, array $options = array())
 	{
 		$timestamp_field = static::temporal_property('timestamp_name', self::$_default_timestamp_field);
-		
-		switch($id)
+
+		switch ($id)
 		{
 			case NULL:
 			case 'all':
@@ -161,7 +212,7 @@ class Model_Temporal extends Model
 				$id[] = static::$_timestamp_zero;
 				break;
 		}
-		
+
 		return parent::find($id, $options);
 	}
 
@@ -202,9 +253,9 @@ class Model_Temporal extends Model
 				parent::save();
 
 				//Construct a copy of this model and save that with a 0 timestamp
-				foreach($this->primary_key() as $pk)
+				foreach ($this->primary_key() as $pk)
 				{
-					if($pk != $timestamp_field)
+					if ($pk != $timestamp_field)
 					{
 						$newModel->{$pk} = $this->{$pk};
 					}
@@ -214,7 +265,7 @@ class Model_Temporal extends Model
 				return $newModel->save();
 			}
 		}
-		
+
 		return $this;
 	}
 
