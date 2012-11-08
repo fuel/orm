@@ -76,12 +76,14 @@ class Model_Temporal extends Model
 	/**
 	 * Finds a specific revision for the given ID. If a timestamp is specified 
 	 * the revision returned will reflect the entity's state at that given time.
+	 * This will also load relations when requested.
 	 * 
 	 * @param type $id
-	 * @param int $timestamp
-	 * @return type
+	 * @param int $timestamp Null to get the latest revision (Same as find($id))
+	 * @param array $relations Names of the relations to load.
+	 * @return Subclass of Orm\Model_Temporal
 	 */
-	public static function find_revision($id, $timestamp = null)
+	public static function find_revision($id, $timestamp = null, $relations = array())
 	{
 		if ($timestamp == null)
 		{
@@ -102,14 +104,21 @@ class Model_Temporal extends Model
 			->order_by($timestamp_field, 'ASC')
 			->limit(1);
 
-		$queryResult = static::query()
+		$query = static::query()
 			->where('id', $id)
 			->where($timestamp_field, '<', $subQuery->get_query())
 			->or_where($timestamp_field, static::$_timestamp_zero)
 			->order_by($timestamp_field, 'DESC')
-			->limit(1)
-			->get();
+			->limit(1);
 		self::enable_primary_key_check();
+		
+		//Ensure the relations are added
+		foreach($relations as $relation)
+		{
+			$query->related($relation);
+		}
+		
+		$queryResult = $query->get();
 
 		$singleItem = array_pop($queryResult);
 
@@ -133,18 +142,18 @@ class Model_Temporal extends Model
 	{
 		//Must also slect +1 earliest times to make sure the entity state
 		//at the earliestTime is included.
-		
+
 		$timestamp_field = static::temporal_property('timestamp_name', self::$_default_timestamp_field);
-		
-		if($earliestTime == null)
+
+		if ($earliestTime == null)
 		{
 			$earliestTime = 1;
 		}
-		
+
 		$maxTimestamp = static::query()
 			->where('id', $id)
 			->max($timestamp_field);
-		
+
 		static::disable_primary_key_check();
 		//Sub query to select a single revision that is the current state at the given start time
 		$startState = static::query()
@@ -153,7 +162,7 @@ class Model_Temporal extends Model
 			->where($timestamp_field, '<=', $earliestTime)
 			->order_by($timestamp_field, 'DESC')
 			->limit(1);
-		
+
 		//Select all revisions within the given range.
 		$query = static::query()
 			->where('id', $id)
@@ -163,35 +172,35 @@ class Model_Temporal extends Model
 			->order_by($timestamp_field, '= \'' . static::$_timestamp_zero . '\' DESC')
 			->order_by($timestamp_field, 'DESC');
 		static::enable_primary_key_check();
-		
+
 		if ($latestTime != null)
 		{
 			$query->where($timestamp_field, '<=', $latestTime);
 		}
-		
+
 		//This must be the last or/where added to ensure the correct ordering
 		$query->or_where($timestamp_field, static::$_timestamp_zero);
-		
+
 		$revisions = $query->get();
-		
+
 		//If there is not more than one we don't need to worry about popping 0 off the list
-		if(count($revisions) > 1)
+		if (count($revisions) > 1)
 		{
 			$selectMax = static::query()
 				->where('id', $id)
 				->where($timestamp_field, $maxTimestamp)
 				->order_by($timestamp_field, '= \'' . $maxTimestamp . '\' DESC')
 				->get_one();
-			
+
 			$latest = array_slice($revisions, 1, 1);
 			$latest = array_pop($latest);
-			
-			if($latest->{$timestamp_field} != $selectMax->{$timestamp_field})
+
+			if ($latest->{$timestamp_field} != $selectMax->{$timestamp_field})
 			{
 				array_shift($revisions);
 			}
 		}
-		
+
 		return $revisions;
 	}
 
