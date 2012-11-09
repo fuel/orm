@@ -414,7 +414,7 @@ class Model implements \ArrayAccess, \Iterator
 					{
 						if (is_string($obs_v) or (is_array($obs_v) and is_int(key($obs_v))))
 						{
-							// @TODO deprecated until v1.2
+							// @TODO deprecated until v1.4
 							logger(\Fuel::L_WARNING, 'Passing observer events as array is deprecated, they must be
 								inside another array under a key "events". Check the docs for more info.', __METHOD__);
 							$observers[$obs_k] = array('events' => (array) $obs_v);
@@ -1061,25 +1061,6 @@ class Model implements \ArrayAccess, \Iterator
 		}
 
 		return $this;
-	}
-
-	/**
-	 * Values
-	 *
-	 * Short way of setting the values
-	 * for the object as opposed to setting
-	 * each one individually
-	 *
-	 * @access  public
-	 * @param   array  $values
-	 * @return  Orm\Model
-	 *
-	 * @deprecated since 1.3, use set() instead
-	 */
-	public function values(Array $data)
-	{
-		logger(\Fuel::L_WARNING, 'This method is deprecated.  Please use a set() instead.', __METHOD__);
-		return $this->set($data);
 	}
 
 	/**
