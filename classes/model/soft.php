@@ -21,13 +21,13 @@ class Model_Soft extends Model
 	 * Default column name that contains the deleted timestamp
 	 * @var string
 	 */
-	private static $_default_field_name = 'deleted_at';
+	protected static $_default_field_name = 'deleted_at';
 
 	/**
 	 * Default value for if a mysql timestamp should be used.
 	 * @var boolean
 	 */
-	private static $_default_mysql_timestamp = true;
+	protected static $_default_mysql_timestamp = true;
 
 	/**
 	 * Contains cached soft delete properties.
@@ -145,8 +145,8 @@ class Model_Soft extends Model
 	 */
 	public function delete($cascade = null, $use_transaction = false)
 	{
-		$deleted_column = static::soft_delete_property('deleted_field', self::$_default_field_name);
-		$mysql_timestamp = static::soft_delete_property('mysql_timestamp', self::$_default_mysql_timestamp);
+		$deleted_column = static::soft_delete_property('deleted_field', static::$_default_field_name);
+		$mysql_timestamp = static::soft_delete_property('mysql_timestamp', static::$_default_mysql_timestamp);
 
 		//If we are using a transcation then make sure it's started
 		if ($use_transaction)
@@ -204,7 +204,7 @@ class Model_Soft extends Model
 	 */
 	public function restore($cascade_restore = null)
 	{
-		$deleted_column = static::soft_delete_property('deleted_field', self::$_default_field_name);
+		$deleted_column = static::soft_delete_property('deleted_field', static::$_default_field_name);
 		$this->{$deleted_column} = null;
 		
 		//Loop through all relations and delete if we are cascading.
@@ -261,7 +261,7 @@ class Model_Soft extends Model
 		if (static::get_filter_status())
 		{
 			//Make sure we are filtering out soft deleted items
-			$deleted_column = static::soft_delete_property('deleted_field', self::$_default_field_name);
+			$deleted_column = static::soft_delete_property('deleted_field', static::$_default_field_name);
 			$options['where'][] = array($deleted_column, null);
 		}
 
@@ -276,7 +276,7 @@ class Model_Soft extends Model
 		if (static::get_filter_status())
 		{
 			//Make sure we are filtering out soft deleted items
-			$deleted_column = static::soft_delete_property('deleted_field', self::$_default_field_name);
+			$deleted_column = static::soft_delete_property('deleted_field', static::$_default_field_name);
 			$options['where'][] = array($deleted_column, null);
 		}
 		
@@ -290,7 +290,7 @@ class Model_Soft extends Model
 	public static function deleted($id = null, array $options = array())
 	{
 		//Make sure we are not filtering out soft deleted items
-		$deleted_column = static::soft_delete_property('deleted_field', self::$_default_field_name);
+		$deleted_column = static::soft_delete_property('deleted_field', static::$_default_field_name);
 		$options['where'][] = array($deleted_column, 'IS NOT', null);
 
 		static::disable_filter();
