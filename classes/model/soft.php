@@ -267,6 +267,21 @@ class Model_Soft extends Model
 
 		return parent::find($id, $options);
 	}
+	
+	/**
+	 * Overrides the query method to allow soft delete items to be filtered out.
+	 */
+	public static function query($options=array())
+	{
+		if (static::get_filter_status())
+		{
+			//Make sure we are filtering out soft deleted items
+			$deleted_column = static::soft_delete_property('deleted_field', self::$_default_field_name);
+			$options['where'][] = array($deleted_column, null);
+		}
+		
+		return parent::query($options);
+	}
 
 	/**
 	 * Alisas of find() but selects only deleted entries rather than non-deleted
