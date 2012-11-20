@@ -20,7 +20,7 @@ Autoloader::add_classes(array(
 	'Orm\\Relation'     => __DIR__.'/classes/relation.php',
 	
 	//Speclised models
-	'Orm\\Model_Soft'   => __DIR__.'/classes/model/soft.php',
+	'Orm\\Model_Soft'      => __DIR__.'/classes/model/soft.php',
 
 	// Observers
 	'Orm\\Observer'             => __DIR__.'/classes/observer.php',
@@ -36,4 +36,5 @@ Autoloader::add_classes(array(
 	'Orm\\FrozenObject'        => __DIR__.'/classes/model.php',
 	'Orm\\InvalidContentType'  => __DIR__.'/classes/observer/typing.php',
 	'Orm\\ValidationFailed'    => __DIR__.'/classes/observer/validation.php',
+	'Orm\\RelationNotSoft' => __DIR__.'/classes/model/soft.php',
 ));
