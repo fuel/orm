@@ -1576,7 +1576,7 @@ class Model implements \ArrayAccess, \Iterator
 
 
 	/**
-	 * Allow populating this object from an array
+	 * Allow populating this object from an array, and any related objects
 	 *
 	 * @return  array
 	 */
@@ -1587,6 +1587,19 @@ class Model implements \ArrayAccess, \Iterator
 			if (array_key_exists($property, static::properties()) and ! in_array($property, static::primary_key()))
 			{
 				$this->_data[$property] = $value;
+			}
+			elseif (array_key_exists($property, static::relations()) and is_array($value))
+			{
+				foreach($value as $id => $data)
+				{
+					if (array_key_exists($id, $this->_data_relations[$property]) and is_array($data))
+					{
+						foreach($data as $field => $contents)
+						{
+							$this->_data_relations[$property][$id]->{$field} = $contents;
+						}
+					}
+				}
 			}
 		}
 	}
