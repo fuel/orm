@@ -225,7 +225,7 @@ class Model_Temporal extends Model
 			case 'all':
 			case 'first':
 			case 'last':
-				$options['where'][] = array($timestamp_field, 0);
+				$options['where'][] = array($timestamp_field, static::$_timestamp_zero);
 				break;
 			default:
 				$id = (array) $id;
