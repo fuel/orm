@@ -483,6 +483,10 @@ class Model implements \ArrayAccess, \Iterator
 		// Return Query object
 		if (is_null($id))
 		{
+			if (func_num_args() === 1)
+			{
+				throw new \FuelException('Invalid method call.  You need to specify a key value.', 0);
+			}
 			return static::query($options);
 		}
 		// Return all that match $options array
