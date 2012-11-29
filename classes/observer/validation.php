@@ -68,14 +68,22 @@ class Observer_Validation extends Observer
 			}
 		}
 
-		! array_key_exists($class, $_generated) and $_generated[$class] = array();
-		if (in_array($fieldset, $_generated[$class], true))
+		// is our parent fieldset a tabular form set?
+		is_object($fieldset->parent()) and $tabular_form = $fieldset->parent()->get_tabular_form();
+
+		// don't cache tabular form fieldsets
+		if (isset($tabular_form) and $tabular_form === false)
 		{
-			return $fieldset;
+			! array_key_exists($class, $_generated) and $_generated[$class] = array();
+			if (in_array($fieldset, $_generated[$class], true))
+			{
+				return $fieldset;
+			}
+			$_generated[$class][] = $fieldset;
 		}
-		$_generated[$class][] = $fieldset;
 
 		$primary_keys = is_object($obj) ? $obj->primary_key() : $class::primary_key();
+		$primary_key = count($primary_keys) === 1 ? reset($primary_keys) : false;
 		$properties = is_object($obj) ? $obj->properties() : $class::properties();
 		foreach ($properties as $p => $settings)
 		{
@@ -97,6 +105,13 @@ class Observer_Validation extends Observer
 			// label is either set in property setting, as part of form attributes or defaults to fieldname
 			$label = isset($settings['label']) ? $settings['label'] : (isset($attributes['label']) ? $attributes['label'] : $p);
 			$label = \Lang::get($label, array(), false) ?: $label;
+
+			// change the fieldname and label for tabular form fieldset children
+			if (isset($tabular_form) and $primary_key)
+			{
+				$p = $tabular_form.'['.(is_object($obj) ? $obj->{$primary_key} : '0').']['.$p.']';
+				$label = '';
+			}
 
 			// create the field and add validation rules
 			$field = $fieldset->add($p, $label, $attributes);

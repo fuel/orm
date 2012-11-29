@@ -148,11 +148,11 @@ class Query
 	 *
 	 * @return  void|array
 	 */
-	public function select()
+	public function select($add_pks = true)
 	{
 		$fields = func_get_args();
 
-		if (empty($fields))
+		if (empty($fields) or is_bool($add_pks))
 		{
 			if (empty($this->select))
 			{
@@ -180,12 +180,15 @@ class Query
 			$select = $this->select;
 
 			// ensure all PKs are being selected
-			$pks = call_user_func($this->model.'::primary_key');
-			foreach($pks as $pk)
+			if ($add_pks)
 			{
-				if ( ! in_array($this->alias.'.'.$pk, $this->select))
+				$pks = call_user_func($this->model.'::primary_key');
+				foreach($pks as $pk)
 				{
-					$this->select($pk);
+					if ( ! in_array($this->alias.'.'.$pk, $this->select))
+					{
+						$this->select($pk);
+					}
 				}
 			}
 
@@ -1040,7 +1043,7 @@ class Query
 	public function get_query()
 	{
 		// Get the columns
-		$columns = $this->select();
+		$columns = $this->select(false);
 
 		// Start building the query
 		$select = $columns;

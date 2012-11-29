@@ -414,7 +414,7 @@ class Model implements \ArrayAccess, \Iterator
 					{
 						if (is_string($obs_v) or (is_array($obs_v) and is_int(key($obs_v))))
 						{
-							// @TODO deprecated until v1.2
+							// @TODO deprecated until v1.4
 							logger(\Fuel::L_WARNING, 'Passing observer events as array is deprecated, they must be
 								inside another array under a key "events". Check the docs for more info.', __METHOD__);
 							$observers[$obs_k] = array('events' => (array) $obs_v);
@@ -1064,25 +1064,6 @@ class Model implements \ArrayAccess, \Iterator
 	}
 
 	/**
-	 * Values
-	 *
-	 * Short way of setting the values
-	 * for the object as opposed to setting
-	 * each one individually
-	 *
-	 * @access  public
-	 * @param   array  $values
-	 * @return  Orm\Model
-	 *
-	 * @deprecated since 1.3, use set() instead
-	 */
-	public function values(Array $data)
-	{
-		logger(\Fuel::L_WARNING, 'This method is deprecated.  Please use a set() instead.', __METHOD__);
-		return $this->set($data);
-	}
-
-	/**
 	 * Save the object and it's relations, create when necessary
 	 *
 	 * @param  mixed  $cascade
@@ -1592,7 +1573,7 @@ class Model implements \ArrayAccess, \Iterator
 
 
 	/**
-	 * Allow populating this object from an array
+	 * Allow populating this object from an array, and any related objects
 	 *
 	 * @return  array
 	 */
@@ -1603,6 +1584,19 @@ class Model implements \ArrayAccess, \Iterator
 			if (array_key_exists($property, static::properties()) and ! in_array($property, static::primary_key()))
 			{
 				$this->_data[$property] = $value;
+			}
+			elseif (array_key_exists($property, static::relations()) and is_array($value))
+			{
+				foreach($value as $id => $data)
+				{
+					if (array_key_exists($id, $this->_data_relations[$property]) and is_array($data))
+					{
+						foreach($data as $field => $contents)
+						{
+							$this->_data_relations[$property][$id]->{$field} = $contents;
+						}
+					}
+				}
 			}
 		}
 	}
