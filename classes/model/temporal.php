@@ -240,19 +240,43 @@ class Model_Temporal extends Model
 			case 'all':
 			case 'first':
 			case 'last':
-				$options['where'][] = array($timestamp_end_name, $max_timestamp);
 				break;
 			default:
 				$id = (array) $id;
-				$id[$timestamp_end_name] = $max_timestamp;
+				$count = 0;
+				foreach(static::getNonTimestampPks() as $key)
+				{
+					$options['where'][] = array($key, $id[$count]);
+					
+					$count++;
+				}
 				break;
 		}
+		
+		$options['where'][] = array($timestamp_end_name, $max_timestamp);
 
 		static::disable_primary_key_check();
 		$result = parent::find($id, $options);
 		static::enable_primary_key_check();
 		
 		return $result;
+	}
+	
+	private static function getNonTimestampPks()
+	{
+		$timestamp_start_name = static::temporal_property('start_column');
+		$timestamp_end_name = static::temporal_property('end_column');
+		
+		$pks = array();
+		foreach(static::primary_key() as $key)
+		{
+			if ($key != $timestamp_start_name && $key != $timestamp_end_name)
+			{
+				$pks[] = $key;
+			}
+		}
+		
+		return $pks;
 	}
 
 	/**
@@ -302,10 +326,13 @@ class Model_Temporal extends Model
 
 				parent::save();
 
+				var_dump(\DB::last_query());
+				exit;
+				
 				//Construct a copy of this model and save that with a 0 timestamp
 				foreach ($this->primary_key() as $pk)
 				{
-					if ($pk != $timestamp_start_name || $pk != $timestamp_end_name)
+					if ($pk != $timestamp_start_name && $pk != $timestamp_end_name)
 					{
 						$newModel->{$pk} = $this->{$pk};
 					}
