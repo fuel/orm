@@ -43,7 +43,7 @@ class HasOne extends Relation
 
 	public function get(Model $from)
 	{
-		$query = call_user_func(array($this->model_to, 'find'));
+		$query = call_user_func(array($this->model_to, 'query'));
 		reset($this->key_to);
 		foreach ($this->key_from as $key)
 		{
