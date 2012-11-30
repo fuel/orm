@@ -18,7 +18,8 @@ class Model_Temporal extends Model
 
 	public static function _init()
 	{
-		static::$_timestamp_zero = static::temporal_property('mysql_timestamp', self::$_default_mysql_timestamp) ? '0000-00-00 00:00:00' : 0;
+		\Config::load('orm', true);
+		static::$_timestamp_zero = static::temporal_property('mysql_timestamp', self::$_default_mysql_timestamp) ? '2038-01-18 22:14:08' : 4294967295;
 	}
 
 	/**
@@ -43,7 +44,16 @@ class Model_Temporal extends Model
 		if (property_exists($class, '_temporal'))
 		{
 			//Load up the info
-			$properties = static::$_temporal;
+			$properties['start_column'] =
+				\Arr::get(static::$_temporal, 'start_column', 'temporal_start');
+			$properties['end_column'] =
+				\Arr::get(static::$_temporal, 'end_column', 'temporal_end');
+			$properties['mysql_timestamp'] =
+				\Arr::get(static::$_temporal, 'mysql_timestamp', true);
+
+			$properties['max_timestamp'] = ($properties['mysql_timestamp']) ?
+				\Config::get('sql_max_timestamp_mysql') :
+				\Config::get('sql_max_timestamp_unix');
 		}
 
 		// cache the properties for next usage
@@ -53,7 +63,8 @@ class Model_Temporal extends Model
 	}
 
 	/**
-	 * Fetches a soft delete property description array, or specific data from it.
+	 * Fetches a soft delete property description array, or specific data from
+	 * it.
 	 * Stolen from parent class.
 	 *
 	 * @param   string  property or property.key
@@ -111,13 +122,13 @@ class Model_Temporal extends Model
 			->order_by($timestamp_field, 'DESC')
 			->limit(1);
 		self::enable_primary_key_check();
-		
+
 		//Ensure the relations are added
-		foreach($relations as $relation)
+		foreach ($relations as $relation)
 		{
 			$query->related($relation);
 		}
-		
+
 		$queryResult = $query->get();
 
 		$singleItem = array_pop($queryResult);
