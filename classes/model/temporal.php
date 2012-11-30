@@ -251,6 +251,7 @@ class Model_Temporal extends Model
 		//If this is new then just call the parent and let everything happen as normal
 		if ($this->is_new())
 		{
+			//TODO: Insert two - current time and current identifier
 			return parent::save($cascade, $use_transaction);
 		}
 		//If this is an update then set a new PK, save and then insert a new row
@@ -333,3 +334,15 @@ class Model_Temporal extends Model
 	}
 
 }
+
+/**
+ *
+SELECT *
+FROM `temporal`
+
+WHERE `temporal` >= '2012-11-29 17:15:00'
+
+GROUP BY `id`
+
+ORDER BY `temporal` DESC
+ */
