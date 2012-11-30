@@ -124,85 +124,42 @@ class Model_Temporal extends Model
 //		}
 
 		$queryResult = $query->get_one();
-
-//		echo '<pre>';
-//		print_r(\DB::last_query());
-//		exit;
-		
 		return $queryResult;
 	}
 
 	/**
 	 * Returns a list of revisions between the given times with the most recent
-	 * first.
+	 * first. This does not load relations.
 	 * 
-	 * @param type $id
-	 * @param type $earliestTime
-	 * @param type $latestTime
+	 * @param int|string $id
+	 * @param timestamp $earliestTime
+	 * @param timestamp $latestTime
 	 */
 	public static function find_revisions_between($id, $earliestTime = null, $latestTime = null)
 	{
-		//Must also slect +1 earliest times to make sure the entity state
-		//at the earliestTime is included.
-
-		$timestamp_field = static::temporal_property('timestamp_name', self::$_default_timestamp_field);
-
+		$timestamp_start_name = static::temporal_property('start_column');
+		$timestamp_end_name = static::temporal_property('end_column');
+		$max_timestamp = static::temporal_property('max_timestamp');
+		
 		if ($earliestTime == null)
 		{
-			$earliestTime = 1;
+			$earliestTime = 0;
+		}
+		
+		if($latestTime == null)
+		{
+			$latestTime = $max_timestamp;
 		}
 
-		$maxTimestamp = static::query()
-			->where('id', $id)
-			->max($timestamp_field);
-
 		static::disable_primary_key_check();
-		//Sub query to select a single revision that is the current state at the given start time
-		$startState = static::query()
-			->select($timestamp_field)
-			->where('id', $id)
-			->where($timestamp_field, '<=', $earliestTime)
-			->order_by($timestamp_field, 'DESC')
-			->limit(1);
-
 		//Select all revisions within the given range.
 		$query = static::query()
 			->where('id', $id)
-			->where($timestamp_field, '>=', $earliestTime)
-			->or_where($timestamp_field, $startState->get_query())
-			//This makes sure that the latest (0 timestamped) revision is at the top of the list
-			->order_by($timestamp_field, '= \'' . static::$_timestamp_zero . '\' DESC')
-			->order_by($timestamp_field, 'DESC');
+			->where($timestamp_start_name, '>=', $earliestTime)
+			->where($timestamp_start_name, '<=', $latestTime);
 		static::enable_primary_key_check();
 
-		if ($latestTime != null)
-		{
-			$query->where($timestamp_field, '<=', $latestTime);
-		}
-
-		//This must be the last or/where added to ensure the correct ordering
-		$query->or_where($timestamp_field, static::$_timestamp_zero);
-
 		$revisions = $query->get();
-
-		//If there is not more than one we don't need to worry about popping 0 off the list
-		if (count($revisions) > 1)
-		{
-			$selectMax = static::query()
-				->where('id', $id)
-				->where($timestamp_field, $maxTimestamp)
-				->order_by($timestamp_field, '= \'' . $maxTimestamp . '\' DESC')
-				->get_one();
-
-			$latest = array_slice($revisions, 1, 1);
-			$latest = array_pop($latest);
-
-			if ($latest->{$timestamp_field} != $selectMax->{$timestamp_field})
-			{
-				array_shift($revisions);
-			}
-		}
-
 		return $revisions;
 	}
 
