@@ -101,47 +101,35 @@ class Model_Temporal extends Model
 	{
 		if ($timestamp == null)
 		{
-			return parent::find(array($id, 0));
+			return parent::find($id);
 		}
 
-		$timestamp_field = static::temporal_property('timestamp_name', self::$_default_timestamp_field);
-
+		$timestamp_start_name = static::temporal_property('start_column');
+		$timestamp_end_name = static::temporal_property('end_column');
+		
 		//Select the next latest revision after the requested one then use that
 		//to get the revision before.
 		self::disable_primary_key_check();
-		$subQuery = static::query()
-			->select($timestamp_field)
-			->where('id', $id)
-			->where($timestamp_field, '>=', $timestamp)
-			->or_where($timestamp_field, static::$_timestamp_zero)
-			->order_by($timestamp_field, '= \'' . static::$_timestamp_zero . '\' ASC')
-			->order_by($timestamp_field, 'ASC')
-			->limit(1);
 
 		$query = static::query()
 			->where('id', $id)
-			->where($timestamp_field, '<', $subQuery->get_query())
-			->or_where($timestamp_field, static::$_timestamp_zero)
-			->order_by($timestamp_field, 'DESC')
-			->limit(1);
+			->where($timestamp_start_name, '<=', $timestamp)
+			->where($timestamp_end_name, '>', $timestamp);
 		self::enable_primary_key_check();
 
-		//Ensure the relations are added
-		foreach ($relations as $relation)
-		{
-			$query->related($relation);
-		}
+		//TODO: Ensure the relations are added
+//		foreach ($relations as $relation)
+//		{
+//			$query->related($relation);
+//		}
 
-		$queryResult = $query->get();
+		$queryResult = $query->get_one();
 
-		$singleItem = array_pop($queryResult);
-
-		if ($singleItem->id != $id)
-		{
-			return null;
-		}
-
-		return $singleItem;
+//		echo '<pre>';
+//		print_r(\DB::last_query());
+//		exit;
+		
+		return $queryResult;
 	}
 
 	/**
