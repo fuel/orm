@@ -325,9 +325,6 @@ class Model_Temporal extends Model
 				self::enable_primary_key_check();
 
 				parent::save();
-
-				var_dump(\DB::last_query());
-				exit;
 				
 				//Construct a copy of this model and save that with a 0 timestamp
 				foreach ($this->primary_key() as $pk)
