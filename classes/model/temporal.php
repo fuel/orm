@@ -10,16 +10,19 @@ namespace Orm;
 class Model_Temporal extends Model
 {
 
+	/**
+	 * Contains cached temporal properties.
+	 */
 	protected static $_temporal_cached = array();
-	private static $_default_mysql_timestamp = true;
-	private static $_default_timestamp_field = 'temporal';
+
+	/**
+	 * Contains the status of the primary key disable flag for temporal models
+	 */
 	private static $_pk_check_disabled = array();
-	protected static $_timestamp_zero = null;
 
 	public static function _init()
 	{
 		\Config::load('orm', true);
-		static::$_timestamp_zero = static::temporal_property('mysql_timestamp', self::$_default_mysql_timestamp) ? '2038-01-18 22:14:08' : 4294967295;
 	}
 
 	/**
@@ -52,8 +55,8 @@ class Model_Temporal extends Model
 				\Arr::get(static::$_temporal, 'mysql_timestamp', true);
 
 			$properties['max_timestamp'] = ($properties['mysql_timestamp']) ?
-				\Config::get('sql_max_timestamp_mysql') :
-				\Config::get('sql_max_timestamp_unix');
+				\Config::get('orm.sql_max_timestamp_mysql') :
+				\Config::get('orm.sql_max_timestamp_unix');
 		}
 
 		// cache the properties for next usage
@@ -228,23 +231,28 @@ class Model_Temporal extends Model
 	 */
 	public static function find($id = null, array $options = array())
 	{
-		$timestamp_field = static::temporal_property('timestamp_name', self::$_default_timestamp_field);
-
+		$timestamp_end_name = static::temporal_property('end_column');
+		$max_timestamp = static::temporal_property('max_timestamp');
+		
 		switch ($id)
 		{
 			case NULL:
 			case 'all':
 			case 'first':
 			case 'last':
-				$options['where'][] = array($timestamp_field, static::$_timestamp_zero);
+				$options['where'][] = array($timestamp_end_name, $max_timestamp);
 				break;
 			default:
 				$id = (array) $id;
-				$id[] = static::$_timestamp_zero;
+				$id[$timestamp_end_name] = $max_timestamp;
 				break;
 		}
 
-		return parent::find($id, $options);
+		static::disable_primary_key_check();
+		$result = parent::find($id, $options);
+		static::enable_primary_key_check();
+		
+		return $result;
 	}
 
 	/**
@@ -256,13 +264,23 @@ class Model_Temporal extends Model
 	public function save($cascade = null, $use_transaction = false)
 	{
 		//Load temporal properties.
-		$timestamp_field = static::temporal_property('timestamp_name', self::$_default_timestamp_field);
-		$mysql_timestamp = static::temporal_property('mysql_timestamp', self::$_default_mysql_timestamp);
+		$timestamp_start_name = static::temporal_property('start_column');
+		$timestamp_end_name = static::temporal_property('end_column');
+		$mysql_timestamp = static::temporal_property('mysql_timestamp');
 
+		$max_timestamp = static::temporal_property('max_timestamp');
+		$current_timestamp = $mysql_timestamp ?
+			\Date::forge()->format('mysql') :
+			\Date::forge()->get_timestamp();
+		
 		//If this is new then just call the parent and let everything happen as normal
 		if ($this->is_new())
 		{
-			//TODO: Insert two - current time and current identifier
+			static::disable_primary_key_check();
+			$this->{$timestamp_start_name} = $current_timestamp;
+			$this->{$timestamp_end_name} = $max_timestamp;
+			static::enable_primary_key_check();
+			
 			return parent::save($cascade, $use_transaction);
 		}
 		//If this is an update then set a new PK, save and then insert a new row
@@ -279,7 +297,7 @@ class Model_Temporal extends Model
 				$this->reset();
 
 				self::disable_primary_key_check();
-				$this->{$timestamp_field} = $mysql_timestamp ? \Date::forge()->format('mysql') : \Date::forge()->get_timestamp();
+				$this->{$timestamp_end_name} = $current_timestamp;
 				self::enable_primary_key_check();
 
 				parent::save();
@@ -287,13 +305,17 @@ class Model_Temporal extends Model
 				//Construct a copy of this model and save that with a 0 timestamp
 				foreach ($this->primary_key() as $pk)
 				{
-					if ($pk != $timestamp_field)
+					if ($pk != $timestamp_start_name || $pk != $timestamp_end_name)
 					{
 						$newModel->{$pk} = $this->{$pk};
 					}
 				}
-				$newModel->{$timestamp_field} = static::$_timestamp_zero;
-
+				
+				static::disable_primary_key_check();
+				$newModel->{$timestamp_start_name} = $current_timestamp;
+				$newModel->{$timestamp_end_name} = $max_timestamp;
+				static::enable_primary_key_check();
+				
 				return $newModel->save();
 			}
 		}
@@ -345,15 +367,3 @@ class Model_Temporal extends Model
 	}
 
 }
-
-/**
- *
-SELECT *
-FROM `temporal`
-
-WHERE `temporal` >= '2012-11-29 17:15:00'
-
-GROUP BY `id`
-
-ORDER BY `temporal` DESC
- */
