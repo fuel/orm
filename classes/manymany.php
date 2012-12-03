@@ -82,7 +82,7 @@ class ManyMany extends Relation
 	public function get(Model $from)
 	{
 		// Create the query on the model_through
-		$query = call_user_func(array($this->model_to, 'find'));
+		$query = call_user_func(array($this->model_to, 'query'));
 
 		// set the model_from's keys as where conditions for the model_through
 		$join = array(

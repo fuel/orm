@@ -126,7 +126,7 @@ class Observer_Typing
 	 *
 	 * @param  string  $column	name of the column
 	 * @param  string  $value	value
-	 * @param  string  $type	column settings from the model
+	 * @param  string  $settings	column settings from the model
 	 */
 	public static function typecast($column, $value, $settings)
 	{
@@ -222,7 +222,6 @@ class Observer_Typing
 	 *
 	 * @throws  InvalidContentType
 	 * @param   mixed  value
-	 * @param   array
 	 * @return  float
 	 */
 	public static function type_float($var)
@@ -280,7 +279,6 @@ class Observer_Typing
 	 * Converts boolean input to 1 or 0 for the DB
 	 *
 	 * @param   bool  value
-	 * @param   array
 	 * @return  int
 	 */
 	public static function type_bool_to_int($var)
@@ -292,7 +290,6 @@ class Observer_Typing
 	 * Converts DB bool values to PHP bool value
 	 *
 	 * @param   bool  value
-	 * @param   array
 	 * @return  int
 	 */
 	public static function type_bool_from_int($var)
