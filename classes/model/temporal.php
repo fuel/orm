@@ -18,7 +18,12 @@ class Model_Temporal extends Model
 	/**
 	 * Contains the status of the primary key disable flag for temporal models
 	 */
-	private static $_pk_check_disabled = array();
+	protected static $_pk_check_disabled = array();
+	
+	/**
+	 * Contains the status of filters for temporal model's query method
+	 */
+	protected static $_filter_query = array();
 
 	public static function _init()
 	{
@@ -126,7 +131,41 @@ class Model_Temporal extends Model
 		$queryResult = $query->get_one();
 		return $queryResult;
 	}
+	
+	public static function query($options = array())
+	{
+		$class = get_called_class();
+		
+		echo '<pre>';
+		print_r($class);
+		
+		if(\Arr::get(static::$_filter_query, $class, false))
+		{
+			echo 'filtering '.$class;
+			$timestamp_start_name = static::temporal_property('start_column');
+			$timestamp_end_name = static::temporal_property('end_column');
+			$timestamp = 1;
 
+			$options['where'] = array(
+				array($timestamp_start_name, '<=', $timestamp),
+				array($timestamp_end_name, '>', $timestamp),
+			);
+		}
+		
+		return parent::query($options);
+	}
+
+	/**
+	 * Adds a filter to query to get the revision at the given timestamp
+	 * 
+	 * @param timestamp $timestamp set to false to remove filtering
+	 */
+	public static function timestampFilterQuery($timestamp)
+	{
+		$class = get_called_class();
+		static::$_filter_query[$class] = $timestamp;
+	}
+	
 	/**
 	 * Returns a list of revisions between the given times with the most recent
 	 * first. This does not load relations.
