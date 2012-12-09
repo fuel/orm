@@ -57,6 +57,7 @@ class Observer_Validation extends Observer
 	public static function set_fields($obj, $fieldset = null)
 	{
 		static $_generated = array();
+		static $_tabular_rows = array();
 
 		$class = is_object($obj) ? get_class($obj) : $obj;
 		if (is_null($fieldset))
@@ -85,6 +86,12 @@ class Observer_Validation extends Observer
 		$primary_keys = is_object($obj) ? $obj->primary_key() : $class::primary_key();
 		$primary_key = count($primary_keys) === 1 ? reset($primary_keys) : false;
 		$properties = is_object($obj) ? $obj->properties() : $class::properties();
+
+		if (isset($tabular_form) and $primary_key and ! is_object($obj))
+		{
+			isset($_tabular_rows[$class]) or $_tabular_rows[$class] = 0;
+		}
+
 		foreach ($properties as $p => $settings)
 		{
 			if (\Arr::get($settings, 'skip', in_array($p, $primary_keys)))
@@ -109,7 +116,14 @@ class Observer_Validation extends Observer
 			// change the fieldname and label for tabular form fieldset children
 			if (isset($tabular_form) and $primary_key)
 			{
-				$p = $tabular_form.'['.(is_object($obj) ? $obj->{$primary_key} : '0').']['.$p.']';
+				if (is_object($obj))
+				{
+					$p = $tabular_form.'['.$obj->{$primary_key}.']['.$p.']';
+				}
+				else
+				{
+					$p = $tabular_form.'_new['.$_tabular_rows[$class].']['.$p.']';
+				}
 				$label = '';
 			}
 
@@ -131,6 +145,12 @@ class Observer_Validation extends Observer
 					call_user_func_array(array($field, 'add_rule'), $args);
 				}
 			}
+		}
+
+		// increase the row counter for tabular row fieldsets
+		if (isset($tabular_form) and $primary_key and ! is_object($obj))
+		{
+			$_tabular_rows[$class]++;
 		}
 
 		return $fieldset;
