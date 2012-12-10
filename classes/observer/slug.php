@@ -12,21 +12,37 @@
 
 namespace Orm;
 
+/**
+ * Observer class to generate SEO friendly slugs from a model property (usually something like a title)
+ */
 class Observer_Slug extends Observer
 {
 	/**
-	 * @var  mixed  Source property or array of properties, which is/are used to create the slug
+	 * @var  mixed  Default source property or array of properties, which is/are used to create the slug
 	 */
 	public static $source = 'title';
 
 	/**
-	 * @var  string  Slug property
+	 * @var  string  Default slug property
 	 */
 	public static $property = 'slug';
 
+	/**
+	 * @var  mixed  Source property or array of properties, which is/are used to create the slug
+	 */
 	protected $_source;
+
+	/**
+	 * @var  string  Slug property
+	 */
 	protected $_property;
 
+	/**
+	 * Set the properties for this observer instance, based on the parent model's
+	 * configuration or the defined defaults.
+	 *
+	 * @param  string  Model class this observer is called on
+	 */
 	public function __construct($class)
 	{
 		$props = $class::observers(get_class($this));
@@ -37,8 +53,7 @@ class Observer_Slug extends Observer
 	/**
 	 * Creates a unique slug and adds it to the object
 	 *
-	 * @param   Model  The object
-	 * @return  void
+	 * @param  Model  Model object subject of this observer method
 	 */
 	public function before_insert(Model $obj)
 	{
@@ -77,8 +92,7 @@ class Observer_Slug extends Observer
 	/**
 	 * Creates a new unique slug and update the object
 	 *
-	 * @param   Model  The object
-	 * @return  void
+	 * @param  Model  Model object subject of this observer method
 	 */
 	public function before_update(Model $obj)
 	{

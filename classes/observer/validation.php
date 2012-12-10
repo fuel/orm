@@ -12,18 +12,23 @@
 
 namespace Orm;
 
-// Exception to throw when validation failed
+/**
+ *  Exception to throw when validation failed
+ */
 class ValidationFailed extends \FuelException
 {
+	/**
+	 * @var  Fieldset the fieldset causing this exception
+	 */
 	protected $fieldset;
 
 	/**
 	 * Overridden \FuelException construct to add a Fieldset instance into the exception
 	 *
-	 * @param string
-	 * @param int
-	 * @param Exception
-	 * @param Fieldset
+	 * @param  string  the error message
+	 * @param  int  the error code
+	 * @param  \Exception any previous exception
+	 * @param  \Fieldset  the fieldset on which this exception was triggered
 	 */
 	public function __construct($message = null, $code = 0, \Exception $previous = null, \Fieldset $fieldset = null)
 	{
@@ -43,6 +48,12 @@ class ValidationFailed extends \FuelException
 	}
 }
 
+/**
+ * Observer class to validate the properties of the model before save.
+ *
+ * It is also used in Fieldset generation based on a model, to populate the fields
+ * and field validation rules of the Fieldset.
+ */
 class Observer_Validation extends Observer
 {
 
@@ -51,8 +62,8 @@ class Observer_Validation extends Observer
 	 * classname if none is provided.
 	 *
 	 * @param   string
-	 * @param   Fieldset|null
-	 * @return  Fieldset
+	 * @param   \Fieldset|null
+	 * @return  \Fieldset
 	 */
 	public static function set_fields($obj, $fieldset = null)
 	{
@@ -159,18 +170,20 @@ class Observer_Validation extends Observer
 	/**
 	 * Execute before saving the Model
 	 *
-	 * @param   Model
+	 * @param   Model	the model object to validate
+	 *
 	 * @throws  ValidationFailed
 	 */
 	public function before_save(Model $obj)
 	{
-		return $this->validate($obj);
+		$this->validate($obj);
 	}
 
 	/**
 	 * Validate the model
 	 *
-	 * @param   Model
+	 * @param   Model	the model object to validate
+	 *
 	 * @throws  ValidationFailed
 	 */
 	public function validate(Model $obj)

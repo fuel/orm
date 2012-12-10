@@ -12,8 +12,18 @@
 
 namespace Orm;
 
+/**
+ * Dummy observer class, which allows you to define observer methods in the
+ * model itself.
+ */
 class Observer_Self
 {
+	/**
+	 * Get notified of an event
+	 *
+	 * @param  Model   $instance
+	 * @param  string  $event
+	 */
 	public static function orm_notify(Model $instance, $event)
 	{
 		if (method_exists($instance, $method = '_event_'.$event))
