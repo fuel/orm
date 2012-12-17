@@ -146,6 +146,9 @@ class Query
 					$val = (array) $val;
 					$this->order_by($val);
 					break;
+				case 'group_by':
+					$this->group_by($val);
+					break;
 				case 'limit':
 					$this->limit($val);
 					break;
