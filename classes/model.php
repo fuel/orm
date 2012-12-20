@@ -199,6 +199,25 @@ class Model implements \ArrayAccess, \Iterator
 
 		return $result;
 	}
+	
+	/**
+	 * Clear cached object(s)
+	 *
+	 * @param int|string|null
+	 * @return  void
+	 */
+	public static function clear_cached_object($id = null)
+	{
+		$class = get_called_class();
+		if ($id === null)
+		{
+			\Arr::delete(static::$_cached_objects, $class);
+		}
+		else
+		{
+			\Arr::delete(static::$_cached_objects, $class.'.'.$id);
+		}
+	}
 
 	/**
 	 * Get the primary key(s) of this class
