@@ -203,18 +203,19 @@ class Model implements \ArrayAccess, \Iterator
 	/**
 	 * Clear cached object(s)
 	 *
+	 * @param int|string|null
 	 * @return  void
 	 */
-	public static function clear_cached_object($id = null, $class = null)
+	public static function clear_cached_object($id = null)
 	{
-		$class = $class ?: get_called_class();
+		$class = get_called_class();
 		if ($id === null)
 		{
-			unset(static::$_cached_objects[$class]);
+			\Arr::delete(static::$_cached_objects, $class);
 		}
 		else
 		{
-			unset(static::$_cached_objects[$class][$id]);
+			\Arr::delete(static::$_cached_objects, $class.'.'.$id);
 		}
 	}
 
