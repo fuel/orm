@@ -994,7 +994,7 @@ class Model implements \ArrayAccess, \Iterator
 			}
 			return $this->_data_relations[$property];
 		}
-		elseif ($value = $this->_get_eav($property))
+		elseif (($value = $this->_get_eav($property)) !== false)
 		{
 			return $value;
 		}
