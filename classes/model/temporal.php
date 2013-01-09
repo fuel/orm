@@ -175,7 +175,6 @@ class Model_Temporal extends Model
 	public static function find_revisions_between($id, $earliestTime = null, $latestTime = null)
 	{
 		$timestamp_start_name = static::temporal_property('start_column');
-		$timestamp_end_name = static::temporal_property('end_column');
 		$max_timestamp = static::temporal_property('max_timestamp');
 		
 		if ($earliestTime == null)
