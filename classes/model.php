@@ -1211,22 +1211,19 @@ class Model implements \ArrayAccess, \Iterator
 		$properties  = array_keys(static::properties());
 		foreach ($primary_key as $pk)
 		{
-			$query->where($pk, '=', $this->_data[$pk]);
+			$query->where($pk, '=', $this->_original[$pk]);
 		}
 
 		// Set all current values
 		foreach ($properties as $p)
 		{
-			if ( ! in_array($p, $primary_key))
+			if (array_key_exists($p, $this->_original))
 			{
-				if (array_key_exists($p, $this->_original))
-				{
-					$this->{$p} !== $this->_original[$p] and $query->set($p, isset($this->_data[$p]) ? $this->_data[$p] : null);
-				}
-				else
-				{
-					array_key_exists($p, $this->_data) and $query->set($p, $this->_data[$p]);
-				}
+				$this->{$p} !== $this->_original[$p] and $query->set($p, isset($this->_data[$p]) ? $this->_data[$p] : null);
+			}
+			else
+			{
+				array_key_exists($p, $this->_data) and $query->set($p, $this->_data[$p]);
 			}
 
 			if ( ! in_array($p, $primary_key) and (array_key_exists($p, $this->_data) or array_key_exists($p, $this->_original)))
