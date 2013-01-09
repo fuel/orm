@@ -152,17 +152,6 @@ class Model_Temporal extends Model
 		
 		return Temporal_Query::forge(get_called_class(), static::connection(), $options);
 	}
-
-	/**
-	 * Adds a filter to query to get the revision at the given timestamp
-	 * 
-	 * @param timestamp $timestamp set to false to remove filtering
-	 */
-	public static function timestampFilterQuery($timestamp)
-	{
-		$class = get_called_class();
-		static::$_filter_query[$class] = $timestamp;
-	}
 	
 	/**
 	 * Returns a list of revisions between the given times with the most recent
