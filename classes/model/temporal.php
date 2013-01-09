@@ -232,6 +232,10 @@ class Model_Temporal extends Model
 		return $result;
 	}
 	
+	/**
+	 * Returns an array of the primary keys that are not related to temporal
+	 * timestamp information.
+	 */
 	private static function getNonTimestampPks()
 	{
 		$timestamp_start_name = static::temporal_property('start_column');
