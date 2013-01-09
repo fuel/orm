@@ -896,9 +896,9 @@ class Query
 	/**
 	 * Allows subclasses to make changes to the join information before it is used
 	 */
-	protected function modify_join_result($joinResult, $name)
+	protected function modify_join_result($join_result, $name)
 	{
-		return $joinResult;
+		return $join_result;
 	}
 
 	/**
