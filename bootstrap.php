@@ -22,6 +22,7 @@ Autoloader::add_classes(array(
 	//Speclised models
 	'Orm\\Model_Soft'   => __DIR__.'/classes/model/soft.php',
 	'Orm\\Model_Temporal'   => __DIR__.'/classes/model/temporal.php',
+	'Orm\\Temporal_Query'   => __DIR__.'/classes/temporal/query.php',
 
 	// Observers
 	'Orm\\Observer'             => __DIR__.'/classes/observer.php',
