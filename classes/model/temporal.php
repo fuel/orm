@@ -337,8 +337,6 @@ class Model_Temporal extends Model
 	 */
 	public static function primary_key()
 	{
-		$class = get_called_class();
-
 		if (static::get_primary_key_status())
 		{
 			return static::$_primary_key;
