@@ -994,7 +994,7 @@ class Model implements \ArrayAccess, \Iterator
 			}
 			return $this->_data_relations[$property];
 		}
-		elseif ($value = $this->_get_eav($property))
+		elseif (($value = $this->_get_eav($property)) !== false)
 		{
 			return $value;
 		}
@@ -1047,7 +1047,7 @@ class Model implements \ArrayAccess, \Iterator
 
 			if (in_array($property, static::primary_key()) and $this->{$property} !== null)
 			{
-				throw new \FuelException('Primary key cannot be changed.');
+				throw new \FuelException('Primary key on model '.get_class().' cannot be changed.');
 			}
 			if (array_key_exists($property, static::properties()))
 			{
