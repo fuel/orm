@@ -122,11 +122,13 @@ class Model_Temporal extends Model
 			->where($timestamp_end_name, '>', $timestamp);
 		self::enable_primary_key_check();
 
-		//TODO: Ensure the relations are added
-//		foreach ($relations as $relation)
-//		{
-//			$query->related($relation);
-//		}
+		//Make sure the temporal stuff is activated
+		$query->set_temporal_properties($timestamp, $timestamp_end_name, $timestamp_start_name);
+		
+		foreach ($relations as $relation)
+		{
+			$query->related($relation);
+		}
 
 		$queryResult = $query->get_one();
 		return $queryResult;
@@ -136,12 +138,8 @@ class Model_Temporal extends Model
 	{
 		$class = get_called_class();
 		
-		echo '<pre>';
-		print_r($class);
-		
 		if(\Arr::get(static::$_filter_query, $class, false))
 		{
-			echo 'filtering '.$class;
 			$timestamp_start_name = static::temporal_property('start_column');
 			$timestamp_end_name = static::temporal_property('end_column');
 			$timestamp = 1;
@@ -152,7 +150,7 @@ class Model_Temporal extends Model
 			);
 		}
 		
-		return parent::query($options);
+		return Temporal_Query::forge(get_called_class(), static::connection(), $options);
 	}
 
 	/**
