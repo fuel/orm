@@ -1228,10 +1228,6 @@ class Model implements \ArrayAccess, \Iterator
 					array_key_exists($p, $this->_data) and $query->set($p, $this->_data[$p]);
 				}
 			}
-
-			if ( ! in_array($p, $primary_key) and (array_key_exists($p, $this->_data) or array_key_exists($p, $this->_original)))
-			{
-			}
 		}
 
 		// Return false when update fails
