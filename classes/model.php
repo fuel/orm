@@ -1209,21 +1209,22 @@ class Model implements \ArrayAccess, \Iterator
 		$query       = Query::forge(get_called_class(), static::connection());
 		$primary_key = static::primary_key();
 		$properties  = array_keys(static::properties());
-		foreach ($primary_key as $pk)
-		{
-			$query->where($pk, '=', $this->_original[$pk]);
-		}
+		//Add the primary keys to the where
+		$this->add_primary_keys_to_where($query);
 
 		// Set all current values
 		foreach ($properties as $p)
 		{
-			if (array_key_exists($p, $this->_original))
+			if ( ! in_array($p, $primary_key) )
 			{
-				$this->{$p} !== $this->_original[$p] and $query->set($p, isset($this->_data[$p]) ? $this->_data[$p] : null);
-			}
-			else
-			{
-				array_key_exists($p, $this->_data) and $query->set($p, $this->_data[$p]);
+				if (array_key_exists($p, $this->_original))
+				{
+					$this->{$p} !== $this->_original[$p] and $query->set($p, isset($this->_data[$p]) ? $this->_data[$p] : null);
+				}
+				else
+				{
+					array_key_exists($p, $this->_data) and $query->set($p, $this->_data[$p]);
+				}
 			}
 
 			if ( ! in_array($p, $primary_key) and (array_key_exists($p, $this->_data) or array_key_exists($p, $this->_original)))
@@ -1241,6 +1242,20 @@ class Model implements \ArrayAccess, \Iterator
 		$this->observe('after_update');
 
 		return true;
+	}
+	
+	/**
+	 * Adds the primary keys in where clauses to the given query.
+	 * 
+	 * @param Query $query
+	 */
+	protected function add_primary_keys_to_where($query)
+	{
+		$primary_key = static::primary_key();
+		foreach ($primary_key as $pk)
+		{
+			$query->where($pk, '=', $this->_original[$pk]);
+		}
 	}
 
 	/**

@@ -71,7 +71,7 @@ class Model_Temporal extends Model
 	}
 
 	/**
-	 * Fetches a soft delete property description array, or specific data from
+	 * Fetches temporal property description array, or specific data from
 	 * it.
 	 * Stolen from parent class.
 	 *
@@ -130,8 +130,8 @@ class Model_Temporal extends Model
 			$query->related($relation);
 		}
 
-		$queryResult = $query->get_one();
-		return $queryResult;
+		$query_result = $query->get_one();
+		return $query_result;
 	}
 	
 	public static function query($options = array())
@@ -319,6 +319,40 @@ class Model_Temporal extends Model
 		}
 
 		return $this;
+	}
+	
+	/**
+	 * Overrides update to remove PK checking when performing an update.
+	 */
+	public function update()
+	{
+		static::disable_primary_key_check();
+		$result = parent::update();
+		static::enable_primary_key_check();
+		
+		return $result;
+	}
+	
+	/**
+	 * Allows correct PKs to be added when performing updates
+	 * 
+	 * @param Query $query
+	 */
+	protected function add_primary_keys_to_where($query)
+	{
+		$timestamp_start_name = static::temporal_property('start_column');
+		$timestamp_end_name = static::temporal_property('end_column');
+		
+		$primary_key = array(
+			'id',
+			$timestamp_start_name,
+			$timestamp_end_name,
+		);
+		
+		foreach ($primary_key as $pk)
+		{
+			$query->where($pk, '=', $this->_original[$pk]);
+		}
 	}
 
 	/**
