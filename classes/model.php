@@ -989,8 +989,15 @@ class Model implements \ArrayAccess, \Iterator
 		{
 			if ( ! array_key_exists($property, $this->_data_relations))
 			{
-				$this->_data_relations[$property] = $rel->get($this);
-				$this->_update_original_relations(array($property));
+				if ($this->is_new())
+				{
+					$this->_data_relations[$property] = $rel->singular ? null : array();
+				}
+				else
+				{
+					$this->_data_relations[$property] = $rel->get($this);
+					$this->_update_original_relations(array($property));
+				}
 			}
 			return $this->_data_relations[$property];
 		}
