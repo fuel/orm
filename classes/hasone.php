@@ -47,6 +47,11 @@ class HasOne extends Relation
 		reset($this->key_to);
 		foreach ($this->key_from as $key)
 		{
+			// no point running a query when a key value is null
+			if ($from->{$key} === null)
+			{
+				return null;
+			}
 			$query->where(current($this->key_to), $from->{$key});
 			next($this->key_to);
 		}

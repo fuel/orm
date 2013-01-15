@@ -45,6 +45,11 @@ class HasMany extends Relation
 		reset($this->key_to);
 		foreach ($this->key_from as $key)
 		{
+			// no point running a query when a key value is null
+			if ($from->{$key} === null)
+			{
+				return array();
+			}
 			$query->where(current($this->key_to), $from->{$key});
 			next($this->key_to);
 		}
