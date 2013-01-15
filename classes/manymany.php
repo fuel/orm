@@ -97,7 +97,7 @@ class ManyMany extends Relation
 		{
 			if ($from->{current($this->key_from)} === null)
 			{
-				return null;
+				return array();
 			}
 			$query->where('t0_through.'.$key, $from->{current($this->key_from)});
 			next($this->key_from);
