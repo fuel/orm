@@ -81,10 +81,10 @@ class Observer_Validation extends Observer
 		}
 
 		// is our parent fieldset a tabular form set?
-		is_object($fieldset->parent()) and $tabular_form = $fieldset->parent()->get_tabular_form();
+		$tabular_form = is_object($fieldset->parent()) ? $fieldset->parent()->get_tabular_form() : false;
 
 		// don't cache tabular form fieldsets
-		if (isset($tabular_form) and $tabular_form === false)
+		if ( ! $tabular_form)
 		{
 			! array_key_exists($class, $_generated) and $_generated[$class] = array();
 			if (in_array($fieldset, $_generated[$class], true))
@@ -98,7 +98,7 @@ class Observer_Validation extends Observer
 		$primary_key = count($primary_keys) === 1 ? reset($primary_keys) : false;
 		$properties = is_object($obj) ? $obj->properties() : $class::properties();
 
-		if (isset($tabular_form) and $primary_key and ! is_object($obj))
+		if ($tabular_form and $primary_key and ! is_object($obj))
 		{
 			isset($_tabular_rows[$class]) or $_tabular_rows[$class] = 0;
 		}
@@ -125,7 +125,7 @@ class Observer_Validation extends Observer
 			$label = \Lang::get($label, array(), false) ?: $label;
 
 			// change the fieldname and label for tabular form fieldset children
-			if (isset($tabular_form) and $primary_key)
+			if ($tabular_form and $primary_key)
 			{
 				if (is_object($obj))
 				{
@@ -159,7 +159,7 @@ class Observer_Validation extends Observer
 		}
 
 		// increase the row counter for tabular row fieldsets
-		if (isset($tabular_form) and $primary_key and ! is_object($obj))
+		if ($tabular_form and $primary_key and ! is_object($obj))
 		{
 			$_tabular_rows[$class]++;
 		}
