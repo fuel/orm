@@ -21,6 +21,12 @@ class Model_Temporal extends Model
 	protected static $_pk_check_disabled = array();
 	
 	/**
+	 * Contains the status for classes that defines if primaryKey() should return
+	 * just the ID.
+	 */
+	protected static $_pk_id_only = array();
+	
+	/**
 	 * Contains the status of filters for temporal model's query method
 	 */
 	protected static $_filter_query = array();
@@ -225,9 +231,9 @@ class Model_Temporal extends Model
 		
 		$options['where'][] = array($timestamp_end_name, $max_timestamp);
 
-		static::disable_primary_key_check();
+		static::enable_id_only_primary_key();
 		$result = parent::find($id, $options);
-		static::enable_primary_key_check();
+		static::disable_id_only_primary_key();
 		
 		return $result;
 	}
@@ -242,7 +248,7 @@ class Model_Temporal extends Model
 		$timestamp_end_name = static::temporal_property('end_column');
 		
 		$pks = array();
-		foreach(static::primary_key() as $key)
+		foreach(parent::primary_key() as $key)
 		{
 			if ($key != $timestamp_start_name && $key != $timestamp_end_name)
 			{
@@ -361,11 +367,19 @@ class Model_Temporal extends Model
 	 */
 	public static function primary_key()
 	{
-		if (static::get_primary_key_status())
+		$id_only = static::get_primary_key_id_only_status();
+		$pk_status = static::get_primary_key_status();
+		
+		if ($id_only)
+		{
+			return static::getNonTimestampPks();
+		}
+		
+		if ($pk_status && ! $id_only)
 		{
 			return static::$_primary_key;
 		}
-
+		
 		return array();
 	}
 
@@ -394,6 +408,33 @@ class Model_Temporal extends Model
 	{
 		$class = get_called_class();
 		return \Arr::get(self::$_pk_check_disabled, $class, true);
+	}
+	
+	/**
+	 * Returns true if the PK shoudl only contain the ID. Defaults to false
+	 */
+	private static function get_primary_key_id_only_status()
+	{
+		$class = get_called_class();
+		return \Arr::get(self::$_pk_id_only, $class, false);
+	}
+	
+	/**
+	 * Makes all PKs returned
+	 */
+	private static function disable_id_only_primary_key()
+	{
+		$class = get_called_class();
+		self::$_pk_id_only[$class] = false;
+	}
+
+	/**
+	 * Makes only id returned as PK
+	 */
+	private static function enable_id_only_primary_key()
+	{
+		$class = get_called_class();
+		self::$_pk_id_only[$class] = true;
 	}
 
 }
