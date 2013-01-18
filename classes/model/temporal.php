@@ -285,7 +285,12 @@ class Model_Temporal extends Model
 			$this->{$timestamp_end_name} = $max_timestamp;
 			static::enable_primary_key_check();
 			
-			return parent::save($cascade, $use_transaction);
+			//Make sure save will populate the PK
+			static::enable_id_only_primary_key();
+			$result = parent::save($cascade, $use_transaction);
+			static::disable_id_only_primary_key();
+			
+			return $result;
 		}
 		//If this is an update then set a new PK, save and then insert a new row
 		else
@@ -320,7 +325,12 @@ class Model_Temporal extends Model
 				$newModel->{$timestamp_end_name} = $max_timestamp;
 				static::enable_primary_key_check();
 				
-				return $newModel->save();
+				$result = $newModel->save();
+				
+				//Make sure $this is repopulated correctly (So Id's are present)
+				$this->set($newModel);
+				
+				return $result;
 			}
 		}
 
