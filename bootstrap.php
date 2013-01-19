@@ -10,6 +10,7 @@
  * @link       http://fuelphp.com
  */
 
+
 Autoloader::add_classes(array(
 	'Orm\\Model'        => __DIR__.'/classes/model.php',
 	'Orm\\Query'        => __DIR__.'/classes/query.php',

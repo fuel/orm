@@ -34,6 +34,11 @@ class Model implements \ArrayAccess, \Iterator
 	// protected static $_connection = null;
 
 	/**
+	 * @var  string  write connection to use
+	 */
+	// protected static $_write_connection = null;
+
+	/**
 	 * @var  string  table name to overwrite assumption
 	 */
 	// protected static $_table_name;
@@ -120,11 +125,17 @@ class Model implements \ArrayAccess, \Iterator
 	/**
 	 * Fetch the database connection name to use
 	 *
+	 * @param	bool	if true return the writeable connection (if set)
 	 * @return  null|string
 	 */
-	public static function connection()
+	public static function connection($writeable = false)
 	{
 		$class = get_called_class();
+
+		if ($writeable and property_exists($class, '_write_connection'))
+		{
+			return static::$_write_connection;
+		}
 
 		return property_exists($class, '_connection') ? static::$_connection : null;
 	}
@@ -538,7 +549,7 @@ class Model implements \ArrayAccess, \Iterator
 	 */
 	public static function query($options = array())
 	{
-		return Query::forge(get_called_class(), static::connection(), $options);
+		return Query::forge(get_called_class(), array(static::connection(), static::connection(true)), $options);
 	}
 
 	/**
@@ -549,7 +560,7 @@ class Model implements \ArrayAccess, \Iterator
 	 */
 	public static function count(array $options = array())
 	{
-		return Query::forge(get_called_class(), static::connection(), $options)->count();
+		return Query::forge(get_called_class(), array(static::connection(), static::connection(true)), $options)->count();
 	}
 
 	/**
@@ -561,7 +572,7 @@ class Model implements \ArrayAccess, \Iterator
 	 */
 	public static function max($key = null)
 	{
-		return Query::forge(get_called_class(), static::connection())->max($key ?: static::primary_key());
+		return Query::forge(get_called_class(), array(static::connection(), static::connection(true)))->max($key ?: static::primary_key());
 	}
 
 	/**
@@ -573,7 +584,7 @@ class Model implements \ArrayAccess, \Iterator
 	 */
 	public static function min($key = null)
 	{
-		return Query::forge(get_called_class(), static::connection())->min($key ?: static::primary_key());
+		return Query::forge(get_called_class(), array(static::connection(), static::connection(true)))->min($key ?: static::primary_key());
 	}
 
 	public static function __callStatic($method, $args)
@@ -1084,7 +1095,7 @@ class Model implements \ArrayAccess, \Iterator
 
 		if ($use_transaction)
 		{
-			$db = \Database_Connection::instance(static::connection());
+			$db = \Database_Connection::instance(static::connection(true));
 			$db->start_transaction();
 		}
 
@@ -1155,7 +1166,7 @@ class Model implements \ArrayAccess, \Iterator
 		$this->observe('before_insert');
 
 		// Set all current values
-		$query = Query::forge(get_called_class(), static::connection());
+		$query = Query::forge(get_called_class(), static::connection(true));
 		$primary_key = static::primary_key();
 		$properties  = array_keys(static::properties());
 		foreach ($properties as $p)
@@ -1206,7 +1217,7 @@ class Model implements \ArrayAccess, \Iterator
 		$this->observe('before_update');
 
 		// Create the query and limit to primary key(s)
-		$query       = Query::forge(get_called_class(), static::connection());
+		$query       = Query::forge(get_called_class(), static::connection(true));
 		$primary_key = static::primary_key();
 		$properties  = array_keys(static::properties());
 		foreach ($primary_key as $pk)
@@ -1261,7 +1272,7 @@ class Model implements \ArrayAccess, \Iterator
 
 		if ($use_transaction)
 		{
-			$db = \Database_Connection::instance(static::connection());
+			$db = \Database_Connection::instance(static::connection(true));
 			$db->start_transaction();
 		}
 
@@ -1277,7 +1288,7 @@ class Model implements \ArrayAccess, \Iterator
 			$this->unfreeze();
 
 			// Create the query and limit to primary key(s)
-			$query = Query::forge(get_called_class(), static::connection())->limit(1);
+			$query = Query::forge(get_called_class(), static::connection(true))->limit(1);
 			$primary_key = static::primary_key();
 			foreach ($primary_key as $pk)
 			{

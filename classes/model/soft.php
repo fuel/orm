@@ -4,14 +4,14 @@ namespace Orm;
 
 class RelationNotSoft extends \Exception
 {
-	
+
 }
 
 /**
  * Defines a model that can be "soft" deleted. A timestamp is used to indicate
- * that the data has been deleted but the data itself is not removed from the 
+ * that the data has been deleted but the data itself is not removed from the
  * database.
- * 
+ *
  * @author Steve "Uru" West <uruwolf@gmail.com>
  */
 class Model_Soft extends Model
@@ -34,13 +34,13 @@ class Model_Soft extends Model
 	 * @var array
 	 */
 	protected static $_soft_delete_cached = array();
-	
+
 	protected static $_disable_filter = array();
 
 	/**
 	 * Gets the soft delete properties.
 	 * Mostly stolen from the parent class properties() function
-	 * 
+	 *
 	 * @return array
 	 */
 	public static function soft_delete_properties()
@@ -67,7 +67,7 @@ class Model_Soft extends Model
 
 		return static::$_soft_delete_cached[$class];
 	}
-	
+
 	/**
 	 * Disables filtering of deleted entries.
 	 */
@@ -76,7 +76,7 @@ class Model_Soft extends Model
 		$class = get_called_class();
 		static::$_disable_filter[$class] = false;
 	}
-	
+
 	/**
 	 * Enables filtering of deleted entries.
 	 */
@@ -85,7 +85,7 @@ class Model_Soft extends Model
 		$class = get_called_class();
 		static::$_disable_filter[$class] = true;
 	}
-	
+
 	/**
 	 * @return boolean True if the deleted items are to be filtered out.
 	 */
@@ -118,7 +118,7 @@ class Model_Soft extends Model
 
 	/**
 	 * Do some php magic to allow static::find_deleted() to work
-	 * 
+	 *
 	 * @param type $method
 	 * @param type $args
 	 */
@@ -140,7 +140,7 @@ class Model_Soft extends Model
 	/**
 	 * Updates the defined deleted_field with a current timestamp rather than
 	 * deleting.
-	 * 
+	 *
 	 * @return this
 	 */
 	public function delete($cascade = null, $use_transaction = false)
@@ -151,7 +151,7 @@ class Model_Soft extends Model
 		//If we are using a transcation then make sure it's started
 		if ($use_transaction)
 		{
-			$db = \Database_Connection::instance(static::connection());
+			$db = \Database_Connection::instance(static::connection(true));
 			$db->start_transaction();
 		}
 
@@ -206,7 +206,7 @@ class Model_Soft extends Model
 	{
 		$deleted_column = static::soft_delete_property('deleted_field', static::$_default_field_name);
 		$this->{$deleted_column} = null;
-		
+
 		//Loop through all relations and delete if we are cascading.
 		$this->freeze();
 		foreach ($this->relations() as $rel_name => $rel)
@@ -227,19 +227,19 @@ class Model_Soft extends Model
 				{
 					$model_to = $rel->model_to;
 					$model_to::disable_filter();
-					
+
 					//Loop through and call restore on all the models
 					foreach($rel->get($this) as $model)
 					{
 						$model->restore($cascade_restore);
 					}
-					
+
 					$model_to::enable_filter();
 				}
 			}
 		}
 		$this->unfreeze();
-		
+
 		$this->save();
 
 		return $this;
@@ -267,7 +267,7 @@ class Model_Soft extends Model
 
 		return parent::find($id, $options);
 	}
-	
+
 	/**
 	 * Overrides the query method to allow soft delete items to be filtered out.
 	 */
@@ -279,7 +279,7 @@ class Model_Soft extends Model
 			$deleted_column = static::soft_delete_property('deleted_field', static::$_default_field_name);
 			$options['where'][] = array($deleted_column, null);
 		}
-		
+
 		return parent::query($options);
 	}
 
@@ -296,7 +296,7 @@ class Model_Soft extends Model
 		static::disable_filter();
 		$result = parent::find($id, $options);
 		static::enable_filter();
-		
+
 		return $result;
 	}
 

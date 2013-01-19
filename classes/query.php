@@ -42,6 +42,11 @@ class Query
 	protected $connection;
 
 	/**
+	 * @var  null|string  connection name to use for writes
+	 */
+	protected $write_connection;
+
+	/**
 	 * @var  array  database view to use with keys 'view' and 'columns'
 	 */
 	protected $view;
@@ -122,7 +127,16 @@ class Query
 	protected function __construct($model, $connection, $options, $table_alias = null)
 	{
 		$this->model = $model;
-		$this->connection = $connection;
+
+		if (is_array($connection))
+		{
+			list($this->connection, $this->write_connection) = $connection;
+		}
+		else
+		{
+			$this->connection = $connection;
+			$this->write_connection = $connection;
+		}
 
 		foreach ($options as $opt => $val)
 		{
@@ -779,9 +793,10 @@ class Query
 		}
 		foreach ($models as $m)
 		{
-			if ($m['connection'] != $this->connection)
+			if (($type == 'select' and $m['connection'] != $this->connection) or
+				($type != 'select' and $m['connection'] != $this->write_connection))
 			{
-				throw new \FuelException('Models cannot be related between connection.');
+				throw new \FuelException('Models cannot be related between different database connections.');
 			}
 
 			$join_query = $query->join($m['table'], $m['join_type']);
@@ -1255,7 +1270,7 @@ class Query
 	{
 		$res = \DB::insert(call_user_func($this->model.'::table'), array_keys($this->values))
 			->values(array_values($this->values))
-			->execute($this->connection);
+			->execute($this->write_connection);
 
 		// Failed to save the new record
 		if ($res[0] === 0)
@@ -1281,7 +1296,7 @@ class Query
 		$query = \DB::update(call_user_func($this->model.'::table'));
 		$tmp   = $this->build_query($query, array(), 'update');
 		$query = $tmp['query'];
-		$res = $query->set($this->values)->execute($this->connection);
+		$res = $query->set($this->values)->execute($this->write_connection);
 
 		// put back any relations settings
 		$this->relations = $tmp_relations;
@@ -1305,7 +1320,7 @@ class Query
 		$query = \DB::delete(call_user_func($this->model.'::table'));
 		$tmp   = $this->build_query($query, array(), 'delete');
 		$query = $tmp['query'];
-		$res = $query->execute($this->connection);
+		$res = $query->execute($this->write_connection);
 
 		// put back any relations settings
 		$this->relations = $tmp_relations;
