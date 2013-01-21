@@ -752,9 +752,10 @@ class Query
 				$alias = $this->alias;
 			}
 
-			$models = array_merge($models, $rel[0]->join($alias, $name, $i++, $rel[1]));
+			$join = $rel[0]->join($alias, $name, $i++, $rel[1]);
+			$models = array_merge($models, $this->modify_join_result($join, $name));
 		}
-
+		
 		if ($this->use_subquery())
 		{
 			// Get the columns for final select
@@ -905,6 +906,14 @@ class Query
 		! is_null($this->rows_offset) and $query->offset($this->rows_offset);
 
 		return array('query' => $query, 'models' => $models);
+	}
+	
+	/**
+	 * Allows subclasses to make changes to the join information before it is used
+	 */
+	protected function modify_join_result($join_result, $name)
+	{
+		return $join_result;
 	}
 
 	/**

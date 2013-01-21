@@ -1,0 +1,54 @@
+<?php
+
+namespace Orm;
+
+/**
+ * Adds temporal properties to the query object to allow for correct relation 
+ * filtering on joins.
+ *
+ * @author Steve "uru" West <uruwolf@gmail.com>
+ */
+class Temporal_Query extends Query
+{
+	protected $timestamp = null;
+	protected $timestamp_end_col = null;
+	protected $timestamp_start_col = null;
+	
+	/**
+	 * Sets the timestamp to be used on joins. If set to null the latest revision
+	 * is used.
+	 * 
+	 * @param null|string $stamp Timestamp to look for
+	 * @param string $timestamp_end_col Name of the end timestamp column
+	 * @param string $timestamp_start_col Name of teh start timestamp column
+	 */
+	public function set_temporal_properties(
+		$stamp,
+		$timestamp_end_col,
+		$timestamp_start_col)
+	{
+		$this->timestamp = $stamp;
+		$this->timestamp_end_col = $timestamp_end_col;
+		$this->timestamp_start_col = $timestamp_start_col;
+	}
+	
+	/**
+	 * Adds extra where conditions when temporal filtering is needed.
+	 * 
+	 * @param array $join_result
+	 * @param string $name
+	 * @return array
+	 */
+	protected function modify_join_result($join_result, $name)
+	{	
+		if( ! is_null($this->timestamp))
+		{
+			//Add the needed conditions to allow for temporal-ness
+			$join_result[$name]['where'][] = array($this->timestamp_start_col, '<=', $this->timestamp);
+			$join_result[$name]['where'][] = array($this->timestamp_end_col, '>', $this->timestamp);
+		}
+		
+		return $join_result;
+	}
+	
+}
