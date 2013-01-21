@@ -328,7 +328,10 @@ class Model_Temporal extends Model
 				$result = $newModel->save();
 				
 				//Make sure $this is repopulated correctly (So Id's are present)
-				$this->set($newModel);
+				foreach($this->properties() as $proptery => $settings)
+				{
+					$this->_data[$proptery] = $newModel->{$proptery};
+				}
 				
 				return $result;
 			}
