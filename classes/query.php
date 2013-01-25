@@ -976,7 +976,7 @@ class Query
 			foreach ($select as $s)
 			{
 				$f = substr($s[0], strpos($s[0], '.') + 1);
-				if ($obj->{$f} === null and $row[$s[1]] !== null)
+				if ( ! isset($obj->{$f}))
 				{
 					$obj->{$f} = $row[$s[1]];
 				}
