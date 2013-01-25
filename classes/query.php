@@ -1051,8 +1051,7 @@ class Query
 		$query = call_user_func_array('DB::select', $select);
 
 		// Set from view/table
-		$table = $this->view ? $this->view['view'] : call_user_func($this->model.'::table');
-		$query->from(array($table, $this->alias));
+		$query->from(array($this->_table(), $this->alias));
 
 		// Build the query further
 		$tmp     = $this->build_query($query, $columns);
@@ -1115,7 +1114,7 @@ class Query
 		$query = call_user_func_array('DB::select', $select);
 
 		// Set from table
-		$query->from(array(call_user_func($this->model.'::table'), $this->alias));
+		$query->from(array($this->_table(), $this->alias));
 
 		// Build the query further
 		$tmp     = $this->build_query($query, $columns);
@@ -1177,8 +1176,8 @@ class Query
 		// Remove the current select and
 		$query = \DB::select($columns);
 
-		// Set from table
-		$query->from(array(call_user_func($this->model.'::table'), $this->alias));
+		// Set from view or table
+		$query->from(array($this->_table(), $this->alias));
 
 		$tmp   = $this->build_query($query, $columns, 'select');
 		$query = $tmp['query'];
@@ -1212,7 +1211,7 @@ class Query
 		$query = \DB::select($columns);
 
 		// Set from table
-		$query->from(array(call_user_func($this->model.'::table'), $this->alias));
+		$query->from(array($this->_table(), $this->alias));
 
 		$tmp   = $this->build_query($query, $columns, 'max');
 		$query = $tmp['query'];
@@ -1246,7 +1245,7 @@ class Query
 		$query = \DB::select($columns);
 
 		// Set from table
-		$query->from(array(call_user_func($this->model.'::table'), $this->alias));
+		$query->from(array($this->_table(), $this->alias));
 
 		$tmp   = $this->build_query($query, $columns, 'min');
 		$query = $tmp['query'];
@@ -1326,5 +1325,13 @@ class Query
 		$this->relations = $tmp_relations;
 
 		return $res > 0;
+	}
+
+	/**
+	 * Returns target table (or view, if specified).
+	 */
+	protected function _table()
+	{
+		return $this->view ? $this->view['view'] : call_user_func($this->model.'::table');
 	}
 }
