@@ -913,7 +913,7 @@ class Query
 	 */
 	protected function modify_join_result($join_result, $name)
 	{
-		return array();
+		return $join_result;
 	}
 
 	/**
