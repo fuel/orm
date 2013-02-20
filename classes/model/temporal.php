@@ -11,6 +11,11 @@ class Model_Temporal extends Model
 {
 
 	/**
+	 * Override to change default temporal paramaters
+	 */
+	protected static $_temporal = array();
+
+	/**
 	 * Contains cached temporal properties.
 	 */
 	protected static $_temporal_cached = array();
