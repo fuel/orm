@@ -69,7 +69,7 @@ class Model_Temporal extends Model
 			$properties['end_column'] =
 				\Arr::get(static::$_temporal, 'end_column', 'temporal_end');
 			$properties['mysql_timestamp'] =
-				\Arr::get(static::$_temporal, 'mysql_timestamp', true);
+				\Arr::get(static::$_temporal, 'mysql_timestamp', false);
 
 			$properties['max_timestamp'] = ($properties['mysql_timestamp']) ?
 				\Config::get('orm.sql_max_timestamp_mysql') :

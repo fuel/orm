@@ -27,7 +27,7 @@ class Model_Soft extends Model
 	 * Default value for if a mysql timestamp should be used.
 	 * @var boolean
 	 */
-	protected static $_default_mysql_timestamp = true;
+	protected static $_default_mysql_timestamp = false;
 
 	/**
 	 * Contains cached soft delete properties.
