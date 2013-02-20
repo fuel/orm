@@ -26,6 +26,17 @@ class Model_Temporal extends Model
 	 */
 	protected static $_pk_id_only = array();
 
+	/**
+	 * If the model has been loaded through find_revision then this will be set
+	 * to the timestamp used to find the revision.
+	 */
+	protected $_lazy_timestamp = null;
+	
+	/**
+	 * Contains the filtering status for temporal queries
+	 */
+	protected static $_lazy_filtered_classes = array();
+	
 	public static function _init()
 	{
 		\Config::load('orm', true);
@@ -58,7 +69,7 @@ class Model_Temporal extends Model
 			$properties['end_column'] =
 				\Arr::get(static::$_temporal, 'end_column', 'temporal_end');
 			$properties['mysql_timestamp'] =
-				\Arr::get(static::$_temporal, 'mysql_timestamp', true);
+				\Arr::get(static::$_temporal, 'mysql_timestamp', false);
 
 			$properties['max_timestamp'] = ($properties['mysql_timestamp']) ?
 				\Config::get('orm.sql_max_timestamp_mysql') :
@@ -132,16 +143,81 @@ class Model_Temporal extends Model
 		}
 
 		$query_result = $query->get_one();
+		$query_result->set_lazy_timestamp($timestamp);
 		return $query_result;
 	}
 	
+	private function set_lazy_timestamp($timestamp)
+	{
+		$this->_lazy_timestamp = $timestamp;
+	}
+	
+	/**
+	 * Overrides Model::get() to allow lazy loaded relations to be filtered
+	 * temporaly.
+	 * 
+	 * @param string $property
+	 * @return mixed
+	 */
+	public function & get($property)
+	{
+		//if a timestamp is set and that we have a relation
+		if( ! is_null($this->_lazy_timestamp) && $rel = static::relations($property))
+		{
+			//Check that model_to is temporal
+			if(is_subclass_of($rel->model_to, 'Orm\Model_Temporal') )
+			{
+				//if so then add the filtering and continue with the parent's behavour
+				$class_name = $rel->model_to;
+				
+				$class_name::make_query_temporal($this->_lazy_timestamp);
+				$result = parent::get($property);
+				$class_name::make_query_temporal(null);
+				
+				return $result;
+			}
+		}
+		
+		return parent::get($property);
+	}
+	
+	/**
+	 * When a timestamp is set any query objects produced by this temporal model
+	 * will behave the same as find_revision()
+	 * 
+	 * @param array $timestamp
+	 */
+	private static function make_query_temporal($timestamp)
+	{
+		$class = get_called_class();
+		static::$_lazy_filtered_classes[$class] = $timestamp;
+	}
+	
+	/**
+	 * Overrides Model::query to provide a Temporal_Query
+	 * 
+	 * @param array $options
+	 * @return Temporal_Query
+	 */
 	public static function query($options = array())
 	{
 		$timestamp_start_name = static::temporal_property('start_column');
 		$timestamp_end_name = static::temporal_property('end_column');
 		
-		return Temporal_Query::forge(get_called_class(), static::connection(), $options)
+		$query = Temporal_Query::forge(get_called_class(), static::connection(), $options)
 			->set_temporal_properties(null, $timestamp_end_name, $timestamp_start_name);
+		
+		//Check if we need to add filtering
+		$class = get_called_class();
+		$timestamp = \Arr::get(static::$_lazy_filtered_classes, $class, null);
+		
+		if(! is_null($timestamp) )
+		{
+			$query->where($timestamp_start_name, '<=', $timestamp)
+				->where($timestamp_end_name, '>', $timestamp);
+		}
+		
+		return $query;
 	}
 	
 	/**
