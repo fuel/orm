@@ -161,23 +161,22 @@ class Model_Temporal extends Model
 	 */
 	public function & get($property)
 	{
-		//if a timestamp is set and that we have a relation
-		if( ! is_null($this->_lazy_timestamp) && $rel = static::relations($property))
+		// if a timestamp is set and that we have a temporal relation
+		$rel = static::relations($property);
+		if ($rel && is_subclass_of($rel->model_to, 'Orm\Model_Temporal'))
 		{
-			//Check that model_to is temporal
-			if(is_subclass_of($rel->model_to, 'Orm\Model_Temporal') )
-			{
-				//if so then add the filtering and continue with the parent's behavour
-				$class_name = $rel->model_to;
-				
-				$class_name::make_query_temporal($this->_lazy_timestamp);
-				$result = parent::get($property);
-				$class_name::make_query_temporal(null);
-				
-				return $result;
-			}
+			// find a specific revision or the newest if lazy timestamp is null
+			$lazy_timestamp = $this->_lazy_timestamp ?: static::temporal_property('max_timestamp') - 1;
+			//add the filtering and continue with the parent's behavour
+			$class_name = $rel->model_to;
+
+			$class_name::make_query_temporal($lazy_timestamp);
+			$result =& parent::get($property);
+			$class_name::make_query_temporal(null);
+
+			return $result;
 		}
-		
+
 		return parent::get($property);
 	}
 	
