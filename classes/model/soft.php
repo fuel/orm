@@ -128,8 +128,8 @@ class Model_Soft extends Model
 		{
 			$temp_args = $args;
 
-			$find_type = count($temp_args) > 0 ? array_pop($temp_args) : 'all';
-			$options = count($temp_args) > 0 ? array_pop($temp_args) : array();
+			$find_type = count($temp_args) > 0 ? array_shift($temp_args) : 'all';
+			$options = count($temp_args) > 0 ? array_shift($temp_args) : array();
 
 			return static::deleted($find_type, $options);
 		}
