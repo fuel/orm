@@ -292,7 +292,7 @@ class Model implements \ArrayAccess, \Iterator
 		{
 			try
 			{
-				$properties = \Cache::get('model_properties.'.$class);
+				$properties = \Cache::get('model_properties.'.str_replace('\\', '_', $class));
 			}
 			catch (\CacheNotFoundException $e) {}
 		}
@@ -303,7 +303,7 @@ class Model implements \ArrayAccess, \Iterator
 			try
 			{
 				$properties = \DB::list_columns(static::table(), null, static::connection());
-				$use_cache_file and \Cache::set('model_properties.'.$class, $properties);
+				$use_cache_file and \Cache::set('model_properties.'.str_replace('\\', '_', $class), $properties);
 			}
 			catch (\Exception $e)
 			{
@@ -1042,7 +1042,7 @@ class Model implements \ArrayAccess, \Iterator
 			if ($reload_cache)
 			{
 				$class = get_called_class();
-				\Cache::delete('model_properties.'.$class);
+				\Cache::delete('model_properties.'.str_replace('\\', '_', $class));
 				unset(static::$_properties_cached[$class]);
 				$reload_cache = false;
 				try
