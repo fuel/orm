@@ -872,7 +872,7 @@ class Model implements \ArrayAccess, \Iterator
 	}
 
 	/**
-	 * Check whether a property exists, only return true for table columns, relations and custom data
+	 * Check whether a property exists, only return true for table columns, relations, eav and custom data
 	 *
 	 * @param   string  $property
 	 * @return  bool
@@ -884,6 +884,10 @@ class Model implements \ArrayAccess, \Iterator
 			return true;
 		}
 		elseif (static::relations($property))
+		{
+			return true;
+		}
+		elseif ($this->_get_eav($property))
 		{
 			return true;
 		}
@@ -1250,10 +1254,10 @@ class Model implements \ArrayAccess, \Iterator
 
 		return true;
 	}
-	
+
 	/**
 	 * Adds the primary keys in where clauses to the given query.
-	 * 
+	 *
 	 * @param Query $query
 	 */
 	protected function add_primary_keys_to_where($query)
