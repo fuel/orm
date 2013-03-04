@@ -43,7 +43,7 @@ class Temporal_Query extends Query
 	 */
 	protected function modify_join_result($join_result, $name)
 	{	
-		if( ! is_null($this->timestamp) and is_a($join_result[$name]['model'], '\\Orm\\Model_Temporal'))
+		if( ! is_null($this->timestamp) and is_subclass_of($join_result[$name]['model'], '\Orm\Model_Temporal'))
 		{
 			//Add the needed conditions to allow for temporal-ness
 			$join_result[$name]['where'][] = array($this->timestamp_start_col, '<=', $this->timestamp);
