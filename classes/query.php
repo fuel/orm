@@ -755,7 +755,7 @@ class Query
 			$join = $rel[0]->join($alias, $name, $i++, $rel[1]);
 			$models = array_merge($models, $this->modify_join_result($join, $name));
 		}
-		
+
 		if ($this->use_subquery())
 		{
 			// Get the columns for final select
@@ -907,7 +907,7 @@ class Query
 
 		return array('query' => $query, 'models' => $models);
 	}
-	
+
 	/**
 	 * Allows subclasses to make changes to the join information before it is used
 	 */
@@ -1232,7 +1232,7 @@ class Query
 			return false;
 		}
 
-		return $max;
+		return (int) $max;
 	}
 
 	/**
@@ -1266,7 +1266,7 @@ class Query
 			return false;
 		}
 
-		return $min;
+		return (int) $min;
 	}
 
 	/**
