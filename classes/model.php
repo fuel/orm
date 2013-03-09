@@ -1068,7 +1068,7 @@ class Model implements \ArrayAccess, \Iterator
 			{
 				$this->_data[$property] = $value;
 			}
-			elseif ($relation = static::relations($property))
+			elseif (static::relations($property))
 			{
 				$this->is_fetched($property) or $this->_reset_relations[$property] = true;
 
@@ -1115,6 +1115,11 @@ class Model implements \ArrayAccess, \Iterator
 							$this->_data_relations[$property][$key] = $datum;
 						}
 					}
+				}
+				else
+				{
+					// Other relations (belongs_to, has_one, many_many)
+					$this->_data_relations[$property] = $value;
 				}
 			}
 			elseif ( ! $this->_set_eav($property, $value))
