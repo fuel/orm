@@ -46,11 +46,6 @@ class Model_Temporal extends Model
 	 * Contains the filtering status for temporal queries
 	 */
 	protected static $_lazy_filtered_classes = array();
-	
-	public static function _init()
-	{
-		\Config::load('orm', true);
-	}
 
 	/**
 	 * Gets the temporal properties.
@@ -81,6 +76,7 @@ class Model_Temporal extends Model
 			$properties['mysql_timestamp'] =
 				\Arr::get(static::$_temporal, 'mysql_timestamp', false);
 
+			\Config::load('orm', true);
 			$properties['max_timestamp'] = ($properties['mysql_timestamp']) ?
 				\Config::get('orm.sql_max_timestamp_mysql') :
 				\Config::get('orm.sql_max_timestamp_unix');
