@@ -242,30 +242,23 @@ class HasMany extends Relation
 		$model_from->_relate($rels);
 		$model_from->freeze();
 
-		foreach ($models_to as $model_to)
+		$cascade = is_null($cascade) ? $this->cascade_delete : (bool) $cascade;
+		foreach ($models_to as $m)
 		{
-			if ( ! $model_to->frozen())
+			if ($cascade)
 			{
-				foreach ($this->key_to as $fk)
-				{
-					$model_to->{$fk} = null;
-				}
+				$m->delete();
 			}
-		}
-
-		if ( ! empty($models_to))
-		{
-			$cascade = is_null($cascade) ? $this->cascade_delete : (bool) $cascade;
-			foreach ($models_to as $m)
+			else
 			{
-				if ($cascade)
+				if ( ! $model_to->frozen())
 				{
-					$m->delete();
+					foreach ($this->key_to as $fk)
+					{
+						$model_to->{$fk} = null;
+					}
 				}
-				else
-				{
-					$m->is_changed() and $m->save();
-				}
+				$m->is_changed() and $m->save();
 			}
 		}
 	}
