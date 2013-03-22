@@ -213,18 +213,22 @@ class HasOne extends Relation
 		$model_from->_relate($rels);
 		$model_from->freeze();
 
-		if ($model_to and ! $model_to->frozen())
+		if ( ! empty($model_to))
 		{
-			foreach ($this->key_to as $fk)
-			{
-				$model_to->{$fk} = null;
-			}
-		}
+			$cascade = is_null($cascade) ? $this->cascade_delete : (bool) $cascade;
 
-		$cascade = is_null($cascade) ? $this->cascade_delete : (bool) $cascade;
-		if ($cascade and ! empty($model_to))
-		{
-			$model_to->delete();
+			if ($cascade)
+			{
+				$model_to->delete();
+			}
+			elseif ( ! $model_to->frozen())
+			{
+				foreach ($this->key_to as $fk)
+				{
+					$model_to->{$fk} = null;
+				}
+				$model_to->is_changed() and $model_to->save();
+			}
 		}
 	}
 }
