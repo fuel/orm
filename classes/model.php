@@ -1194,6 +1194,7 @@ class Model implements \ArrayAccess, \Iterator
 
 		// update the original properties on creation and cache object for future retrieval in this request
 		$this->_is_new = false;
+		$this->_original = $this->_data;
 		static::$_cached_objects[get_class($this)][static::implode_pk($this)] = $this;
 
 		$this->observe('after_insert');
