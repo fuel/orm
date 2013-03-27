@@ -487,7 +487,7 @@ class Model implements \ArrayAccess, \Iterator
 	 *
 	 * @param   mixed
 	 * @param   array
-	 * @return  object|array
+	 * @return  Model|Model[]
 	 */
 	public static function find($id = null, array $options = array())
 	{
@@ -568,7 +568,7 @@ class Model implements \ArrayAccess, \Iterator
 	 *
 	 * @param   mixed
 	 * @param   array
-	 * @return  object|array
+	 * @return  bool|int Maximum value or false
 	 */
 	public static function max($key = null)
 	{
@@ -1619,7 +1619,7 @@ class Model implements \ArrayAccess, \Iterator
 			{
 				foreach($value as $id => $data)
 				{
-					if (array_key_exists($id, $this->_data_relations[$property]) and is_array($data))
+					if (isset($this->_data_relations[$property]) and array_key_exists($id, $this->_data_relations[$property]) and is_array($data))
 					{
 						foreach($data as $field => $contents)
 						{
