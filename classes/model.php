@@ -1072,7 +1072,7 @@ class Model implements \ArrayAccess, \Iterator
 			{
 				$this->is_fetched($property) or $this->_reset_relations[$property] = true;
 
-				if (is_array($value) and $model_to = \Arr::get(static::$_has_many, $property.'.model_to'))
+				if (is_array($value) and $model_to = \Arr::get(isset(static::$_has_many) ?: array(), $property.'.model_to'))
 				{
 					foreach ($value as $key => $datum)
 					{
