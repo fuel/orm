@@ -1746,8 +1746,7 @@ class Model implements \ArrayAccess, \Iterator
 	 * 
 	 * @param string $attribute, the attribute key to check
 	 *
-	 * @return void
-	 * @author James Pudney james@phpgenie.co.uk
+	 * @return boolean
 	 **/
 	protected function _eav_key_exists($attribute)
 	{
