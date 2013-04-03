@@ -887,7 +887,7 @@ class Model implements \ArrayAccess, \Iterator
 		{
 			return true;
 		}
-		elseif ($this->_get_eav($property))
+		elseif ($this->_eav_key_exists($property))
 		{
 			return true;
 		}
@@ -1737,6 +1737,64 @@ class Model implements \ArrayAccess, \Iterator
 	public function to_object()
 	{
 		return (object) $this->to_array();
+	}
+	
+	/**
+	 * EAV Key Exists
+	 * 
+	 * A function for checking whether an eav attribute key exists.
+	 * 
+	 * @param string $attribute, the attribute key to check
+	 *
+	 * @return boolean
+	 **/
+	protected function _eav_key_exists($attribute)
+	{
+		// get the current class name
+		$class = get_called_class();
+
+		// don't do anything unless we actually have an EAV container
+		if (property_exists($class, '_eav'))
+		{
+			// loop through the defined EAV containers
+			foreach (static::$_eav as $rel => $settings)
+			{
+				// normalize the container definition, could be string or array
+				if (is_string($settings))
+				{
+					$rel = $settings;
+					$settings = array();
+				}
+
+				// fetch the relation object for this EAV container
+				if ( ! $rel = static::relations($rel))
+				{
+					throw new \OutOfBoundsException('EAV container defines a relation that does not exist in '.get_called_class().'.');
+				}
+
+				// EAV containers must be of the "Many type"
+				if ($rel instanceOf \Orm\HasOne or $rel instanceOf \Orm\BelongsTo )
+				{
+					throw new \OutOfBoundsException('EAV containers can only be defined on "HasMany" or "ManyMany" relations in '.get_called_class().'.');
+				}
+
+				// determine attribute and value column names
+				$attr = isset($settings['attribute']) ? $settings['attribute'] : 'attribute';
+				$val = isset($settings['value']) ? $settings['value'] : 'value';
+
+				// loop over the resultset
+				foreach ($this->{$rel->name} as $key => $record)
+				{
+					// return true if we find the attribute key
+					if ($record->{$attr} === $attribute)
+					{
+						return true;
+					}
+				}
+			}
+		}
+
+		return false;
 	}
 
 	/**
