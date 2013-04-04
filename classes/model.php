@@ -887,7 +887,7 @@ class Model implements \ArrayAccess, \Iterator
 		{
 			return true;
 		}
-		elseif ($this->_get_eav($property))
+		elseif ($this->_get_eav($property, true))
 		{
 			return true;
 		}
@@ -1743,11 +1743,12 @@ class Model implements \ArrayAccess, \Iterator
 	 * EAV attribute getter
 	 *
 	 * @param   string  $attribute, the attribute value to get
+	 * @param	bool	$isset, if true, do an exists check instead of returning the value
 	 *
 	 * @return  mixed
 	 * @throws	OutOfBoundsException if the defined EAV relation does not exist or of the wrong type
 	 */
-	protected function _get_eav($attribute)
+	protected function _get_eav($attribute, $isset = false)
 	{
 		// get the current class name
 		$class = get_called_class();
@@ -1787,7 +1788,7 @@ class Model implements \ArrayAccess, \Iterator
 					// and return the value if found
 					if ($record->{$attr} === $attribute)
 					{
-						return $record->{$val};
+						return $isset ? true : $record->{$val};
 					}
 				}
 			}
