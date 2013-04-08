@@ -738,12 +738,14 @@ class Model implements \ArrayAccess, \Iterator
 				if (array_key_exists($prop, $data))
 				{
 					$this->_data[$prop] = $data[$prop];
+					unset($data[$prop]);
 				}
 				elseif (array_key_exists('default', $settings))
 				{
 					$this->_data[$prop] = $settings['default'];
 				}
 			}
+			$this->_custom_data = $data;
 		}
 		else
 		{
