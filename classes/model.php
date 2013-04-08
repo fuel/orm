@@ -1338,6 +1338,12 @@ class Model implements \ArrayAccess, \Iterator
 			{
 				unset($this->_data[$pk]);
 			}
+			// remove original relations too
+			foreach($this->relations() as $rel_name => $rel)
+			{
+				$this->_original_relations[$rel_name] = $rel->singular ? null : array();
+			}
+
 			$this->_is_new = true;
 			$this->_original = array();
 
