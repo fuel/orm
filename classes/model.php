@@ -722,8 +722,8 @@ class Model implements \ArrayAccess, \Iterator
 	 */
 	public function __construct(array $data = array(), $new = true, $view = null)
 	{
-		// This is to deal with PHP's native hydration from that happens before constructor is called
-		// for example using the DB's as_object() function
+		// This is to deal with PHP's native hydration that happens before constructor is called
+		// for some weird reason, for example using the DB's as_object() function
 		if( ! empty($this->_data))
 		{
 			$this->_original = $this->_data;
@@ -1006,6 +1006,12 @@ class Model implements \ArrayAccess, \Iterator
 		{
 			if ( ! array_key_exists($property, $this->_data_relations))
 			{
+				if ($this->_frozen)
+				{
+					// avoid a notice, we're returning by reference
+					$var = null;
+					return $var;
+				}
 				$this->_data_relations[$property] = $rel->get($this);
 				$this->_update_original_relations(array($property));
 			}
