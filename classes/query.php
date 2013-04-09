@@ -20,11 +20,11 @@ class Query
 	/**
 	 * Create a new instance of the Query class.
 	 *
-	 * @param	string	name of the model this instance has to operate on
-	 * @param	mixed	DB connection to use to run the query
-	 * @param	array	any options to pass on to the query
+	 * @param	string  $model      name of the model this instance has to operate on
+	 * @param	mixed   $connection DB connection to use to run the query
+	 * @param	array   $options    any options to pass on to the query
 	 *
-	 * return	Query	newly created instance
+	 * @return	Query	newly created instance
 	 */
 	public static function forge($model, $connection = null, $options = array())
 	{
@@ -119,10 +119,10 @@ class Query
 	/**
 	 * Create a new instance of the Query class.
 	 *
-	 * @param	string	name of the model this instance has to operate on
-	 * @param	mixed	DB connection to use to run the query
-	 * @param	array	any options to pass on to the query
-	 * @param	mixed	optionally, the alias to use for the models table
+	 * @param	string  $model        Name of the model this instance has to operate on
+	 * @param	mixed   $connection   DB connection to use to run the query
+	 * @param	array   $options      Any options to pass on to the query
+	 * @param	mixed   $table_alias  Optionally, the alias to use for the models table
 	 */
 	protected function __construct($model, $connection, $options, $table_alias = null)
 	{
@@ -183,7 +183,10 @@ class Query
 	 * Select which properties are included, each as its own param. Or don't give input to retrieve
 	 * the current selection.
 	 *
-	 * @param	bool	whether or not to add the Primary Keys to the list of selected columns
+	 * @param bool          $add_pks    Whether or not to add the Primary Keys to the list of selected columns
+	 * @param string|array  $fields     Optionally. Which field/fields must be retrieved
+	 *
+	 * @throws \FuelException No properties found in model
 	 *
 	 * @return  void|array
 	 */
@@ -268,7 +271,9 @@ class Query
 	/**
 	 * Set a view to use instead of the table
 	 *
-	 * @param   string
+	 * @param  string   $view   Name of view which you want to use
+	 *
+	 * @throws \OutOfBoundsException Cannot use undefined database view, must be defined with Model
 	 *
 	 * @return  Query
 	 */
@@ -288,12 +293,10 @@ class Query
 	/**
 	 * Creates a "GROUP BY ..." filter.
 	 *
-	 * @param   mixed   column name or array($column, $alias) or object
-	 * @param   mixed	..., optional list of additional filter definitions
-	 *
+	 * @param   mixed   $coulmns    Column name or array($column, $alias) or object
 	 * @return  $this
 	 */
-	public function group_by($columns)
+	public function group_by()
 	{
 		$columns = func_get_args();
 
@@ -305,7 +308,7 @@ class Query
 	/**
 	 * Set the limit
 	 *
-	 * @param   int
+	 * @param   int $limit
 	 *
 	 * @return  $this
 	 */
@@ -319,7 +322,7 @@ class Query
 	/**
 	 * Set the offset
 	 *
-	 * @param   int
+	 * @param   int $offset
 	 *
 	 * @return  $this
 	 */
@@ -333,7 +336,7 @@ class Query
 	/**
 	 * Set the limit of rows requested
 	 *
-	 * @param   int
+	 * @param   int $limit
 	 *
 	 * @return  $this
 	 */
@@ -347,7 +350,7 @@ class Query
 	/**
 	 * Set the offset of rows requested
 	 *
-	 * @param   int
+	 * @param   int $offset
 	 *
 	 * @return  $this
 	 */
@@ -361,9 +364,9 @@ class Query
 	/**
 	 * Set where condition
 	 *
-	 * @param   string  property
-	 * @param   string  comparison type (can be omitted)
-	 * @param   string  comparison value
+	 * @param   string  Property
+	 * @param   string  Comparison type (can be omitted)
+	 * @param   string  Comparison value
 	 *
 	 * @return  $this
 	 */
@@ -378,9 +381,9 @@ class Query
 	/**
 	 * Set or_where condition
 	 *
-	 * @param   string  property
-	 * @param   string  comparison type (can be omitted)
-	 * @param   string  comparison value
+	 * @param   string  Property
+	 * @param   string  Comparison type (can be omitted)
+	 * @param   string  Comparison value
 	 *
 	 * @return  $this
 	 */
@@ -395,8 +398,10 @@ class Query
 	/**
 	 * Does the work for where() and or_where()
 	 *
-	 * @param   array
-	 * @param   string
+	 * @param   array   $condition
+	 * @param   string  $type
+	 *
+	 * @throws \FuelException
 	 *
 	 * @return  $this
 	 */
@@ -541,8 +546,8 @@ class Query
 	/**
 	 * Set the order_by
 	 *
-	 * @param   string|array
-	 * @param   string|null
+	 * @param   string|array  $property
+	 * @param   string        $direction
 	 *
 	 * @return  $this
 	 */
@@ -578,8 +583,10 @@ class Query
 	/**
 	 * Set a relation to include
 	 *
-	 * @param   string
-	 * @param   array
+	 * @param   string  $relation
+	 * @param   array   $conditions    Optionally
+	 *
+	 * @throws \UnexpectedValueException Relation was not found in the model
 	 *
 	 * @return  $this
 	 */
@@ -636,7 +643,7 @@ class Query
 	/**
 	 * Add a table to join, consider this a protect method only for Orm package usage
 	 *
-	 * @param   array
+	 * @param   array   $join
 	 *
 	 * @return  $this
 	 */
@@ -650,8 +657,8 @@ class Query
 	/**
 	 * Set any properties for insert or update
 	 *
-	 * @param   string|array
-	 * @param   mixed
+	 * @param   string|array  $property
+	 * @param   mixed         $value    Optionally
 	 *
 	 * @return  $this
 	 */
@@ -675,8 +682,11 @@ class Query
 	 * Build a select, delete or update query
 	 *
 	 * @param   \Fuel\Core\Database_Query_Builder_Where  DB where() query object
-	 * @param   string|select  either array for select query or string update, delete, insert
-	 * @param	string  type of query to build (select/update/delete/insert)
+	 * @param   array $columns  Optionally
+	 * @param   string $type    Type of query to build (select/update/delete/insert)
+	 *
+	 * @throws \FuelException            Models cannot be related between different database connections
+	 * @throws \UnexpectedValueException Trying to get the relation of an unloaded relation
 	 *
 	 * @return  array          with keys query and relations
 	 */
@@ -755,7 +765,7 @@ class Query
 			$join = $rel[0]->join($alias, $name, $i++, $rel[1]);
 			$models = array_merge($models, $this->modify_join_result($join, $name));
 		}
-		
+
 		if ($this->use_subquery())
 		{
 			// Get the columns for final select
@@ -907,7 +917,7 @@ class Query
 
 		return array('query' => $query, 'models' => $models);
 	}
-	
+
 	/**
 	 * Allows subclasses to make changes to the join information before it is used
 	 */
@@ -929,12 +939,13 @@ class Query
 	/**
 	 * Hydrate model instances with retrieved data
 	 *
-	 * @param   array   row from the database
-	 * @param   array   relations to be expected
-	 * @param   array   current result array (by reference)
-	 * @param   string  model classname to hydrate
-	 * @param   array   columns to use
-	 * @param   array   primary key(s) for this model
+	 * @param   array   &$row   Row from the database
+	 * @param   array   $models Relations to be expected
+	 * @param   array   $result Current result array (by reference)
+	 * @param   string  $model  Optionally. Model classname to hydrate
+	 * @param   array   $select Optionally. Columns to use
+	 * @param   array   $primary_key    Optionally. Primary key(s) for this model
+	 *
 	 * @return  Model
 	 */
 	public function hydrate(&$row, $models, &$result, $model = null, $select = null, $primary_key = null)
@@ -1167,8 +1178,8 @@ class Query
 	/**
 	 * Count the result of a query
 	 *
-	 * @param   bool  false for random selected column or specific column, only works for main model currently
-	 * @param	bool  true if DISTINCT has to be aded to the query
+	 * @param   bool  $column   False for random selected column or specific column, only works for main model currently
+	 * @param   bool  $distinct True if DISTINCT has to be aded to the query
 	 *
 	 * @return  mixed   number of rows OR false
 	 */
@@ -1204,8 +1215,8 @@ class Query
 	/**
 	 * Get the maximum of a column for the current query
 	 *
-	 * @param   string  column
-	 * @return  mixed   maximum value OR false
+	 * @param   string      $column Column
+	 * @return  bool|int    maximum value OR false
 	 */
 	public function max($column)
 	{
@@ -1232,14 +1243,15 @@ class Query
 			return false;
 		}
 
-		return $max;
+		return (int) $max;
 	}
 
 	/**
 	 * Get the minimum of a column for the current query
 	 *
-	 * @param   string  column
-	 * @return  mixed   minimum value OR false
+	 * @param   string      $column Column which min value you want to get
+	 *
+	 * @return  bool|int    minimum value OR false
 	 */
 	public function min($column)
 	{
@@ -1266,13 +1278,13 @@ class Query
 			return false;
 		}
 
-		return $min;
+		return (int) $min;
 	}
 
 	/**
 	 * Run INSERT with the current values
 	 *
-	 * @return  mixed  last inserted ID or false on failure
+	 * @return  bool|int    Last inserted ID or false on failure
 	 */
 	public function insert()
 	{

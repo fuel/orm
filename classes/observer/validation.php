@@ -180,6 +180,30 @@ class Observer_Validation extends Observer
 	}
 
 	/**
+	 * Execute before inserting the row in the database
+	 *
+	 * @param   Model	the model object to validate
+	 *
+	 * @throws  ValidationFailed
+	 */
+	public function before_insert(Model $obj)
+	{
+		$this->validate($obj);
+	}
+
+	/**
+	 * Execute before updating the row in the database
+	 *
+	 * @param   Model	the model object to validate
+	 *
+	 * @throws  ValidationFailed
+	 */
+	public function before_update(Model $obj)
+	{
+		$this->validate($obj);
+	}
+
+	/**
 	 * Validate the model
 	 *
 	 * @param   Model	the model object to validate

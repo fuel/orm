@@ -11,6 +11,11 @@ class Model_Temporal extends Model
 {
 
 	/**
+	 * Compound primary key that includes the start and end times is required
+	 */
+	protected static $_primary_key = array('id', 'temporal_start', 'temporal_end');
+
+	/**
 	 * Override to change default temporal paramaters
 	 */
 	protected static $_temporal = array();

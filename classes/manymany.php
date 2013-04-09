@@ -329,7 +329,7 @@ class ManyMany extends Relation
 		$this->delete_related($model_from);
 
 		$cascade = is_null($cascade) ? $this->cascade_delete : (bool) $cascade;
-		if ($cascade and ! empty($model_to))
+		if ($cascade and ! empty($models_to))
 		{
 			foreach ($models_to as $m)
 			{

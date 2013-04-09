@@ -504,7 +504,7 @@ class Model implements \ArrayAccess, \Iterator
 	 *
 	 * @param   mixed
 	 * @param   array
-	 * @return  object|array
+	 * @return  Model|Model[]
 	 */
 	public static function find($id = null, array $options = array())
 	{
@@ -585,7 +585,7 @@ class Model implements \ArrayAccess, \Iterator
 	 *
 	 * @param   mixed
 	 * @param   array
-	 * @return  object|array
+	 * @return  bool|int Maximum value or false
 	 */
 	public static function max($key = null)
 	{
@@ -755,12 +755,14 @@ class Model implements \ArrayAccess, \Iterator
 				if (array_key_exists($prop, $data))
 				{
 					$this->_data[$prop] = $data[$prop];
+					unset($data[$prop]);
 				}
 				elseif (array_key_exists('default', $settings))
 				{
 					$this->_data[$prop] = $settings['default'];
 				}
 			}
+			$this->_custom_data = $data;
 		}
 		else
 		{
@@ -889,7 +891,7 @@ class Model implements \ArrayAccess, \Iterator
 	}
 
 	/**
-	 * Check whether a property exists, only return true for table columns, relations and custom data
+	 * Check whether a property exists, only return true for table columns, relations, eav and custom data
 	 *
 	 * @param   string  $property
 	 * @return  bool
@@ -901,6 +903,10 @@ class Model implements \ArrayAccess, \Iterator
 			return true;
 		}
 		elseif (static::relations($property))
+		{
+			return true;
+		}
+		elseif ($this->_get_eav($property, true))
 		{
 			return true;
 		}
@@ -1230,6 +1236,7 @@ class Model implements \ArrayAccess, \Iterator
 
 		// update the original properties on creation and cache object for future retrieval in this request
 		$this->_is_new = false;
+		$this->_original = $this->_data;
 		static::$_cached_objects[get_class($this)][static::implode_pk($this)] = $this;
 
 		$this->observe('after_insert');
@@ -1371,6 +1378,12 @@ class Model implements \ArrayAccess, \Iterator
 			{
 				unset($this->_data[$pk]);
 			}
+			// remove original relations too
+			foreach($this->relations() as $rel_name => $rel)
+			{
+				$this->_original_relations[$rel_name] = $rel->singular ? null : array();
+			}
+
 			$this->_is_new = true;
 			$this->_original = array();
 
@@ -1655,7 +1668,7 @@ class Model implements \ArrayAccess, \Iterator
 			{
 				foreach($value as $id => $data)
 				{
-					if (array_key_exists($id, $this->_data_relations[$property]) and is_array($data))
+					if (isset($this->_data_relations[$property]) and array_key_exists($id, $this->_data_relations[$property]) and is_array($data))
 					{
 						foreach($data as $field => $contents)
 						{
@@ -1778,11 +1791,12 @@ class Model implements \ArrayAccess, \Iterator
 	 * EAV attribute getter
 	 *
 	 * @param   string  $attribute, the attribute value to get
+	 * @param	bool	$isset, if true, do an exists check instead of returning the value
 	 *
 	 * @return  mixed
 	 * @throws	OutOfBoundsException if the defined EAV relation does not exist or of the wrong type
 	 */
-	protected function _get_eav($attribute)
+	protected function _get_eav($attribute, $isset = false)
 	{
 		// get the current class name
 		$class = get_called_class();
@@ -1822,7 +1836,7 @@ class Model implements \ArrayAccess, \Iterator
 					// and return the value if found
 					if ($record->{$attr} === $attribute)
 					{
-						return $record->{$val};
+						return $isset ? true : $record->{$val};
 					}
 				}
 			}

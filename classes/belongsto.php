@@ -206,10 +206,6 @@ class BelongsTo extends Relation
 		$rels = $model_from->_relate();
 		$rels[$this->name] = null;
 		$model_from->_relate($rels);
-		foreach ($this->key_from as $fk)
-		{
-			$model_from->{$fk} = null;
-		}
 		$model_from->freeze();
 
 		$cascade = is_null($cascade) ? $this->cascade_delete : (bool) $cascade;
