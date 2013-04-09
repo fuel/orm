@@ -1614,7 +1614,9 @@ class Model implements \ArrayAccess, \Iterator
 	/**
 	 * Allow populating this object from an array, and any related objects
 	 *
-	 * @return  array
+	 * @param  array  assoc array with named values to store in the object
+	 *
+	 * @return  Model  this instance as a new object without primary key(s)
 	 */
 	public function from_array(array $values)
 	{
@@ -1638,6 +1640,8 @@ class Model implements \ArrayAccess, \Iterator
 				}
 			}
 		}
+
+		return $this;
 	}
 
 	/**
