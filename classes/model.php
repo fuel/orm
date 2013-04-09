@@ -117,6 +117,11 @@ class Model implements \ArrayAccess, \Iterator
 		'many_many'     => 'Orm\\ManyMany',
 	);
 
+	public static function _init()
+	{
+		\Config::load('orm', true);
+	}
+
 	public static function forge($data = array(), $new = true, $view = null)
 	{
 		return new static($data, $new, $view);
@@ -281,12 +286,24 @@ class Model implements \ArrayAccess, \Iterator
 			}
 		}
 
+		// ...if the above failed, look up cache file to fetch properties
+		$use_cache_file = \Config::get('orm.properties_cached', false);
+		if (empty($properties) && $use_cache_file)
+		{
+			try
+			{
+				$properties = \Cache::get('model_properties.'.str_replace('\\', '_', $class));
+			}
+			catch (\CacheNotFoundException $e) {}
+		}
+
 		// ...if the above failed, run DB query to fetch properties
 		if (empty($properties))
 		{
 			try
 			{
 				$properties = \DB::list_columns(static::table(), null, static::connection());
+				$use_cache_file and \Cache::set('model_properties.'.str_replace('\\', '_', $class), $properties);
 			}
 			catch (\Exception $e)
 			{
@@ -1021,12 +1038,35 @@ class Model implements \ArrayAccess, \Iterator
 		}
 		elseif (array_key_exists($property, $this->_custom_data))
 		{
-				return $this->_custom_data[$property];
+			return $this->_custom_data[$property];
 		}
-		else
+		// Check if $property is a new column, i.e. if the cache is outdated
+		elseif (\Config::get('orm.properties_cached', false))
 		{
-			throw new \OutOfBoundsException('Property "'.$property.'" not found for '.get_called_class().'.');
+			// Prevent looping
+			static $reload_cache = true;
+			if ($reload_cache)
+			{
+				$class = get_called_class();
+				\Cache::delete('model_properties.'.str_replace('\\', '_', $class));
+				unset(static::$_properties_cached[$class]);
+				$reload_cache = false;
+				try
+				{
+					// get() calls properties(), i.e. regenerates the cache file
+					$value = $this->get($property);
+					$reload_cache = true;
+					return $value;
+				}
+				catch (\OutOfBoundsException $e)
+				{
+					$reload_cache = true;
+					throw $e;
+				}
+			}
 		}
+
+		throw new \OutOfBoundsException('Property "'.$property.'" not found for '.get_called_class().'.');
 	}
 
 	/**
