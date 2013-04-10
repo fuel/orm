@@ -117,6 +117,11 @@ class Query
 	protected $select_filter = array();
 
 	/**
+	 * @var  bool  whether or not to retrieve a cached object
+	 */
+	protected $from_cache = true;
+
+	/**
 	 * Create a new instance of the Query class.
 	 *
 	 * @param	string  $model        Name of the model this instance has to operate on
@@ -175,8 +180,25 @@ class Query
 				case 'rows_offset':
 					$this->rows_offset($val);
 					break;
+				case 'from_cache':
+					$this->from_cache($val);
+					break;
 			}
 		}
+	}
+
+	/**
+	 * Enables or disables the object cache for this query
+	 *
+	 * @param  bool  $cache    Whether or not to use the object cache on this query
+	 *
+	 * @return  Query
+	 */
+	public function from_cache($cache = true)
+	{
+		$this->from_cache = (bool) $cache;
+
+		return $this;
 	}
 
 	/**
@@ -971,7 +993,7 @@ class Query
 
 		// Check for cached object
 		$pk  = count($primary_key) == 1 ? reset($obj) : '['.implode('][', $obj).']';
-		$obj = Model::cached_object($pk, $model);
+		$obj = $this->from_cache ? Model::cached_object($pk, $model) : false;
 
 		// Create the object when it wasn't found
 		if ( ! $obj)
@@ -988,7 +1010,7 @@ class Query
 				}
 				unset($row[$s[1]]);
 			}
-			$obj = $model::forge($obj, false, $this->view ? $this->view['_name'] : null);
+			$obj = $model::forge($obj, false, $this->view ? $this->view['_name'] : null, $this->from_cache);
 		}
 		else
 		{

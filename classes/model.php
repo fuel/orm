@@ -117,9 +117,9 @@ class Model implements \ArrayAccess, \Iterator
 		'many_many'     => 'Orm\\ManyMany',
 	);
 
-	public static function forge($data = array(), $new = true, $view = null)
+	public static function forge($data = array(), $new = true, $view = null, $cache = true)
 	{
-		return new static($data, $new, $view);
+		return new static($data, $new, $view, $cache);
 	}
 
 	/**
@@ -530,7 +530,8 @@ class Model implements \ArrayAccess, \Iterator
 			}
 
 			if (array_key_exists(get_called_class(), static::$_cached_objects)
-			    and array_key_exists(static::implode_pk($cache_pk), static::$_cached_objects[get_called_class()]))
+			    and array_key_exists(static::implode_pk($cache_pk), static::$_cached_objects[get_called_class()])
+			    and (! isset($options['from_cache']) or $options['from_cache'] == true))
 			{
 				return static::$_cached_objects[get_called_class()][static::implode_pk($cache_pk)];
 			}
@@ -720,7 +721,7 @@ class Model implements \ArrayAccess, \Iterator
 	 * @param  array
 	 * @param  bool
 	 */
-	public function __construct(array $data = array(), $new = true, $view = null)
+	public function __construct(array $data = array(), $new = true, $view = null, $cache = true)
 	{
 		// This is to deal with PHP's native hydration that happens before constructor is called
 		// for some weird reason, for example using the DB's as_object() function
@@ -760,7 +761,7 @@ class Model implements \ArrayAccess, \Iterator
 
 		if ($new === false)
 		{
-			static::$_cached_objects[get_class($this)][static::implode_pk($data)] = $this;
+			$cache and static::$_cached_objects[get_class($this)][static::implode_pk($data)] = $this;
 			$this->_is_new = false;
 			$this->observe('after_load');
 		}
