@@ -1031,7 +1031,7 @@ class Model implements \ArrayAccess, \Iterator
 		}
 		else
 		{
-			throw new \OutOfBoundsException('Property "'.$property.'" not found for '.get_called_class().'.');
+			throw new \OutOfBoundsException('Property "'.$property.'" not found for '.get_class($this).'.');
 		}
 	}
 
@@ -1070,7 +1070,7 @@ class Model implements \ArrayAccess, \Iterator
 
 			if (in_array($property, static::primary_key()) and $this->{$property} !== null)
 			{
-				throw new \FuelException('Primary key on model '.get_class().' cannot be changed.');
+				throw new \FuelException('Primary key on model '.get_class($this).' cannot be changed.');
 			}
 			if (array_key_exists($property, static::properties()))
 			{
@@ -1794,13 +1794,13 @@ class Model implements \ArrayAccess, \Iterator
 				// fetch the relation object for this EAV container
 				if ( ! $rel = static::relations($rel))
 				{
-					throw new \OutOfBoundsException('EAV container defines a relation that does not exist in '.get_called_class().'.');
+					throw new \OutOfBoundsException('EAV container defines a relation that does not exist in '.get_class($this).'.');
 				}
 
 				// EAV containers must be of the "Many type"
 				if ($rel instanceOf \Orm\HasOne or $rel instanceOf \Orm\BelongsTo )
 				{
-					throw new \OutOfBoundsException('EAV containers can only be defined on "HasMany" or "ManyMany" relations in '.get_called_class().'.');
+					throw new \OutOfBoundsException('EAV containers can only be defined on "HasMany" or "ManyMany" relations in '.get_class($this).'.');
 				}
 
 				// determine attribute and value column names
@@ -1851,13 +1851,13 @@ class Model implements \ArrayAccess, \Iterator
 				// fetch the relation object for this EAV container
 				if ( ! $rel = static::relations($rel))
 				{
-					throw new \OutOfBoundsException('EAV container defines a relation that does not exist in '.get_called_class().'.');
+					throw new \OutOfBoundsException('EAV container defines a relation that does not exist in '.get_class($this).'.');
 				}
 
 				// EAV containers must be of the "Many type"
 				if ($rel instanceOf \Orm\HasOne or $rel instanceOf \Orm\BelongsTo )
 				{
-					throw new \OutOfBoundsException('EAV containers can only be defined on "HasMany" or "ManyMany" relations in '.get_called_class().'.');
+					throw new \OutOfBoundsException('EAV containers can only be defined on "HasMany" or "ManyMany" relations in '.get_class($this).'.');
 				}
 
 				// determine attribute and value column names
