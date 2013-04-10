@@ -1079,7 +1079,56 @@ class Model implements \ArrayAccess, \Iterator
 			elseif (static::relations($property))
 			{
 				$this->is_fetched($property) or $this->_reset_relations[$property] = true;
-				$this->_data_relations[$property] = $value;
+
+				if (is_array($value) and $model_to = \Arr::get(isset(static::$_has_many) ?: array(), $property.'.model_to'))
+				{
+					foreach ($value as $key => $datum)
+					{
+						if (is_array($datum))
+						{
+							// If data is an array.
+							$primary_key = current(call_user_func(array($model_to, 'primary_key')));
+
+							// Get primary key and delete that from data.
+							$id = (int) \Arr::get($datum, $primary_key) and \Arr::delete($datum, $primary_key);
+
+							if (\Arr::get($datum, '_unset'))
+							{
+								// If data contain '_unset' and it is true value.
+								unset($this->{$property}[$id]);
+							}
+							else
+							{
+								if ($id)
+								{
+									// If data contain primary id, then find and set.
+									$instance = call_user_func(array($model_to, 'find'), $id) and $instance->set($datum);
+
+									// Push to storage.
+									$instance and $this->_data_relations[$property][$id] = $instance;
+								}
+								else
+								{
+									// If data don't contain primary id, then forge.
+									$instance = call_user_func(array($model_to, 'forge'), $datum);
+
+									// Push to storage.
+									$instance and $this->_data_relations[$property][] = $instance;
+								}
+							}
+						}
+						else
+						{
+							// If data is an object.
+							$this->_data_relations[$property][$key] = $datum;
+						}
+					}
+				}
+				else
+				{
+					// Other relations (belongs_to, has_one, many_many)
+					$this->_data_relations[$property] = $value;
+				}
 			}
 			elseif ( ! $this->_set_eav($property, $value))
 			{
