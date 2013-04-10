@@ -1641,16 +1641,46 @@ class Model implements \ArrayAccess, \Iterator
 			}
 			elseif (array_key_exists($property, static::relations()) and is_array($value))
 			{
+				$rel = static::relations($property);
+				if ( ! isset($this->_data_relations[$property]))
+				{
+					$this->_data_relations[$property] = $rel->singular ? null : array();
+				}
 				foreach($value as $id => $data)
 				{
-					if (isset($this->_data_relations[$property]) and array_key_exists($id, $this->_data_relations[$property]) and is_array($data))
+					if (is_array($data))
 					{
-						foreach($data as $field => $contents)
+						if (array_key_exists($id, $this->_data_relations[$property]))
 						{
-							$this->_data_relations[$property][$id]->{$field} = $contents;
+							foreach($data as $field => $contents)
+							{
+								if ($rel->singular)
+								{
+									$this->_data_relations[$property]->{$field} = $contents;
+								}
+								else
+								{
+									$this->_data_relations[$property][$id]->{$field} = $contents;
+								}
+							}
+						}
+						else
+						{
+							if ($rel->singular)
+							{
+								$this->_data_relations[$property] = call_user_func(static::relations($property)->model_to.'::forge', $data);
+							}
+							else
+							{
+								$this->_data_relations[$property][] = call_user_func(static::relations($property)->model_to.'::forge', $data);
+							}
 						}
 					}
 				}
+			}
+			else
+			{
+				$this->_custom_data[$property] = $value;
 			}
 		}
 
