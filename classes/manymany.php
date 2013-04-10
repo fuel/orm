@@ -214,15 +214,8 @@ class ManyMany extends Relation
 			}
 			else
 			{
-				$key = str_replace(array(
-					$alias_through[0],
-					$alias_to_table[0],
-				), array(
-					$alias_through[1],
-					$alias_to_table[1],
-				), $key);
+				$key = str_replace(array($alias_through[0],$alias_to_table[0]), array($alias_through[1],$alias_to_table[1]), $key);
 			}
-
 			$models[$rel_name]['order_by'][$key] = $direction;
 		}
 
