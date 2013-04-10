@@ -243,6 +243,11 @@ class Observer_Typing
 			throw new InvalidContentType('Array or object could not be converted to float.');
 		}
 
+		// deal with locale issues
+		$locale_info = localeconv();
+		$var = str_replace($locale_info["mon_thousands_sep"] , "", $var);
+		$var = str_replace($locale_info["mon_decimal_point"] , ".", $var);
+
 		return floatval($var);
 	}
 
