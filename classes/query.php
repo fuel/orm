@@ -788,6 +788,9 @@ class Query
 			$models = array_merge($models, $this->modify_join_result($join, $name));
 		}
 
+		// if no order_by was given, see if a default was defined in the model
+		empty($this->order_by) and $this->order_by(call_user_func($this->model.'::condition', 'order_by'));
+
 		if ($this->use_subquery())
 		{
 			// Get the columns for final select
@@ -796,6 +799,23 @@ class Query
 				foreach ($m['columns'] as $c)
 				{
 					$columns[] = $c;
+				}
+			}
+
+			// do we need to add order_by clauses on the subquery?
+			foreach ($this->order_by as $idx => $ob)
+			{
+				if ( ! $ob[0] instanceof \Fuel\Core\Database_Expression)
+				{
+					if (strpos($ob[0], $this->alias.'.') === 0)
+					{
+						// order by on the current model
+						$type == 'select' or $ob[0] = substr($ob[0], strlen($this->alias.'.'));
+						$query->order_by($ob[0], $ob[1]);
+
+						// and remove it from the order_by
+						unset($this->order_by[$idx]);
+					}
 				}
 			}
 
@@ -840,7 +860,6 @@ class Query
 		}
 
 		// Get the order, if none set see if we have an order_by condition set
-		empty($this->order_by) and $this->order_by(call_user_func($this->model.'::condition', 'order_by'));
 		$order_by = $order_by_backup = $this->order_by;
 
 		// Add any additional order_by and where clauses from the relations
