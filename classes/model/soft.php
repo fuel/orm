@@ -275,14 +275,17 @@ class Model_Soft extends Model
 	 */
 	public static function query($options = array())
 	{
+		$query = Query_Soft::forge(get_called_class(), static::connection(), $options);
+
 		if (static::get_filter_status())
 		{
 			//Make sure we are filtering out soft deleted items
-			$deleted_column = static::soft_delete_property('deleted_field', static::$_default_field_name);
-			$options['where'][] = array($deleted_column, null);
+			$query->set_soft_filter(static::soft_delete_property('deleted_field', static::$_default_field_name));
+//			$deleted_column = static::soft_delete_property('deleted_field', static::$_default_field_name);
+//			$options['where'][] = array($deleted_column, '=', null);
 		}
 
-		return parent::query($options);
+		return $query;
 	}
 
 	/**
