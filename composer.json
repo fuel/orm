@@ -1,0 +1,7 @@
+{
+	"name": "fuel/orm",
+	"type": "fuel-package",
+	"require": {
+		"composer/installers": "dev-fuelphp-support"
+	}
+}
