@@ -34,41 +34,74 @@ class Observer_Typing
 	);
 
 	/**
-	 * @var  array  regexes for db types with the method(s) to use, optionally pre- or post-database
+	 * @var  array  db type mappings
+	 */
+	public static $type_mappings = array(
+		'tinyint' => 'int',
+		'smallint' => 'int',
+		'mediumint' => 'int',
+		'bigint' => 'int',
+		'integer' => 'int',
+		'double' => 'float',
+		'decimal' => 'float',
+		'tinytext' => 'text',
+		'mediumtext' => 'text',
+		'longtext' => 'text',
+		'boolean' => 'bool',
+		'time_unix' => 'time',
+		'time_mysql' => 'time',
+	);
+
+	/**
+	 * @var  array  db data types with the method(s) to use, optionally pre- or post-database
 	 */
 	public static $type_methods = array(
-		'/^varchar/uiD' => array(
+		'varchar' => array(
 			'before' => 'Orm\\Observer_Typing::type_string',
 		),
-		'/^(tiny|small|medium|big)?int(eger)?/uiD'
-			=> 'Orm\\Observer_Typing::type_integer',
-		'/^(float|double|decimal)/uiD'
-			=> 'Orm\\Observer_Typing::type_float',
-		'/^(tiny|medium|long)?text/' => array(
+		'int' => array(
+			'before' => 'Orm\\Observer_Typing::type_integer',
+			'after' => 'Orm\\Observer_Typing::type_integer',
+		),
+		'float' => array(
+			'before' => 'Orm\\Observer_Typing::type_float',
+			'after' => 'Orm\\Observer_Typing::type_float',
+		),
+		'text' => array(
 			'before' => 'Orm\\Observer_Typing::type_string',
 		),
-		'/^set/uiD' => array(
+		'set' => array(
 			'before' => 'Orm\\Observer_Typing::type_set_before',
 			'after' => 'Orm\\Observer_Typing::type_set_after',
 		),
-		'/^enum/uiD' => array(
+		'enum' => array(
 			'before' => 'Orm\\Observer_Typing::type_set_before',
 		),
-		'/^bool(ean)?$/uiD' => array(
+		'bool' => array(
 			'before' => 'Orm\\Observer_Typing::type_bool_to_int',
 			'after'  => 'Orm\\Observer_Typing::type_bool_from_int',
 		),
-		'/^serialize$/uiD' => array(
+		'serialize' => array(
 			'before' => 'Orm\\Observer_Typing::type_serialize',
 			'after'  => 'Orm\\Observer_Typing::type_unserialize',
 		),
-		'/^json$/uiD' => array(
+		'json' => array(
 			'before' => 'Orm\\Observer_Typing::type_json_encode',
 			'after'  => 'Orm\\Observer_Typing::type_json_decode',
 		),
-		'/^time_(unix|mysql)$/' => array(
+		'time' => array(
 			'before' => 'Orm\\Observer_Typing::type_time_encode',
 			'after'  => 'Orm\\Observer_Typing::type_time_decode',
+		),
+	);
+
+	/**
+	 * @var  array  regexes for db types with the method(s) to use, optionally pre- or post-database
+	 */
+	public static $regex_methods = array(
+		'/^decimal:([0-9])/uiD' => array(
+			'before' => 'Orm\\Observer_Typing::type_decimal_before',
+			'after' => 'Orm\\Observer_Typing::type_decimal_after',
 		),
 	);
 
@@ -80,45 +113,25 @@ class Observer_Typing
 	 */
 	public static function orm_notify(Model $instance, $event)
 	{
-		if ( ! array_key_exists($event, static::$events))
+		// if we don't serve this event, bail out immediately
+		if (array_key_exists($event, static::$events))
 		{
-			return;
-		}
+			// get the event type of the event that triggered us
+			$event_type = static::$events[$event];
 
-		$event_type = static::$events[$event];
-		$properties = $instance->properties();
+			// fetch the model's properties
+			$properties = $instance->properties();
 
-		foreach ($properties as $p => $settings)
-		{
-			if (empty($settings['data_type']) || in_array($p, $instance->primary_key()))
+			// and check if we need to do any datatype conversions
+			foreach ($properties as $p => $settings)
 			{
-				continue;
-			}
-			if ($instance->{$p} === null) // add check if null is allowed
-			{
-				if (array_key_exists('null', $settings) and $settings['null'] === false)
-				{
-					throw new InvalidContentType('The property "'.$p.'" cannot be NULL.');
-				}
-				continue;
-			}
-
-			foreach (static::$type_methods as $match => $method)
-			{
-				if (is_array($method))
-				{
-					$method = ! empty($method[$event_type]) ? $method[$event_type] : false;
-				}
-				if ($method === false)
+				// the property is part of the primary key, skip it
+				if (in_array($p, $instance->primary_key()))
 				{
 					continue;
 				}
 
-				if ($method and preg_match($match, $settings['data_type']) > 0)
-				{
-					$instance->{$p} = call_user_func($method, $instance->{$p}, $settings);
-					continue;
-				}
+				$instance->{$p} = static::typecast($p, $instance->{$p}, $settings, $event_type);
 			}
 		}
 	}
@@ -134,8 +147,14 @@ class Observer_Typing
 	 *
 	 * @return  mixed
 	 */
-	public static function typecast($column, $value, $settings)
+	public static function typecast($column, $value, $settings, $event_type	= 'before')
 	{
+		// no datatype given
+		if (empty($settings['data_type']))
+		{
+			return $value;
+		}
+
 		if ($value === null) // add check if null is allowed
 		{
 			if (array_key_exists('null', $settings) and $settings['null'] === false)
@@ -144,27 +163,45 @@ class Observer_Typing
 			}
 		}
 
-		if (isset($settings['data_type']))
+		// get the data type for this column
+		$data_type = $settings['data_type'];
+
+		// is this a base data type?
+		if ( ! isset(static::$type_methods[$data_type]))
 		{
-			foreach (static::$type_methods as $match => $method)
+			// no, can we map it to one?
+			if (isset(static::$type_mappings[$data_type]))
 			{
-				if (is_array($method))
-				{
-					if ( ! empty($method['before']))
-					{
-						$method = $method['before'];
-					}
-					else
-					{
-						continue;
-					}
-				}
-				if ($method and preg_match($match, $settings['data_type']) > 0)
-				{
-					$value = call_user_func($method, $value, $settings);
-					break;
-				}
+				// yes, so swap it for a base data type
+				$data_type = static::$type_mappings[$data_type];
 			}
+			else
+			{
+				// can't be mapped, check the regexes
+				foreach (static::$regex_methods as $match => $methods)
+				{
+					// fetch the method
+					$method = ! empty($methods[$event_type]) ? $methods[$event_type] : false;
+
+					if ($method)
+					{
+						if (preg_match_all($match, $data_type, $matches) > 0)
+						{
+							$value = call_user_func($method, $value, $settings, $matches);
+						}
+					}
+				}
+				return $value;
+			}
+		}
+
+		// fetch the method
+		$method = ! empty(static::$type_methods[$data_type][$event_type]) ? static::$type_methods[$data_type][$event_type] : false;
+
+		// if one was found, call it
+		if ($method)
+		{
+			$value = call_user_func($method, $value, $settings);
 		}
 
 		return $value;
@@ -249,6 +286,50 @@ class Observer_Typing
 		$var = str_replace($locale_info["mon_decimal_point"] , ".", $var);
 
 		return floatval($var);
+	}
+
+	/**
+	 * Decimal pre-treater, converts a decimal representation to a float
+	 *
+	 * @param   mixed  value to typecast
+	 *
+	 * @throws  InvalidContentType
+	 *
+	 * @return  float
+	 */
+	public static function type_decimal_before($var)
+	{
+		if (is_array($var) or is_object($var))
+		{
+			throw new InvalidContentType('Array or object could not be converted to decimal.');
+		}
+
+		return static::type_float($var);
+	}
+
+	/**
+	 * Decimal post-treater, converts any number to a decimal representation
+	 *
+	 * @param   mixed  value to typecast
+	 *
+	 * @throws  InvalidContentType
+	 *
+	 * @return  float
+	 */
+	public static function type_decimal_after($var, array $settings, array $matches)
+	{
+		if (is_array($var) or is_object($var))
+		{
+			throw new InvalidContentType('Array or object could not be converted to decimal.');
+		}
+
+		if ( ! is_numeric($var))
+		{
+			throw new InvalidContentType('Value '.$var.' is not numeric and can not be converted to decimal.');
+		}
+
+		$dec = empty($matches[2][0]) ? 2 : $matches[2][0];
+		return sprintf("%.".$dec."f", static::type_float($var));
 	}
 
 	/**
