@@ -206,14 +206,14 @@ class Model_Temporal extends Model
 	 * Overrides Model::query to provide a Temporal_Query
 	 * 
 	 * @param array $options
-	 * @return Temporal_Query
+	 * @return Query_Temporal
 	 */
 	public static function query($options = array())
 	{
 		$timestamp_start_name = static::temporal_property('start_column');
 		$timestamp_end_name = static::temporal_property('end_column');
 		
-		$query = Temporal_Query::forge(get_called_class(), static::connection(), $options)
+		$query = Query_Temporal::forge(get_called_class(), static::connection(), $options)
 			->set_temporal_properties(null, $timestamp_end_name, $timestamp_start_name);
 		
 		//Check if we need to add filtering

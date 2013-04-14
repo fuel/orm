@@ -8,7 +8,7 @@ namespace Orm;
  *
  * @author Steve "uru" West <uruwolf@gmail.com>
  */
-class Temporal_Query extends Query
+class Query_Temporal extends Query
 {
 	protected $timestamp = null;
 	protected $timestamp_end_col = null;

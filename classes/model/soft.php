@@ -99,16 +99,17 @@ class Model_Soft extends Model
 	 * Fetches a soft delete property description array, or specific data from it.
 	 * Stolen from parent class.
 	 *
-	 * @param   string  property or property.key
-	 * @param   mixed   return value when key not present
-	 * @return  mixed
+	 * @param  $key      string  property or property.key
+	 * @param  $default  mixed   return value when key not present
+	 *
+	 * @return mixed
 	 */
 	public static function soft_delete_property($key, $default = null)
 	{
 		$class = get_called_class();
 
 		// If already determined
-		if ( ! array_key_exists($class, static::$_soft_delete_cached))
+		if (! array_key_exists($class, static::$_soft_delete_cached))
 		{
 			static::soft_delete_properties();
 		}
@@ -119,13 +120,13 @@ class Model_Soft extends Model
 	/**
 	 * Do some php magic to allow static::find_deleted() to work
 	 *
-	 * @param type $method
-	 * @param type $args
+	 * @param  string $method
+	 * @param  array  $args
+	 * @return mixed
 	 */
 	public static function __callStatic($method, $args)
 	{
-		if (strpos($method, 'find_deleted') === 0)
-		{
+		if (strpos($method, 'find_deleted') === 0) {
 			$temp_args = $args;
 
 			$find_type = count($temp_args) > 0 ? array_shift($temp_args) : 'all';
@@ -134,14 +135,17 @@ class Model_Soft extends Model
 			return static::deleted($find_type, $options);
 		}
 
-		parent::__callStatic($method, $args);
+		return parent::__callStatic($method, $args);
 	}
 
 	/**
 	 * Updates the defined deleted_field with a current timestamp rather than
 	 * deleting.
 	 *
-	 * @return this
+	 * @param $cascade         boolean
+	 * @param $use_transaction boolean
+	 *
+	 * @return boolean
 	 */
 	public function delete($cascade = null, $use_transaction = false)
 	{
@@ -166,21 +170,21 @@ class Model_Soft extends Model
 		foreach ($this->relations() as $rel_name => $rel)
 		{
 			//get the cascade delete status
-			$relCascade = is_null($cascade) ? $rel->cascade_delete : (bool) $cascade;
+			$relCascade = is_null($cascade) ? $rel->cascade_delete : (bool)$cascade;
 
 			//Make sure that the other model is soft delete too
 			if ($relCascade)
 			{
-				if ( ! is_subclass_of($rel->model_to, 'Orm\Model_Soft'))
+				if (! is_subclass_of($rel->model_to, 'Orm\Model_Soft'))
 				{
 					//Throw if other is not soft
 					throw new RelationNotSoft('Both sides of the relation must be subclasses of Model_Soft if cascade delete is true');
 				}
 
-				if(get_class($rel) != 'Orm\ManyMany')
+				if (get_class($rel) != 'Orm\ManyMany')
 				{
 					//Loop through and call delete on all the models
-					foreach($rel->get($this) as $model)
+					foreach ($rel->get($this) as $model)
 					{
 						$model->delete($cascade);
 					}
@@ -189,14 +193,14 @@ class Model_Soft extends Model
 		}
 		$this->unfreeze();
 
-		$this->save();
+		$result = $this->save();
 
 		$this->observe('after_delete');
 
 		//Make sure the transaction is commited if needed
 		$use_transaction and $db->commit_transaction();
 
-		return $this;
+		return $result;
 	}
 
 	/**
@@ -212,12 +216,12 @@ class Model_Soft extends Model
 		foreach ($this->relations() as $rel_name => $rel)
 		{
 			//get the cascade delete status
-			$rel_cascade = is_null($cascade_restore) ? $rel->cascade_delete : (bool) $cascade_restore;
+			$rel_cascade = is_null($cascade_restore) ? $rel->cascade_delete : (bool)$cascade_restore;
 
 			//Make sure that the other model is soft delete too
 			if ($rel_cascade)
 			{
-				if ( ! is_subclass_of($rel->model_to, 'Orm\Model_Soft'))
+				if (! is_subclass_of($rel->model_to, 'Orm\Model_Soft'))
 				{
 					//Throw if other is not soft
 					throw new RelationNotSoft('Both sides of the relation must be subclasses of Model_Soft if cascade delete is true');
@@ -229,7 +233,7 @@ class Model_Soft extends Model
 					$model_to::disable_filter();
 
 					//Loop through and call restore on all the models
-					foreach($rel->get($this) as $model)
+					foreach ($rel->get($this) as $model)
 					{
 						$model->restore($cascade_restore);
 					}
@@ -240,9 +244,7 @@ class Model_Soft extends Model
 		}
 		$this->unfreeze();
 
-		$this->save();
-
-		return $this;
+		return $this->save();
 	}
 
 	/**
@@ -271,7 +273,7 @@ class Model_Soft extends Model
 	/**
 	 * Overrides the query method to allow soft delete items to be filtered out.
 	 */
-	public static function query($options=array())
+	public static function query($options = array())
 	{
 		if (static::get_filter_status())
 		{
