@@ -161,6 +161,7 @@ class Observer_Typing
 			{
 				throw new InvalidContentType('The property "'.$column.'" cannot be NULL.');
 			}
+			return $value;
 		}
 
 		// get the data type for this column
