@@ -1538,7 +1538,7 @@ class Model implements \ArrayAccess, \Iterator
 			}
 			else
 			{
-				$original_pks = empty($this->_original_relations[$key]) ? null : $this->_original_relations[$key];
+				$original_pks = empty($this->_original_relations[$key]) ? array() : $this->_original_relations[$key];
 				$new_pks = array();
 				if ($val)
 				{
