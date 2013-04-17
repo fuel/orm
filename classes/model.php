@@ -1540,15 +1540,18 @@ class Model implements \ArrayAccess, \Iterator
 			{
 				$original_pks = $this->_original_relations[$key];
 				$new_pks = array();
-				foreach ($val as $v)
+				if ($val)
 				{
-					if ( ! in_array(($new_pk = $v->implode_pk($v)), $original_pks))
+					foreach ($val as $v)
 					{
-						$new_pks[] = $new_pk;
-					}
-					else
-					{
-						$original_pks = array_diff($original_pks, array($new_pk));
+						if ( ! in_array(($new_pk = $v->implode_pk($v)), $original_pks))
+						{
+							$new_pks[] = $new_pk;
+						}
+						else
+						{
+							$original_pks = array_diff($original_pks, array($new_pk));
+						}
 					}
 				}
 				if ( ! empty($original_pks) or ! empty($new_pks)) {
