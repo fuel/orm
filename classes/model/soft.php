@@ -183,10 +183,17 @@ class Model_Soft extends Model
 
 				if (get_class($rel) != 'Orm\ManyMany')
 				{
-					//Loop through and call delete on all the models
-					foreach ($rel->get($this) as $model)
+					if(get_class($rel) == 'Orm\HasOne')
 					{
-						$model->delete($cascade);
+						$rel->get($this)->delete();
+					}
+					else
+					{
+						//Loop through and call delete on all the models
+						foreach ($rel->get($this) as $model)
+						{
+							$model->delete($cascade);
+						}
 					}
 				}
 			}
@@ -281,8 +288,6 @@ class Model_Soft extends Model
 		{
 			//Make sure we are filtering out soft deleted items
 			$query->set_soft_filter(static::soft_delete_property('deleted_field', static::$_default_field_name));
-//			$deleted_column = static::soft_delete_property('deleted_field', static::$_default_field_name);
-//			$options['where'][] = array($deleted_column, '=', null);
 		}
 
 		return $query;
