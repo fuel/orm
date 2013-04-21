@@ -151,18 +151,25 @@ class Observer_Typing
 	 */
 	public static function typecast($column, $value, $settings, $event_type	= 'before')
 	{
-		// no datatype given
-		if (empty($settings['data_type']))
-		{
-			return $value;
-		}
-
-		if ($value === null) // add check if null is allowed
+		 // only on before_save, check if null is allowed
+		if ($event_type == 'before' and $value === null)
 		{
 			if (array_key_exists('null', $settings) and $settings['null'] === false)
 			{
+				// if a default is defined, return that instead
+				if (array_key_exists('default', $settings))
+				{
+					return $settings['default'];
+				}
+
 				throw new InvalidContentType('The property "'.$column.'" cannot be NULL.');
 			}
+			return $value;
+		}
+
+		// no datatype given
+		if (empty($settings['data_type']))
+		{
 			return $value;
 		}
 
