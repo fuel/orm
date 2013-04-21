@@ -1843,13 +1843,17 @@ class Model implements \ArrayAccess, \Iterator
 				$attr = isset($settings['attribute']) ? $settings['attribute'] : 'attribute';
 				$val = isset($settings['value']) ? $settings['value'] : 'value';
 
-				// loop over the resultset
-				foreach ($this->{$rel->name} as $key => $record)
+				// see if we have a result
+				if ($result = $this->{$rel->name})
 				{
-					// and return the value if found
-					if ($record->{$attr} === $attribute)
+					// loop over the resultset
+					foreach ($result as $key => $record)
 					{
-						return $isset ? true : $record->{$val};
+						// and return the value if found
+						if ($record->{$attr} === $attribute)
+						{
+							return $isset ? true : $record->{$val};
+						}
 					}
 				}
 			}
