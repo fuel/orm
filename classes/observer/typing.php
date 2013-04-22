@@ -528,9 +528,21 @@ class Observer_Typing
 	{
 		if ($settings['data_type'] == 'time_mysql')
 		{
+			// deal with a 'nulled' date, which according to MySQL is a valid enough to store?
+			if ($var == '0000-00-00 00:00:00')
+			{
+				if (array_key_exists('null', $settings) and $settings['null'] === false)
+				{
+					throw new InvalidContentType('Value '.$var.' is not a valid date and can not be converted to a Date object.');
+				}
+				return null;
+			}
+
 			return \Date::create_from_string($var, 'mysql');
 		}
 
 		return \Date::forge($var);
 	}
 }
+
+
