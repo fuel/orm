@@ -282,7 +282,6 @@ class Model_Temporal extends Model
 
 		switch ($id)
 		{
-			case NULL:
 			case 'all':
 			case 'first':
 			case 'last':
