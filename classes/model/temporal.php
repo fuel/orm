@@ -4,7 +4,7 @@ namespace Orm;
 
 /**
  * Allows revisions of database entries to be kept when updates are made.
- * 
+ *
  * @author Steve "Uru" West <uruwolf@gmail.com>
  */
 class Model_Temporal extends Model
@@ -29,7 +29,7 @@ class Model_Temporal extends Model
 	 * Contains the status of the primary key disable flag for temporal models
 	 */
 	protected static $_pk_check_disabled = array();
-	
+
 	/**
 	 * Contains the status for classes that defines if primaryKey() should return
 	 * just the ID.
@@ -41,12 +41,12 @@ class Model_Temporal extends Model
 	 * to the timestamp used to find the revision.
 	 */
 	protected $_lazy_timestamp = null;
-	
+
 	/**
 	 * Contains the filtering status for temporal queries
 	 */
 	protected static $_lazy_filtered_classes = array();
-	
+
 	public static function _init()
 	{
 		\Config::load('orm', true);
@@ -55,7 +55,7 @@ class Model_Temporal extends Model
 	/**
 	 * Gets the temporal properties.
 	 * Mostly stolen from the parent class properties() function
-	 * 
+	 *
 	 * @return array
 	 */
 	public static function temporal_properties()
@@ -115,10 +115,10 @@ class Model_Temporal extends Model
 	}
 
 	/**
-	 * Finds a specific revision for the given ID. If a timestamp is specified 
+	 * Finds a specific revision for the given ID. If a timestamp is specified
 	 * the revision returned will reflect the entity's state at that given time.
 	 * This will also load relations when requested.
-	 * 
+	 *
 	 * @param type $id
 	 * @param int $timestamp Null to get the latest revision (Same as find($id))
 	 * @param array $relations Names of the relations to load.
@@ -133,7 +133,7 @@ class Model_Temporal extends Model
 
 		$timestamp_start_name = static::temporal_property('start_column');
 		$timestamp_end_name = static::temporal_property('end_column');
-		
+
 		//Select the next latest revision after the requested one then use that
 		//to get the revision before.
 		self::disable_primary_key_check();
@@ -146,7 +146,7 @@ class Model_Temporal extends Model
 
 		//Make sure the temporal stuff is activated
 		$query->set_temporal_properties($timestamp, $timestamp_end_name, $timestamp_start_name);
-		
+
 		foreach ($relations as $relation)
 		{
 			$query->related($relation);
@@ -156,16 +156,16 @@ class Model_Temporal extends Model
 		$query_result->set_lazy_timestamp($timestamp);
 		return $query_result;
 	}
-	
+
 	private function set_lazy_timestamp($timestamp)
 	{
 		$this->_lazy_timestamp = $timestamp;
 	}
-	
+
 	/**
 	 * Overrides Model::get() to allow lazy loaded relations to be filtered
 	 * temporaly.
-	 * 
+	 *
 	 * @param string $property
 	 * @return mixed
 	 */
@@ -189,11 +189,11 @@ class Model_Temporal extends Model
 
 		return parent::get($property);
 	}
-	
+
 	/**
 	 * When a timestamp is set any query objects produced by this temporal model
 	 * will behave the same as find_revision()
-	 * 
+	 *
 	 * @param array $timestamp
 	 */
 	private static function make_query_temporal($timestamp)
@@ -201,10 +201,10 @@ class Model_Temporal extends Model
 		$class = get_called_class();
 		static::$_lazy_filtered_classes[$class] = $timestamp;
 	}
-	
+
 	/**
 	 * Overrides Model::query to provide a Temporal_Query
-	 * 
+	 *
 	 * @param array $options
 	 * @return Query_Temporal
 	 */
@@ -212,27 +212,27 @@ class Model_Temporal extends Model
 	{
 		$timestamp_start_name = static::temporal_property('start_column');
 		$timestamp_end_name = static::temporal_property('end_column');
-		
+
 		$query = Query_Temporal::forge(get_called_class(), static::connection(), $options)
 			->set_temporal_properties(null, $timestamp_end_name, $timestamp_start_name);
-		
+
 		//Check if we need to add filtering
 		$class = get_called_class();
 		$timestamp = \Arr::get(static::$_lazy_filtered_classes, $class, null);
-		
+
 		if(! is_null($timestamp) )
 		{
 			$query->where($timestamp_start_name, '<=', $timestamp)
 				->where($timestamp_end_name, '>', $timestamp);
 		}
-		
+
 		return $query;
 	}
-	
+
 	/**
 	 * Returns a list of revisions between the given times with the most recent
 	 * first. This does not load relations.
-	 * 
+	 *
 	 * @param int|string $id
 	 * @param timestamp $earliestTime
 	 * @param timestamp $latestTime
@@ -241,12 +241,12 @@ class Model_Temporal extends Model
 	{
 		$timestamp_start_name = static::temporal_property('start_column');
 		$max_timestamp = static::temporal_property('max_timestamp');
-		
+
 		if ($earliestTime == null)
 		{
 			$earliestTime = 0;
 		}
-		
+
 		if($latestTime == null)
 		{
 			$latestTime = $max_timestamp;
@@ -267,10 +267,10 @@ class Model_Temporal extends Model
 	/**
 	 * Overrides the default find method to allow the latest revision to be found
 	 * by default.
-	 * 
+	 *
 	 * If any new options to find are added the switch statement will have to be
 	 * updated too.
-	 * 
+	 *
 	 * @param type $id
 	 * @param array $options
 	 * @return type
@@ -279,7 +279,7 @@ class Model_Temporal extends Model
 	{
 		$timestamp_end_name = static::temporal_property('end_column');
 		$max_timestamp = static::temporal_property('max_timestamp');
-		
+
 		switch ($id)
 		{
 			case NULL:
@@ -293,21 +293,21 @@ class Model_Temporal extends Model
 				foreach(static::getNonTimestampPks() as $key)
 				{
 					$options['where'][] = array($key, $id[$count]);
-					
+
 					$count++;
 				}
 				break;
 		}
-		
+
 		$options['where'][] = array($timestamp_end_name, $max_timestamp);
 
 		static::enable_id_only_primary_key();
 		$result = parent::find($id, $options);
 		static::disable_id_only_primary_key();
-		
+
 		return $result;
 	}
-	
+
 	/**
 	 * Returns an array of the primary keys that are not related to temporal
 	 * timestamp information.
@@ -316,7 +316,7 @@ class Model_Temporal extends Model
 	{
 		$timestamp_start_name = static::temporal_property('start_column');
 		$timestamp_end_name = static::temporal_property('end_column');
-		
+
 		$pks = array();
 		foreach(parent::primary_key() as $key)
 		{
@@ -325,12 +325,12 @@ class Model_Temporal extends Model
 				$pks[] = $key;
 			}
 		}
-		
+
 		return $pks;
 	}
 
 	/**
-	 * Overrides the save method to allow temporal models to be 
+	 * Overrides the save method to allow temporal models to be
 	 * @param type $cascade
 	 * @param type $use_transaction
 	 * @return type
@@ -346,7 +346,7 @@ class Model_Temporal extends Model
 		$current_timestamp = $mysql_timestamp ?
 			\Date::forge()->format('mysql') :
 			\Date::forge()->get_timestamp();
-		
+
 		//If this is new then just call the parent and let everything happen as normal
 		if ($this->is_new())
 		{
@@ -354,12 +354,12 @@ class Model_Temporal extends Model
 			$this->{$timestamp_start_name} = $current_timestamp;
 			$this->{$timestamp_end_name} = $max_timestamp;
 			static::enable_primary_key_check();
-			
+
 			//Make sure save will populate the PK
 			static::enable_id_only_primary_key();
 			$result = parent::save($cascade, $use_transaction);
 			static::disable_id_only_primary_key();
-			
+
 			return $result;
 		}
 		//If this is an update then set a new PK, save and then insert a new row
@@ -369,19 +369,24 @@ class Model_Temporal extends Model
 
 			if (count($diff[0]) > 0)
 			{
+				self::disable_primary_key_check();
+				$this->{$timestamp_end_name} = $current_timestamp;
+				self::enable_primary_key_check();
+
+				//If we cannot save then don't bother updating anything else to prevent bad data in the database.
+				if ( ! parent::save($cascade, $use_transaction) )
+				{
+					return false;
+				}
+
 				//Take a copy before resetting
 				$newModel = clone $this;
 
 				//Reset the current model and update the timestamp
 				$this->reset();
 
-				self::disable_primary_key_check();
-				$this->{$timestamp_end_name} = $current_timestamp;
-				self::enable_primary_key_check();
-
-				parent::save();
-				
 				//Construct a copy of this model and save that with a 0 timestamp
+				//Copy the PKs
 				foreach ($this->primary_key() as $pk)
 				{
 					if ($pk != $timestamp_start_name && $pk != $timestamp_end_name)
@@ -389,57 +394,61 @@ class Model_Temporal extends Model
 						$newModel->{$pk} = $this->{$pk};
 					}
 				}
-				
+
+				//Then update the timestamps
 				static::disable_primary_key_check();
 				$newModel->{$timestamp_start_name} = $current_timestamp;
 				$newModel->{$timestamp_end_name} = $max_timestamp;
 				static::enable_primary_key_check();
-				
+
 				$result = $newModel->save();
-				
+
 				//Make sure $this is repopulated correctly (So Id's are present)
 				foreach($this->properties() as $proptery => $settings)
 				{
 					$this->_data[$proptery] = $newModel->{$proptery};
 				}
-				
+
 				return $result;
 			}
+			else
+			{
+				//If nothing has changed call parent::save() to insure relations are saved too
+				return parent::save($cascade, $use_transaction);
+			}
 		}
-
-		return $this;
 	}
-	
+
 	/**
 	 * ALlows an entry to be updated without having to insert a new row.
 	 * This will not record any changed data as a new revision.
-	 * 
+	 *
 	 * Takes the same options as Model::save()
 	 */
 	public function overwrite($cascade = null, $use_transaction = false)
 	{
 		return parent::save($cascade, $use_transaction);
 	}
-	
+
 	/**
 	 * Restores the entity to this state.
-	 * 
+	 *
 	 * @return boolean
 	 */
 	public function restore()
 	{
 		$timestamp_end_name = static::temporal_property('end_column');
 		$max_timestamp = static::temporal_property('max_timestamp');
-		
+
 		//check to see if there is a currently active row, if so then don't
 		//restore anything.
 		$activeRow = static::find('first', array(
-			'where' => array(
-				array('id', $this->id),
-				array($timestamp_end_name, $max_timestamp),
-			),
-		));
-		
+				'where' => array(
+					array('id', $this->id),
+					array($timestamp_end_name, $max_timestamp),
+				),
+			));
+
 		if(is_null($activeRow))
 		{
 			//No active row was found so we are ok to go and restore the this
@@ -451,23 +460,25 @@ class Model_Temporal extends Model
 			$current_timestamp = $mysql_timestamp ?
 				\Date::forge()->format('mysql') :
 				\Date::forge()->get_timestamp();
-			
+
 			//Make sure this is saved as a new entry
 			$this->_is_new = true;
+
 			//Update timestamps
 			static::disable_primary_key_check();
 			$this->{$timestamp_start_name} = $current_timestamp;
 			$this->{$timestamp_end_name} = $max_timestamp;
+
 			//Save
 			$result = parent::save();
 			static::enable_primary_key_check();
-			
+
 			return $result;
 		}
-		
+
 		return false;
 	}
-	
+
 	/**
 	 * Deletes all revisions of this entity permantly.
 	 */
@@ -479,7 +490,7 @@ class Model_Temporal extends Model
 		return $query->where('id', $this->id)
 			->delete();
 	}
-	
+
 	/**
 	 * Overrides update to remove PK checking when performing an update.
 	 */
@@ -488,26 +499,26 @@ class Model_Temporal extends Model
 		static::disable_primary_key_check();
 		$result = parent::update();
 		static::enable_primary_key_check();
-		
+
 		return $result;
 	}
-	
+
 	/**
 	 * Allows correct PKs to be added when performing updates
-	 * 
+	 *
 	 * @param Query $query
 	 */
 	protected function add_primary_keys_to_where($query)
 	{
 		$timestamp_start_name = static::temporal_property('start_column');
 		$timestamp_end_name = static::temporal_property('end_column');
-		
+
 		$primary_key = array(
 			'id',
 			$timestamp_start_name,
 			$timestamp_end_name,
 		);
-		
+
 		foreach ($primary_key as $pk)
 		{
 			$query->where($pk, '=', $this->_original[$pk]);
@@ -522,17 +533,17 @@ class Model_Temporal extends Model
 	{
 		$id_only = static::get_primary_key_id_only_status();
 		$pk_status = static::get_primary_key_status();
-		
+
 		if ($id_only)
 		{
 			return static::getNonTimestampPks();
 		}
-		
+
 		if ($pk_status && ! $id_only)
 		{
 			return static::$_primary_key;
 		}
-		
+
 		return array();
 	}
 
@@ -556,7 +567,7 @@ class Model_Temporal extends Model
 		$current_timestamp = $mysql_timestamp ?
 			\Date::forge()->format('mysql') :
 			\Date::forge()->get_timestamp();
-		
+
 		static::disable_primary_key_check();
 		$this->{$timestamp_end_name} = $current_timestamp;
 		static::enable_primary_key_check();
@@ -581,17 +592,17 @@ class Model_Temporal extends Model
 			}
 		}
 		$this->unfreeze();
-		
+
 		parent::save();
 
 		$this->observe('after_delete');
 
-		//Make sure the transaction is commited if needed
+		//Make sure the transaction is committed if needed
 		$use_transaction and $db->commit_transaction();
 
 		return $this;
 	}
-	
+
 	/**
 	 * Disables PK checking
 	 */
@@ -618,16 +629,16 @@ class Model_Temporal extends Model
 		$class = get_called_class();
 		return \Arr::get(self::$_pk_check_disabled, $class, true);
 	}
-	
+
 	/**
-	 * Returns true if the PK shoudl only contain the ID. Defaults to false
+	 * Returns true if the PK should only contain the ID. Defaults to false
 	 */
 	private static function get_primary_key_id_only_status()
 	{
 		$class = get_called_class();
 		return \Arr::get(self::$_pk_id_only, $class, false);
 	}
-	
+
 	/**
 	 * Makes all PKs returned
 	 */
