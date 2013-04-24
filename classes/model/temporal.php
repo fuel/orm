@@ -225,9 +225,10 @@ class Model_Temporal extends Model
 	{
 		$timestamp_start_name = static::temporal_property('start_column');
 		$timestamp_end_name = static::temporal_property('end_column');
+		$max_timestamp = static::temporal_property('max_timestamp');
 
 		$query = Query_Temporal::forge(get_called_class(), static::connection(), $options)
-			->set_temporal_properties(null, $timestamp_end_name, $timestamp_start_name);
+			->set_temporal_properties($max_timestamp, $timestamp_end_name, $timestamp_start_name);
 
 		//Check if we need to add filtering
 		$class = get_called_class();

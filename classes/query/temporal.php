@@ -26,12 +26,12 @@ class Query_Temporal extends Query
 	protected $timestamp = null;
 	protected $timestamp_end_col = null;
 	protected $timestamp_start_col = null;
-	
+
 	/**
 	 * Sets the timestamp to be used on joins. If set to null the latest revision
 	 * is used.
 	 * 
-	 * @param null|string $stamp Timestamp to look for
+	 * @param string $stamp Timestamp to look for
 	 * @param string $timestamp_end_col Name of the end timestamp column
 	 * @param string $timestamp_start_col Name of teh start timestamp column
 	 */
@@ -62,7 +62,7 @@ class Query_Temporal extends Query
 			$table      = $join_result[$name]['table'][1];
 			$query_time = \DB::escape($this->timestamp);
 			$join_result[$name]['join_on'][] = array("$table.$this->timestamp_start_col", '<=', $query_time);
-			$join_result[$name]['join_on'][] = array("$table.$this->timestamp_end_col", '>', $query_time);
+			$join_result[$name]['join_on'][] = array("$table.$this->timestamp_end_col", '>=', $query_time);
 		}
 
 		return $join_result;
