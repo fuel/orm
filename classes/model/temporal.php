@@ -1,11 +1,24 @@
 <?php
+/**
+ * Fuel
+ *
+ * Fuel is a fast, lightweight, community driven PHP5 framework.
+ *
+ * @package    Fuel
+ * @version    1.6
+ * @author     Fuel Development Team
+ * @license    MIT License
+ * @copyright  2010 - 2013 Fuel Development Team
+ * @link       http://fuelphp.com
+ */
 
 namespace Orm;
 
 /**
  * Allows revisions of database entries to be kept when updates are made.
  *
- * @author Steve "Uru" West <uruwolf@gmail.com>
+ * @package Orm
+ * @author  Fuel Development Team
  */
 class Model_Temporal extends Model
 {
@@ -330,9 +343,10 @@ class Model_Temporal extends Model
 
 	/**
 	 * Overrides the save method to allow temporal models to be
-	 * @param type $cascade
-	 * @param type $use_transaction
-	 * @return type
+	 * @param boolean $cascade
+	 * @param boolean $use_transaction
+	 * @param boolean $skip_temporal Skips temporal filtering on initial inserts. Should not be used!
+	 * @return boolean
 	 */
 	public function save($cascade = null, $use_transaction = false)
 	{
@@ -368,45 +382,33 @@ class Model_Temporal extends Model
 
 			if (count($diff[0]) > 0)
 			{
+				//Take a copy of this model
+				$revision = clone $this;
+
+				//Give that new model an end time of the current time after resetting back to the old data
+				$revision->set($this->_original);
+
 				self::disable_primary_key_check();
-				$this->{$timestamp_end_name} = $current_timestamp;
+				$revision->{$timestamp_end_name} = $current_timestamp;
 				self::enable_primary_key_check();
 
-				//If we cannot save then don't bother updating anything else to prevent bad data in the database.
-				if ( ! parent::save($cascade, $use_transaction) )
+				//save that, now we have our archive
+				self::enable_id_only_primary_key();
+				$revision_result = $revision->overwrite(false, $use_transaction);
+				self::disable_id_only_primary_key();
+
+				if ( ! $revision_result)
 				{
+					//If the revision did not save then stop the process so the user can do something.
 					return false;
 				}
 
-				//Take a copy before resetting
-				$newModel = clone $this;
+				//Now that the old data is saved update the current object so its end timestamp is now
+				self::disable_primary_key_check();
+				$this->{$timestamp_start_name} = $current_timestamp;
+				self::enable_primary_key_check();
 
-				//Reset the current model and update the timestamp
-				$this->reset();
-
-				//Construct a copy of this model and save that with a 0 timestamp
-				//Copy the PKs
-				foreach ($this->primary_key() as $pk)
-				{
-					if ($pk != $timestamp_start_name && $pk != $timestamp_end_name)
-					{
-						$newModel->{$pk} = $this->{$pk};
-					}
-				}
-
-				//Then update the timestamps
-				static::disable_primary_key_check();
-				$newModel->{$timestamp_start_name} = $current_timestamp;
-				$newModel->{$timestamp_end_name} = $max_timestamp;
-				static::enable_primary_key_check();
-
-				$result = $newModel->save();
-
-				//Make sure $this is repopulated correctly (So Id's are present)
-				foreach($this->properties() as $proptery => $settings)
-				{
-					$this->_data[$proptery] = $newModel->{$proptery};
-				}
+				$result = parent::save($cascade, $use_transaction);
 
 				return $result;
 			}

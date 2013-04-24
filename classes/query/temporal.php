@@ -1,4 +1,16 @@
 <?php
+/**
+ * Fuel
+ *
+ * Fuel is a fast, lightweight, community driven PHP5 framework.
+ *
+ * @package    Fuel
+ * @version    1.6
+ * @author     Fuel Development Team
+ * @license    MIT License
+ * @copyright  2010 - 2013 Fuel Development Team
+ * @link       http://fuelphp.com
+ */
 
 namespace Orm;
 
@@ -6,7 +18,8 @@ namespace Orm;
  * Adds temporal properties to the query object to allow for correct relation 
  * filtering on joins.
  *
- * @author Steve "uru" West <uruwolf@gmail.com>
+ * @package Orm
+ * @author  Fuel Development Team
  */
 class Query_Temporal extends Query
 {

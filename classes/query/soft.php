@@ -18,6 +18,7 @@ namespace Orm;
  * Overrides the default Query object to allow for custom soft delete filtering on queries.
  *
  * @package Orm
+ * @author  Fuel Development Team
  */
 class Query_Soft extends Query
 {
