@@ -814,9 +814,6 @@ class Query
 						// order by on the current model
 						$type == 'select' or $ob[0] = substr($ob[0], strlen($this->alias.'.'));
 						$query->order_by($ob[0], $ob[1]);
-
-						// and remove it from the order_by
-						unset($this->order_by[$idx]);
 					}
 				}
 			}
