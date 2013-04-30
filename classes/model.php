@@ -1332,17 +1332,14 @@ class Model implements \ArrayAccess, \Iterator
 			$this->freeze();
 			foreach($this->relations() as $rel_name => $rel)
 			{
+				$should_cascade = is_array($cascade) ? in_array($rel_name, $cascade) : $cascade;
+
 				//Give model subclasses a chance to chip in.
-				if ( ! $this->should_cascade_delete($rel))
+				if ($should_cascade && ! $this->should_cascade_delete($rel))
 				{
 					//The function returned false so something does not want this relation to be cascade deleted
 					$should_cascade = false;
 				}
-				else
-				{
-					$should_cascade = is_array($cascade) ? in_array($rel_name, $cascade) : $cascade;
-				}
-
 
 				$rel->delete($this, $this->{$rel_name}, true, $should_cascade);
 			}
