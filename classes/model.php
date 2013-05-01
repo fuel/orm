@@ -917,6 +917,7 @@ class Model implements \ArrayAccess, \Iterator
 		}
 		elseif ($rel = static::relations($property))
 		{
+			$this->_reset_relations[$property] = true;
 			$this->_data_relations[$property] = $rel->singular ? null : array();
 		}
 		elseif (array_key_exists($property, $this->_custom_data))
@@ -1123,7 +1124,29 @@ class Model implements \ArrayAccess, \Iterator
 			{
 				if (array_key_exists($rel_name, $this->_reset_relations))
 				{
-					method_exists($rel, 'delete_related') and $rel->delete_related($this);
+					if (method_exists($rel, 'delete_related'))
+					{
+						$rel->delete_related($this);
+					}
+					else
+					{
+						if (empty($this->_original_relations[$rel_name]))
+						{
+							$data = $rel->get($this);
+							if (is_array($data))
+							{
+								$this->_original_relations[$rel_name] = array();
+								foreach ($data as $obj)
+								{
+									$this->_original_relations[$rel_name][] = $obj ? $obj->implode_pk($obj) : null;
+								}
+							}
+							else
+							{
+								$this->_original_relations[$rel_name] = $data ? $data->implode_pk($data) : null;
+							}
+						}
+					}
 					unset($this->_reset_relations[$rel_name]);
 				}
 				if (array_key_exists($rel_name, $this->_data_relations))
