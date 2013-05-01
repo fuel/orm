@@ -152,17 +152,21 @@ class Observer_Typing
 	public static function typecast($column, $value, $settings, $event_type	= 'before')
 	{
 		 // only on before_save, check if null is allowed
-		if ($event_type == 'before' and $value === null)
+		if ($value === null)
 		{
-			if (array_key_exists('null', $settings) and $settings['null'] === false)
+			 // only on before_save
+			if ($event_type == 'before')
 			{
-				// if a default is defined, return that instead
-				if (array_key_exists('default', $settings))
+				if (array_key_exists('null', $settings) and $settings['null'] === false)
 				{
-					return $settings['default'];
-				}
+					// if a default is defined, return that instead
+					if (array_key_exists('default', $settings))
+					{
+						return $settings['default'];
+					}
 
-				throw new InvalidContentType('The property "'.$column.'" cannot be NULL.');
+					throw new InvalidContentType('The property "'.$column.'" cannot be NULL.');
+				}
 			}
 			return $value;
 		}
