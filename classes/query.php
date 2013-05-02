@@ -735,12 +735,19 @@ class Query
 		if ( ! empty($this->where))
 		{
 			$open_nests = 0;
+			$where_nested = array();
+			$include_nested = true;
 			foreach ($this->where as $key => $w)
 			{
 				list($method, $conditional) = $w;
 
 				if ($type == 'select' and (empty($conditional) or $open_nests > 0))
 				{
+					$include_nested and $where_nested[$key] = $w;
+					if ( ! empty($conditional) and strpos($conditional[0], $this->alias.'.') !== 0)
+					{
+						$include_nested = false;
+					}
 					strpos($method, '_open') and $open_nests++;
 					strpos($method, '_close') and $open_nests--;
 					continue;
@@ -757,6 +764,27 @@ class Query
 					}
 					call_user_func_array(array($query, $method), $conditional);
 					unset($this->where[$key]);
+				}
+			}
+
+			if ($include_nested and ! empty($where_nested))
+			{
+				foreach ($where_nested as $key => $w)
+				{
+					list($method, $conditional) = $w;
+
+					if (empty($conditional)
+						or strpos($conditional[0], $this->alias.'.') === 0
+						or ($type != 'select' and $conditional[0] instanceof \Fuel\Core\Database_Expression))
+					{
+						if ($type != 'select' and ! empty($conditional)
+							and ! $conditional[0] instanceof \Fuel\Core\Database_Expression)
+						{
+							$conditional[0] = substr($conditional[0], strlen($this->alias.'.'));
+						}
+						call_user_func_array(array($query, $method), $conditional);
+						unset($this->where[$key]);
+					}
 				}
 			}
 		}
