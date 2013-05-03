@@ -130,6 +130,7 @@ class BelongsTo extends Relation
 		}
 
 		$current_model_id = $model_to ? $model_to->implode_pk($model_to) : null;
+
 		// Check if there was another model assigned (this supersedes any change to the foreign key(s))
 		if ($current_model_id != $original_model_id)
 		{
@@ -143,26 +144,29 @@ class BelongsTo extends Relation
 			}
 			$model_from->freeze();
 		}
-		// if not check the model_from's foreign_keys
+
+		// if not check the model_from's foreign_keys against the model_to's primary keys
+		// because that is how the model stores them
 		else
 		{
 			$foreign_keys = count($this->key_to) == 1 ? array($original_model_id) : explode('][', substr($original_model_id, 1, -1));
 			$changed      = false;
 			$new_rel_id   = array();
 			reset($foreign_keys);
-			foreach ($this->key_from as $fk)
+			$m = $this->model_to;
+			foreach ($m::primary_key() as $pk)
 			{
-				if (is_null($model_from->{$fk}))
+				if (is_null($model_from->{$pk}))
 				{
 					$changed = true;
 					$new_rel_id = null;
 					break;
 				}
-				elseif ($model_from->{$fk} != current($foreign_keys))
+				elseif ($model_from->{$pk} != current($foreign_keys))
 				{
 					$changed = true;
 				}
-				$new_rel_id[] = $model_from->{$fk};
+				$new_rel_id[] = $model_from->{$pk};
 				next($foreign_keys);
 			}
 
