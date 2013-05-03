@@ -115,7 +115,6 @@ abstract class Relation
 	 * @param  array|Model  single or multiple model instances to save
 	 * @param  bool         whether the model_from has been saved already
 	 * @param  null|bool    either uses default setting (null) or forces when true or prevents when false
-	 * @todo   make abstract
 	 */
 	abstract public function save($model_from, $model_to, $original_model_id, $parent_saved, $cascade);
 
@@ -126,7 +125,6 @@ abstract class Relation
 	 * @param  array|Model  single or multiple model instances to delete
 	 * @param  bool         whether the model_from has been saved already
 	 * @param  null|bool    either uses default setting (null) or forces when true or prevents when false
-	 * @todo   make abstract
 	 */
 	abstract public function delete($model_from, $model_to, $parent_deleted, $cascade);
 
