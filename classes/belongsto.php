@@ -156,17 +156,17 @@ class BelongsTo extends Relation
 			$m = $this->model_to;
 			foreach ($m::primary_key() as $pk)
 			{
-				if (is_null($model_from->{$pk}))
+				if (is_null($model_to->{$pk}))
 				{
 					$changed = true;
 					$new_rel_id = null;
 					break;
 				}
-				elseif ($model_from->{$pk} != current($foreign_keys))
+				elseif ($model_to->{$pk} != current($foreign_keys))
 				{
 					$changed = true;
 				}
-				$new_rel_id[] = $model_from->{$pk};
+				$new_rel_id[] = $model_to->{$pk};
 				next($foreign_keys);
 			}
 
