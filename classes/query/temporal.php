@@ -5,7 +5,7 @@
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
  * @package    Fuel
- * @version    1.6
+ * @version    1.7
  * @author     Fuel Development Team
  * @license    MIT License
  * @copyright  2010 - 2013 Fuel Development Team
@@ -15,7 +15,7 @@
 namespace Orm;
 
 /**
- * Adds temporal properties to the query object to allow for correct relation 
+ * Adds temporal properties to the query object to allow for correct relation
  * filtering on joins.
  *
  * @package Orm
@@ -30,7 +30,7 @@ class Query_Temporal extends Query
 	/**
 	 * Sets the timestamp to be used on joins. If set to null the latest revision
 	 * is used.
-	 * 
+	 *
 	 * @param string $stamp Timestamp to look for
 	 * @param string $timestamp_end_col Name of the end timestamp column
 	 * @param string $timestamp_start_col Name of teh start timestamp column
@@ -43,13 +43,13 @@ class Query_Temporal extends Query
 		$this->timestamp = $stamp;
 		$this->timestamp_end_col = $timestamp_end_col;
 		$this->timestamp_start_col = $timestamp_start_col;
-		
+
 		return $this;
 	}
-	
+
 	/**
 	 * Adds extra where conditions when temporal filtering is needed.
-	 * 
+	 *
 	 * @param array $join_result
 	 * @param string $name
 	 * @return array
@@ -67,7 +67,7 @@ class Query_Temporal extends Query
 
 		return $join_result;
 	}
-	
+
 	public function hydrate(&$row, $models, &$result, $model = null, $select = null, $primary_key = null)
 	{
 		if( is_subclass_of($model, '\Orm\Model_Temporal'))
@@ -77,5 +77,5 @@ class Query_Temporal extends Query
 		}
 		parent::hydrate($row, $models, $result, $model, $select, $primary_key);
 	}
-	
+
 }
