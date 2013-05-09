@@ -1929,6 +1929,7 @@ class Model implements \ArrayAccess, \Iterator
 							{
 								// delete the related object if we need to unset
 								unset($this->{$rel->name}[$key]);
+								$record->delete();
 								return true;
 							}
 							else
