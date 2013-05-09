@@ -402,6 +402,30 @@ class Model implements \ArrayAccess, \Iterator
 	}
 
 	/**
+	 * Get the name of the class that defines a relation
+	 *
+	 * @param   string
+	 * @return  array
+	 */
+	public static function related_class($relation)
+	{
+		$class = get_called_class();
+
+		foreach (static::$_valid_relations as $rel_name => $rel_class)
+		{
+			if (property_exists($class, '_'.$rel_name))
+			{
+				if (isset(static::${'_'.$rel_name}[$relation]))
+				{
+					return static::${'_'.$rel_name}[$relation]['model_to'];
+				}
+			}
+		}
+
+		return null;
+	}
+
+	/**
 	 * Get the class's observers and what they observe
 	 *
 	 * @param   string  specific observer to retrieve info of, allows direct param access by using dot notation
@@ -1933,13 +1957,13 @@ class Model implements \ArrayAccess, \Iterator
 				}
 
 				// fetch the relation object for this EAV container
-				if ( ! $rel = static::relations($rel))
+				if ( ! $relation = static::relations($rel))
 				{
 					throw new \OutOfBoundsException('EAV container defines a relation that does not exist in '.get_class($this).'.');
 				}
 
 				// EAV containers must be of the "Many type"
-				if ($rel instanceOf \Orm\HasOne or $rel instanceOf \Orm\BelongsTo )
+				if ($relation instanceOf \Orm\HasOne or $relation instanceOf \Orm\BelongsTo)
 				{
 					throw new \OutOfBoundsException('EAV containers can only be defined on "HasMany" or "ManyMany" relations in '.get_class($this).'.');
 				}
@@ -1949,13 +1973,23 @@ class Model implements \ArrayAccess, \Iterator
 				$val = isset($settings['value']) ? $settings['value'] : 'value';
 
 				// loop over the resultset
-				foreach ($this->{$rel->name} as $key => $record)
+				foreach ($this->{$relation->name} as $key => $record)
 				{
 					if ($record->{$attr} === $attribute)
 					{
 						$record->{$val} = $value;
 						return true;
 					}
+				}
+
+				// not found, we've got outselfs a new attribute, so add it
+				if ($rel = static::related_class($rel))
+				{
+					$this->{$relation->name}[] = $rel::forge(array(
+						$attr => $attribute,
+						$val => $value,
+					));
+					return true;
 				}
 			}
 		}
