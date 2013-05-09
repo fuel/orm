@@ -944,6 +944,10 @@ class Model implements \ArrayAccess, \Iterator
 			$this->_reset_relations[$property] = true;
 			$this->_data_relations[$property] = $rel->singular ? null : array();
 		}
+		elseif ($this->_get_eav($property, true, true))
+		{
+			// no additional work needed here
+		}
 		elseif (array_key_exists($property, $this->_custom_data))
 		{
 			unset($this->_custom_data[$property]);
@@ -1869,15 +1873,16 @@ class Model implements \ArrayAccess, \Iterator
 	}
 
 	/**
-	 * EAV attribute getter
+	 * EAV attribute getter. Also deals with isset() and unset()
 	 *
 	 * @param   string  $attribute, the attribute value to get
 	 * @param	bool	$isset, if true, do an exists check instead of returning the value
+	 * @param	bool	$unset, if true, delete the EAV attribute if it exists
 	 *
 	 * @return  mixed
 	 * @throws	OutOfBoundsException if the defined EAV relation does not exist or of the wrong type
 	 */
-	protected function _get_eav($attribute, $isset = false)
+	protected function _get_eav($attribute, $isset = false, $unset = false)
 	{
 		// get the current class name
 		$class = get_called_class();
@@ -1917,10 +1922,20 @@ class Model implements \ArrayAccess, \Iterator
 					// loop over the resultset
 					foreach ($result as $key => $record)
 					{
-						// and return the value if found
+						// check if this is the attribute we need
 						if ($record->{$attr} === $attribute)
 						{
-							return $isset ? true : $record->{$val};
+							if ($unset)
+							{
+								// delete the related object if we need to unset
+								unset($this->{$rel->name}[$key]);
+								return true;
+							}
+							else
+							{
+								// else return its existence or its value
+								return $isset ? true : $record->{$val};
+							}
 						}
 					}
 				}
