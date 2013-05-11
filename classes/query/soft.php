@@ -38,6 +38,8 @@ class Query_Soft extends Query
 	{
 		$this->_col_name = $col_name;
 
+		$this->where($col_name, null);
+
 		return $this;
 	}
 
