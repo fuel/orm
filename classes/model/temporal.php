@@ -393,6 +393,9 @@ class Model_Temporal extends Model
 				$revision->{$timestamp_end_name} = $current_timestamp;
 				self::enable_primary_key_check();
 
+				//Make sure relations stay the same
+				$revision->_original_relations = $this->_relations;
+
 				//save that, now we have our archive
 				self::enable_id_only_primary_key();
 				$revision_result = $revision->overwrite(false, $use_transaction);
