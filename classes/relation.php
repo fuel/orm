@@ -64,9 +64,9 @@ abstract class Relation
 	/**
 	 * Configures the relationship
 	 *
-	 * @param  string  the model that initiates the relationship
-	 * @param  string  name of the relationship
-	 * @param  array   config values like model_to classname, key_from & key_to
+	 * @param  string  $from   the model that initiates the relationship
+	 * @param  string  $name   name of the relationship
+	 * @param  array   $config config values like model_to classname, key_from & key_to
 	 */
 	abstract public function __construct($from, $name, array $config);
 
@@ -102,8 +102,10 @@ abstract class Relation
 	/**
 	 * Returns tables to join and fields to select with optional additional settings like order/where
 	 *
-	 * @param   string  alias for the from table
-	 * @param   string  alias for the to table
+	 * @param $alias_from
+	 * @param $rel_name
+	 * @param $alias_to
+	 *
 	 * @return  array
 	 */
 	abstract public function join($alias_from, $rel_name, $alias_to);
@@ -111,20 +113,27 @@ abstract class Relation
 	/**
 	 * Saves the current relationships and may cascade saving to model_to instances
 	 *
-	 * @param  Model        instance of model_from
-	 * @param  array|Model  single or multiple model instances to save
-	 * @param  bool         whether the model_from has been saved already
-	 * @param  null|bool    either uses default setting (null) or forces when true or prevents when false
+	 * @param Model $model_from
+	 * @param Model $model_to
+	 * @param $original_model_id
+	 * @param $parent_saved
+	 * @param bool|null $cascade
+	 * @internal param \Orm\instance $Model of model_from
+	 * @internal param array|\Orm\Model $single or multiple model instances to save
+	 * @internal param \Orm\whether $bool the model_from has been saved already
+	 * @internal param bool|null $either uses default setting (null) or forces when true or prevents when false
+	 *
+	 * @return
 	 */
 	abstract public function save($model_from, $model_to, $original_model_id, $parent_saved, $cascade);
 
 	/**
 	 * Takes the current relations and attempts to delete them when cascading is allowed or forced
 	 *
-	 * @param  Model        instance of model_from
-	 * @param  array|Model  single or multiple model instances to delete
-	 * @param  bool         whether the model_from has been saved already
-	 * @param  null|bool    either uses default setting (null) or forces when true or prevents when false
+	 * @param  Model        $model_from      instance of model_from
+	 * @param  array|Model  $model_to        single or multiple model instances to delete
+	 * @param  bool         $parent_deleted  whether the model_from has been saved already
+	 * @param  null|bool    $cascade         either uses default setting (null) or forces when true or prevents when false
 	 */
 	abstract public function delete($model_from, $model_to, $parent_deleted, $cascade);
 
@@ -132,6 +141,8 @@ abstract class Relation
 	 * Allow outside access to protected properties
 	 *
 	 * @param  $property
+	 * @throws \FuelException Invalid relation property
+	 * @return
 	 */
 	public function __get($property)
 	{

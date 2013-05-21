@@ -254,11 +254,13 @@ class Model implements \ArrayAccess, \Iterator
 		return $pk;
 	}
 
-	/**
-	 * Get the class's properties
-	 *
-	 * @return  array
-	 */
+    /**
+     * Get the class's properties
+     *
+     * @throws \FuelException Listing columns failed
+     *
+     * @return  array
+     */
 	public static function properties()
 	{
 		$class = get_called_class();
@@ -323,11 +325,13 @@ class Model implements \ArrayAccess, \Iterator
 		return \Arr::get(static::$_properties_cached[$class], $key, $default);
 	}
 
-	/**
-	 * Fetch the model's views
-	 *
-	 * @return  array
-	 */
+    /**
+     * Fetch the model's views
+     *
+     * @throws \InvalidArgumentException Database view is defined without columns
+     *
+     * @return  array
+     */
 	public static function views()
 	{
 		$class = get_called_class();
@@ -360,8 +364,8 @@ class Model implements \ArrayAccess, \Iterator
 	/**
 	 * Get the class's relations
 	 *
-	 * @param   string
-	 * @return  array
+	 * @param bool $specific
+	 * @return  HasOne|HasMany|ManyMany|Belongsto|HasOne[]|HasMany[]|ManyMany[]|Belongsto[]
 	 */
 	public static function relations($specific = false)
 	{
@@ -508,13 +512,16 @@ class Model implements \ArrayAccess, \Iterator
 		}
 	}
 
-	/**
-	 * Find one or more entries
-	 *
-	 * @param   mixed
-	 * @param   array
-	 * @return  Model|Model[]
-	 */
+    /**
+     * Find one or more entries
+     *
+     * @param int|null $id
+     * @param array $options
+     *
+     * @throws \FuelException
+     *
+     * @return  Model|Model[]
+     */
 	public static function find($id = null, array $options = array())
 	{
 		// Return Query object
@@ -850,13 +857,17 @@ class Model implements \ArrayAccess, \Iterator
 		}
 	}
 
-	/**
-	 * Fetch or set relations on this object
-	 * To be used only after having fetched them from the database!
-	 *
-	 * @param   array|null  $rels
-	 * @return  void|array
-	 */
+    /**
+     * Fetch or set relations on this object
+     * To be used only after having fetched them from the database!
+     *
+     * @param array|bool|null $rels
+     *
+     * @throws \FuelException  Invalid input for _relate(), should be an array
+     * @throws FrozenObject    No changes allowed
+     *
+     * @return  void|array
+     */
 	public function _relate($rels = false)
 	{
 		if ($this->_frozen)
@@ -894,6 +905,8 @@ class Model implements \ArrayAccess, \Iterator
 	 *
 	 * @param  string
 	 * @param  mixed
+	 *
+	 * @return Model
 	 */
 	public function __set($property, $value)
 	{
@@ -1067,18 +1080,23 @@ class Model implements \ArrayAccess, \Iterator
 		}
 	}
 
-	/**
-	 * Set
-	 *
-	 * Sets a property or
-	 * relation of the
-	 * object
-	 *
-	 * @access  public
-	 * @param   string|array  $property
-	 * @param   string  $value in case $property is a string
-	 * @return  Orm\Model
-	 */
+    /**
+     * Set
+     *
+     * Sets a property or
+     * relation of the
+     * object
+     *
+     * @access  public
+     * @param   string|array $property
+     * @param   string $value in case $property is a string
+     *
+     * @throws \FuelException Primary key on model cannot be changed
+     * @throws \InvalidArgumentException You need to pass both a property name and a value to set()
+     * @throws FrozenObject No changes allowed
+     *
+     * @return  Model
+     */
 	public function set($property, $value = null)
 	{
 		if ($this->_frozen)
@@ -1129,7 +1147,9 @@ class Model implements \ArrayAccess, \Iterator
 	 *     null = use default config,
 	 *     bool = force/prevent cascade,
 	 *     array cascades only the relations that are in the array
-	 */
+     *
+     * @return bool
+     */
 	public function save($cascade = null, $use_transaction = false)
 	{
 		if ($this->frozen())
@@ -1332,15 +1352,19 @@ class Model implements \ArrayAccess, \Iterator
 		}
 	}
 
-	/**
-	 * Delete current object
-	 *
-	 * @param   mixed  $cascade
-	 *     null = use default config,
-	 *     bool = force/prevent cascade,
-	 *     array cascades only the relations that are in the array
-	 * @return  Model  this instance as a new object without primary key(s)
-	 */
+    /**
+     * Delete current object
+     *
+     * @param   mixed $cascade
+     *     null = use default config,
+     *     bool = force/prevent cascade,
+     *     array cascades only the relations that are in the array
+     * @param bool $use_transaction
+     *
+     * @throws \Exception
+     *
+     * @return  Model  this instance as a new object without primary key(s)
+     */
 	public function delete($cascade = null, $use_transaction = false)
 	{
 		// New objects can't be deleted, neither can frozen
@@ -1498,6 +1522,9 @@ class Model implements \ArrayAccess, \Iterator
 	 * Compare current state with the retrieved state
 	 *
 	 * @param   string|array $property
+	 *
+	 * @throws \OutOfBoundsException
+	 *
 	 * @return  bool
 	 */
 	public function is_changed($property = null)
@@ -1601,6 +1628,7 @@ class Model implements \ArrayAccess, \Iterator
 			$rel = static::relations($key);
 			if ($rel->singular)
 			{
+				$new_pk = null;
 				if (empty($this->_original_relations[$key]) !== empty($val)
 					or ( ! empty($this->_original_relations[$key]) and ! empty($val)
 						and $this->_original_relations[$key] !== $new_pk = $val->implode_pk($val)
@@ -1640,6 +1668,8 @@ class Model implements \ArrayAccess, \Iterator
 
 	/***
 	 * Returns whether the given relation is fetched. If no relation is
+	 *
+	 * @param string $relation Name of relation
 	 *
 	 * @return  bool
 	 */
@@ -1768,7 +1798,11 @@ class Model implements \ArrayAccess, \Iterator
 	/**
 	 * Allow converting this object to an array
 	 *
-	 * @param	bool	whether or not to include the custom data array
+	 * @param bool $custom
+	 * @param bool $recurse
+	 *
+	 * @internal param \Orm\whether $bool or not to include the custom data array
+	 *
 	 * @return  array
 	 */
 	public function to_array($custom = false, $recurse = false)
@@ -1875,12 +1909,13 @@ class Model implements \ArrayAccess, \Iterator
 	/**
 	 * EAV attribute getter. Also deals with isset() and unset()
 	 *
-	 * @param   string  $attribute, the attribute value to get
-	 * @param	bool	$isset, if true, do an exists check instead of returning the value
-	 * @param	bool	$unset, if true, delete the EAV attribute if it exists
+	 * @param   string $attribute, the attribute value to get
+	 * @param    bool $isset, if true, do an exists check instead of returning the value
+	 * @param    bool $unset, if true, delete the EAV attribute if it exists
+	 *
+	 * @throws \OutOfBoundsException if the defined EAV relation does not exist or of the wrong type
 	 *
 	 * @return  mixed
-	 * @throws	OutOfBoundsException if the defined EAV relation does not exist or of the wrong type
 	 */
 	protected function _get_eav($attribute, $isset = false, $unset = false)
 	{
@@ -1949,8 +1984,10 @@ class Model implements \ArrayAccess, \Iterator
 	/**
 	 * EAV attribute setter
 	 *
-	 * @param   string  $attribute
-	 * @param   string  $value
+	 * @param   string $attribute
+	 * @param   string $value
+	 *
+	 * @throws \OutOfBoundsException
 	 *
 	 * @return  mixed
 	 */
