@@ -1628,6 +1628,7 @@ class Model implements \ArrayAccess, \Iterator
 			$rel = static::relations($key);
 			if ($rel->singular)
 			{
+				$new_pk = null;
 				if (empty($this->_original_relations[$key]) !== empty($val)
 					or ( ! empty($this->_original_relations[$key]) and ! empty($val)
 						and $this->_original_relations[$key] !== $new_pk = $val->implode_pk($val)
