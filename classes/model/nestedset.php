@@ -39,7 +39,6 @@ class Model_Nestedset extends Model
 		'left_field'     => 'left_id',		// name of the tree node left index field
 		'right_field'    => 'right_id',		// name of the tree node right index field
 		'tree_field'     => null,			// name of the tree node tree index field
-		'tree_value'     => null,			// value of the selected tree index
 		'title_field'    => null,			// value of the tree node title field
 		'read-only'      => array(),		// list of properties to protect against direct updates
 	);
@@ -53,6 +52,11 @@ class Model_Nestedset extends Model
 	 * @var  array  related objects to always include in a query
 	 */
 	protected $_nestedset_relations = array();
+
+	/**
+	 * @var  mixed  id value of the current tree in multi-tree models
+	 */
+	protected $_current_tree_id = null;
 
 	/*
 	 * Initialize the nestedset model instance
@@ -160,7 +164,7 @@ class Model_Nestedset extends Model
 		}
 
 		// set the tree filter value to select a specific tree
-		$this->set_param('tree_value', $tree);
+		$this->_current_tree_id = $tree;
 
 		// return the object for chaining
 		return $this;
@@ -183,10 +187,10 @@ class Model_Nestedset extends Model
 			return $value;
 		}
 
-		// check if there is a default tree value set
-		if (($value = $this->get_param('tree_value')) !== null)
+		// check if there is a default tree id value set
+		if ($this->_current_tree_id !== null)
 		{
-			return $value;
+			return $this->_current_tree_id;
 		}
 
 		// we needed a tree id, but there isn't one defined
@@ -1417,7 +1421,6 @@ class Model_Nestedset extends Model
 	 */
 	protected function _shift_rl_values($first, $delta)
 	{
-//var_dump('MOVING '.$first.' BY '.$delta);
 		// get params to avoid excessive method calls
 		$tree_field = $this->get_param('tree_field');
 		$left_field = $this->get_param('left_field');
@@ -1476,7 +1479,6 @@ class Model_Nestedset extends Model
 			{
 				if (is_null($tree_field) or $object->{$tree_field} == $this->{$tree_field})
 				{
-//var_dump('before (A): '.$object->_data[$left_field]);
 					if ($object->{$left_field} >= $first)
 					{
 						if ($delta < 0)
@@ -1503,7 +1505,6 @@ class Model_Nestedset extends Model
 							$object->_original[$right_field] += $delta;
 						}
 					}
-//var_dump('after (A): '.$object->_data[$left_field]);
 				}
 			}
 		}
@@ -1522,7 +1523,6 @@ class Model_Nestedset extends Model
 	 */
 	protected function _shift_rl_range($first, $last, $delta)
 	{
-//var_dump('MOVING '.$first.' TO '.$last.' BY '.$delta);
 		// get params to avoid excessive method calls
 		$tree_field = $this->get_param('tree_field');
 		$left_field = $this->get_param('left_field');
@@ -1565,7 +1565,6 @@ class Model_Nestedset extends Model
 				{
 					if ($object->{$left_field} >= $first and $object->{$right_field} <= $last)
 					{
-//var_dump('before (B): '.$object->_data[$left_field]);
 						if ($delta < 0)
 						{
 							$object->_data[$left_field] -= abs($delta);
@@ -1580,7 +1579,6 @@ class Model_Nestedset extends Model
 							$object->_original[$left_field] += $delta;
 							$object->_original[$right_field] += $delta;
 						}
-//var_dump('after (B): '.$object->_data[$left_field]);
 					}
 				}
 			}
