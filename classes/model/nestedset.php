@@ -242,6 +242,25 @@ class Model_Nestedset extends Model
 	// -------------------------------------------------------------------------
 
 	/**
+	 * Returns the roots of all trees
+	 *
+	 * @return  Model_Nestedset  this object, for chaining
+	 */
+	public function roots()
+	{
+		$this->_node_operation = array(
+			'single' => false,
+			'action' => 'roots',
+			'to' => null,
+		);
+
+		// return the object for chaining
+		return $this;
+	}
+
+	// -------------------------------------------------------------------------
+
+	/**
 	 * Returns the parent of the current node
 	 *
 	 * @return  Model_Nestedset  this object, for chaining
@@ -873,13 +892,16 @@ class Model_Nestedset extends Model
 			// was a relocation of this node asked?
 			if ( ! empty($this->_node_operation))
 			{
-				// verify that both objects are from the same model
-				$this->_same_model_as($this->_node_operation['to'], __METHOD__);
-
-				// set the tree id if needed
-				if ( ! is_null($tree_field))
+				if ($this->_node_operation['to'])
 				{
-					$this->_data[$tree_field] = $this->_node_operation['to']->get_tree_id();
+					// verify that both objects are from the same model
+					$this->_same_model_as($this->_node_operation['to'], __METHOD__);
+
+					// set the tree id if needed
+					if ( ! is_null($tree_field))
+					{
+						$this->_data[$tree_field] = $this->_node_operation['to']->get_tree_id();
+					}
 				}
 
 				// add the left- and right pointers to the current object, and make room for it
@@ -927,6 +949,10 @@ class Model_Nestedset extends Model
 							// create room for this new node
 							$this->_shift_rl_values($this->{$left_field}, 2);
 						break;
+
+						default:
+							throw new \OutOfBoundsException('You can not define a '.$this->_node_operation['action'].'() action before a save().');
+						break;
 					}
 				}
 				catch (\Exception $e)
@@ -943,11 +969,34 @@ class Model_Nestedset extends Model
 				$this->_data[$left_field] = 1;
 				$this->_data[$right_field] = 2;
 
+				// we need to check if we don't already have this root
+				$query = \DB::select('id')
+					->from(static::table())
+					->where($left_field, '=', 1);
+
 				// multi-root tree? And no new tree id defined?
 				if ( ! is_null($tree_field) and empty($this->{$tree_field}))
 				{
 					// get the next free tree id, and hope it's numeric...
 					$this->_data[$tree_field] = $this->max($tree_field) + 1;
+
+					// and set it as the default tree id for this node
+					$this->set_tree_id($this->_data[$tree_field]);
+				}
+
+				// add the tree_id to the query if present
+				if ( ! empty($this->{$tree_field}))
+				{
+					$query->where($tree_field, '=', $this->_data[$tree_field]);
+				}
+
+				// run the check
+				$result = $query->execute(static::connection());
+
+				// any hits?
+				if (count($result))
+				{
+					throw new \OutOfBoundsException('You can not add this new tree root, it already exists.');
 				}
 			}
 		}
@@ -968,15 +1017,18 @@ class Model_Nestedset extends Model
 			// was a relocation of this node asked
 			if ( ! empty($this->_node_operation))
 			{
-				// verify that both objects are from the same model
-				$this->_same_model_as($this->_node_operation['to'], __METHOD__);
-
-				// and from the same tree (if we have multi-tree support for this object)
-				if ( ! is_null($tree_field))
+				if ($this->_node_operation['to'])
 				{
-					if ($this->{$tree_field} !== $this->_node_operation['to']->{$tree_field})
+					// verify that both objects are from the same model
+					$this->_same_model_as($this->_node_operation['to'], __METHOD__);
+
+					// and from the same tree (if we have multi-tree support for this object)
+					if ( ! is_null($tree_field))
 					{
-						throw new \OutOfBoundsException('When moving nodes, nodes must be part of the same tree.');
+						if ($this->{$tree_field} !== $this->_node_operation['to']->{$tree_field})
+						{
+							throw new \OutOfBoundsException('When moving nodes, nodes must be part of the same tree.');
+						}
 					}
 				}
 
@@ -1004,6 +1056,10 @@ class Model_Nestedset extends Model
 
 						case 'last_child':
 							$this->_move_subtree($this->_node_operation['to']->{$this->get_param('right_field')});
+						break;
+
+						default:
+							throw new \OutOfBoundsException('You can not define a '.$this->_node_operation['action'].'() action before a save().');
 						break;
 					}
 				}
@@ -1191,6 +1247,11 @@ class Model_Nestedset extends Model
 					->where($left_field, '=', 1);
 			break;
 
+			case 'roots':
+				$query = $this->query()
+					->where($left_field, '=', 1);
+			break;
+
 			case 'parent':
 				$query = $this->get_query()
 					->where($left_field, '<', $this->{$left_field})
@@ -1316,10 +1377,23 @@ class Model_Nestedset extends Model
 
 				return $path;
 			break;
+
+			default:
+				throw new \OutOfBoundsException('You can not set a '.$this->_node_operation['action'].'() operation on a get() or get_one().');
+			break;
 		}
 
 		// reset the node operation store to make sure nothings pending...
 		$this->_node_operation = array();
+
+		// inject defined relations in the query
+		foreach ($this->_nestedset_relations as $relation)
+		{
+			$query->related($relation);
+		}
+
+		// reset the related objects list
+		$this->_nestedset_relations = array();
 
 		// return the query result based on the action type
 		return $action == 'single' ? $query->get_one() : $query->get();
