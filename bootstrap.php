@@ -14,19 +14,20 @@
 
 
 Autoloader::add_classes(array(
-	'Orm\\Model'        => __DIR__.'/classes/model.php',
-	'Orm\\Query'        => __DIR__.'/classes/query.php',
-	'Orm\\BelongsTo'    => __DIR__.'/classes/belongsto.php',
-	'Orm\\HasMany'      => __DIR__.'/classes/hasmany.php',
-	'Orm\\HasOne'       => __DIR__.'/classes/hasone.php',
-	'Orm\\ManyMany'     => __DIR__.'/classes/manymany.php',
-	'Orm\\Relation'     => __DIR__.'/classes/relation.php',
+	'Orm\\Model'                => __DIR__.'/classes/model.php',
+	'Orm\\Query'                => __DIR__.'/classes/query.php',
+	'Orm\\BelongsTo'            => __DIR__.'/classes/belongsto.php',
+	'Orm\\HasMany'              => __DIR__.'/classes/hasmany.php',
+	'Orm\\HasOne'               => __DIR__.'/classes/hasone.php',
+	'Orm\\ManyMany'             => __DIR__.'/classes/manymany.php',
+	'Orm\\Relation'             => __DIR__.'/classes/relation.php',
 
 	//Speclised models
-	'Orm\\Model_Soft'   => __DIR__.'/classes/model/soft.php',
-	'Orm\\Query_Soft'   => __DIR__.'/classes/query/soft.php',
-	'Orm\\Model_Temporal'   => __DIR__.'/classes/model/temporal.php',
-	'Orm\\Query_Temporal'   => __DIR__.'/classes/query/temporal.php',
+	'Orm\\Model_Soft'           => __DIR__.'/classes/model/soft.php',
+	'Orm\\Query_Soft'           => __DIR__.'/classes/query/soft.php',
+	'Orm\\Model_Temporal'       => __DIR__.'/classes/model/temporal.php',
+	'Orm\\Query_Temporal'       => __DIR__.'/classes/query/temporal.php',
+	'Orm\\Model_Nestedset'      => __DIR__.'/classes/model/nestedset.php',
 
 	// Observers
 	'Orm\\Observer'             => __DIR__.'/classes/observer.php',
@@ -38,9 +39,9 @@ Autoloader::add_classes(array(
 	'Orm\\Observer_Slug'        => __DIR__.'/classes/observer/slug.php',
 
 	// Exceptions
-	'Orm\\RecordNotFound'      => __DIR__.'/classes/model.php',
-	'Orm\\FrozenObject'        => __DIR__.'/classes/model.php',
-	'Orm\\InvalidContentType'  => __DIR__.'/classes/observer/typing.php',
-	'Orm\\ValidationFailed'    => __DIR__.'/classes/observer/validation.php',
-	'Orm\\RelationNotSoft' => __DIR__.'/classes/model/soft.php',
+	'Orm\\RecordNotFound'       => __DIR__.'/classes/model.php',
+	'Orm\\FrozenObject'         => __DIR__.'/classes/model.php',
+	'Orm\\InvalidContentType'   => __DIR__.'/classes/observer/typing.php',
+	'Orm\\ValidationFailed'     => __DIR__.'/classes/observer/validation.php',
+	'Orm\\RelationNotSoft'      => __DIR__.'/classes/model/soft.php',
 ));
