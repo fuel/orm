@@ -1359,23 +1359,29 @@ class Model_Nestedset extends Model
 			break;
 
 			case 'path':
-				// storage for the path
-				$path = '';
-
 				// do we have a title field defined?
 				if ($title_field = $this->get_param('title_field'))
 				{
+					// storage for the path
+					$path = '';
+
 					// get all parents
 					$result = $this->ancestors()->get();
 
+					// construct the path
 					foreach($result as $object)
 					{
 						$path .= $object->{$title_field}.'/';
 					}
 					$path .= $this->{$title_field}.'/';
-				}
 
-				return $path;
+					// and return it
+					return $path;
+				}
+				else
+				{
+					throw new \OutOfBoundsException('You can call path(), the "'.get_class($this).'" model does not define a title field.');
+				}
 			break;
 
 			default:
