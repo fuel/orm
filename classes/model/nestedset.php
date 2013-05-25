@@ -49,11 +49,6 @@ class Model_Nestedset extends Model
 	protected $_node_operation = array();
 
 	/**
-	 * @var  array  related objects to always include in a query
-	 */
-	protected $_nestedset_relations = array();
-
-	/**
 	 * @var  mixed  id value of the current tree in multi-tree models
 	 */
 	protected $_current_tree_id = null;
@@ -187,7 +182,7 @@ class Model_Nestedset extends Model
 	 *
 	 * @return  Query  the constructed query object
 	 */
-	public function get_query()
+	public function build_query()
 	{
 		// create a new query object
 		$query = $this->query();
@@ -720,7 +715,7 @@ class Model_Nestedset extends Model
 		$right_field = $this->get_config('right_field');
 
 		// if we have a valid object, run the query to calculate the depth
-		$query = $this->get_query()
+		$query = $this->build_query()
 			->where($left_field, '<', $this->{$left_field})
 			->where($right_field, '>', $this->{$right_field});
 
@@ -793,24 +788,6 @@ class Model_Nestedset extends Model
 		// and return the result
 		return $result;
 	}
-
-	// -------------------------------------------------------------------------
-
-	/**
-	 * Define related models to be included when running a query on this model
-	 *
-	 * @param  string  name of the relation to include
-	 * @return  Model_Nestedset
-	 */
-	public function related($relation)
-	{
-		// make sure it's added only once
-		in_array($relation, $this->_nestedset_relations) or $this->_nestedset_relations[] = $relation;
-
-		// return for chaining
-		return $this;
-	}
-
 
 	// -------------------------------------------------------------------------
 
@@ -1112,6 +1089,20 @@ class Model_Nestedset extends Model
 	// -------------------------------------------------------------------------
 
 	/**
+	 * Creates a new query with optional settings up front, or return a pre-build
+	 * query to further chain upon
+	 *
+	 * @param   array
+	 * @return  Query
+	 */
+	public function get_query()
+	{
+		return $this->_fetch_nodes('query');
+	}
+
+	// -------------------------------------------------------------------------
+
+	/**
 	 * Get one or more tree nodes, and provide fallback for
 	 * the original model getter
 	 *
@@ -1122,30 +1113,23 @@ class Model_Nestedset extends Model
 	 */
 	public function & get($query = null)
 	{
-		// capture normal getter calls
-		if (func_num_args() and ! $query instanceOf Query)
-		{
-			// assume it's a model getter call
-			return parent::get($query);
-		}
-
-		// do we have a query object passed?
+		// do we have any parameters passed?
 		if (func_num_args())
 		{
-			// inject defined relations in the query
-			foreach ($this->_nestedset_relations as $relation)
+			// capture normal getter calls
+			if ($query instanceOf Query)
 			{
-				$query->related($relation);
+				// run a get() on the query
+				return $query->get();
 			}
-
-			// reset the related objects list
-			$this->_nestedset_relations = array();
-
-			// return the query result
-			return $query->get();
+			else
+			{
+				// assume it's a model getter call
+				return parent::get($query);
+			}
 		}
 
-		// so we need to fetch something
+		// no parameters, so we need to fetch something
 		$result = $this->_fetch_nodes('multiple');
 		return $result;
 	}
@@ -1165,15 +1149,6 @@ class Model_Nestedset extends Model
 		// do we have a query object passed?
 		if (func_num_args())
 		{
-			// inject defined relations in the query
-			foreach ($this->_nestedset_relations as $relation)
-			{
-				$query->related($relation);
-			}
-
-			// reset the related objects list
-			$this->_nestedset_relations = array();
-
 			// return the query result
 			return $query->get_one();
 		}
@@ -1228,7 +1203,7 @@ class Model_Nestedset extends Model
 		switch ($this->_node_operation['action'])
 		{
 			case 'root':
-				$query = $this->get_query()
+				$query = $this->build_query()
 					->where($left_field, '=', 1);
 			break;
 
@@ -1238,19 +1213,19 @@ class Model_Nestedset extends Model
 			break;
 
 			case 'parent':
-				$query = $this->get_query()
+				$query = $this->build_query()
 					->where($left_field, '<', $this->{$left_field})
 					->where($right_field, '>', $this->{$right_field})
 					->order_by($right_field, 'ASC');
 			break;
 
 			case 'first_child':
-				$query = $this->get_query()
+				$query = $this->build_query()
 					->where($left_field, $this->{$left_field} + 1);
 			break;
 
 			case 'last_child':
-				$query = $this->get_query()
+				$query = $this->build_query()
 					->where($right_field, $this->{$right_field} - 1);
 			break;
 
@@ -1280,7 +1255,7 @@ class Model_Nestedset extends Model
 				}
 
 				// construct the query to find all child objects
-				$query = $this->get_query()
+				$query = $this->build_query()
 					->where($pk, 'IN', $pks)
 					->order_by($right_field, 'ASC');
 			break;
@@ -1307,25 +1282,25 @@ class Model_Nestedset extends Model
 			break;
 
 			case 'descendants':
-				$query = $this->get_query()
+				$query = $this->build_query()
 					->where($left_field, '>', $this->{$left_field})
 					->where($right_field, '<', $this->{$right_field});
 			break;
 
 			case 'leaf_descendants':
-				$query = $this->get_query()
+				$query = $this->build_query()
 					->where($left_field, '>', $this->{$left_field})
 					->where($right_field, '<', $this->{$right_field})
 					->where(\DB::expr(\DB::quote_identifier($right_field) . ' - ' . \DB::quote_identifier($left_field)), '=', 1);
 			break;
 
 			case 'previous_sibling':
-				$query = $this->get_query()
+				$query = $this->build_query()
 					->where($this->get_config('right_field'), $this->{$this->get_config('left_field')} - 1);
 			break;
 
 			case 'next_sibling':
-				$query = $this->get_query()
+				$query = $this->build_query()
 					->where($this->get_config('left_field'), $this->{$this->get_config('right_field')} + 1);
 			break;
 
@@ -1377,17 +1352,16 @@ class Model_Nestedset extends Model
 		// reset the node operation store to make sure nothings pending...
 		$this->_node_operation = array();
 
-		// inject defined relations in the query
-		foreach ($this->_nestedset_relations as $relation)
+		if ($action == 'query')
 		{
-			$query->related($relation);
+			// return the query object for further chaining
+			return $query;
 		}
-
-		// reset the related objects list
-		$this->_nestedset_relations = array();
-
-		// return the query result based on the action type
-		return $action == 'single' ? $query->get_one() : $query->get();
+		else
+		{
+			// return the query result based on the action type
+			return $action == 'single' ? $query->get_one() : $query->get();
+		}
 	}
 
 	// -------------------------------------------------------------------------
