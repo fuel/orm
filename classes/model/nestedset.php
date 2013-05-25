@@ -85,31 +85,12 @@ class Model_Nestedset extends Model
 	// -------------------------------------------------------------------------
 
 	/**
-	 * Set a tree configuration item
-	 *
-	 * @param  string  name of the item to set
-	 * @param  mixed  new value for the item
-	 */
-	public function set_param($name, $value)
-	{
-		$class = get_called_class();
-
-		// trigger a parameter load if not defined yet (just in case)
-		array_key_exists($class, static::$_tree_cached) or $this->get_param();
-
-		// assign the value
-		array_key_exists($name, static::$_tree_cached[$class]) and static::$_tree_cached[$class][$name] = $value;
-	}
-
-	// -------------------------------------------------------------------------
-
-	/**
 	 * Get a tree configuration parameter
 	 *
 	 * @param  string  name of the parameter to get
 	 * @return  mixed  parameter value, or null if the parameter does not exist
 	 */
-	public function get_param($name = null)
+	public function get_config($name = null)
 	{
 		$class = get_called_class();
 
@@ -129,7 +110,7 @@ class Model_Nestedset extends Model
 			// array of read-only column names, the can not be set manually
 			foreach(array('left_field','right_field','tree_field') as $field)
 			{
-				$column = $this->get_param($field) and static::$_tree_cached[$class]['read-only'][] = $column;
+				$column = $this->get_config($field) and static::$_tree_cached[$class]['read-only'][] = $column;
 			}
 		}
 
@@ -158,7 +139,7 @@ class Model_Nestedset extends Model
 	public function set_tree_id($tree = null)
 	{
 		// is this a multi-tree model?
-		if ($this->get_param('tree_field') === null)
+		if ($this->get_config('tree_field') === null)
 		{
 			throw new \BadMethodCallException('This is not a multi-tree model, set_tree_id() can not be used.');
 		}
@@ -182,7 +163,7 @@ class Model_Nestedset extends Model
 	public function get_tree_id()
 	{
 		// check if the current object is part of a tree
-		if (($value = $this->{$this->get_param('tree_field')}) !== null)
+		if (($value = $this->{$this->get_config('tree_field')}) !== null)
 		{
 			return $value;
 		}
@@ -212,7 +193,7 @@ class Model_Nestedset extends Model
 		$query = $this->query();
 
 		// get params to avoid excessive method calls
-		$tree_field = $this->get_param('tree_field');
+		$tree_field = $this->get_config('tree_field');
 
 		// add the tree id if needed
 		if ( ! is_null($tree_field))
@@ -515,7 +496,7 @@ class Model_Nestedset extends Model
 	 */
 	public function is_root()
 	{
-		return $this->{$this->get_param('left_field')} == 1;
+		return $this->{$this->get_config('left_field')} == 1;
 	}
 
 	// -------------------------------------------------------------------------
@@ -527,7 +508,7 @@ class Model_Nestedset extends Model
 	 */
 	public function is_leaf()
 	{
-		return $this->{$this->get_param('right_field')} - $this->{$this->get_param('left_field')} == 1;
+		return $this->{$this->get_config('right_field')} - $this->{$this->get_config('left_field')} == 1;
 	}
 
 	// -------------------------------------------------------------------------
@@ -570,8 +551,8 @@ class Model_Nestedset extends Model
 	public function is_descendant_of(Model_Nestedset $parent)
 	{
 		// get params to avoid excessive method calls
-		$left_field = $this->get_param('left_field');
-		$right_field = $this->get_param('right_field');
+		$left_field = $this->get_config('left_field');
+		$right_field = $this->get_config('right_field');
 
 		return $this->{$left_field} > $parent->{$left_field} and
 			$this->{$right_field} < $parent->{$right_field};
@@ -601,8 +582,8 @@ class Model_Nestedset extends Model
 	public function is_ancestor_of(Model_Nestedset $child)
 	{
 		// get params to avoid excessive method calls
-		$left_field = $this->get_param('left_field');
-		$right_field = $this->get_param('right_field');
+		$left_field = $this->get_config('left_field');
+		$right_field = $this->get_config('right_field');
 
 		return $child->{$left_field} > $this->{$left_field} and
 			$child->{$right_field} < $this->{$right_field};
@@ -635,7 +616,7 @@ class Model_Nestedset extends Model
 		if ($this->is_same_model_as($object))
 		{
 			// get params to avoid excessive method calls
-			$tree_field = $this->get_param('tree_field');
+			$tree_field = $this->get_config('tree_field');
 
 			if (empty($this->{$tree_field}) or $this->{$tree_field} === $object->{$tree_field})
 			{
@@ -722,7 +703,7 @@ class Model_Nestedset extends Model
 	 */
 	public function count_descendants()
 	{
-		return ($this->{$this->get_param('right_field')} - $this->{$this->get_param('left_field')} - 1) / 2;
+		return ($this->{$this->get_config('right_field')} - $this->{$this->get_config('left_field')} - 1) / 2;
 	}
 
 	// -------------------------------------------------------------------------
@@ -735,8 +716,8 @@ class Model_Nestedset extends Model
 	public function depth()
 	{
 		// get params to avoid excessive method calls
-		$left_field = $this->get_param('left_field');
-		$right_field = $this->get_param('right_field');
+		$left_field = $this->get_config('left_field');
+		$right_field = $this->get_config('right_field');
 
 		// if we have a valid object, run the query to calculate the depth
 		$query = $this->get_query()
@@ -760,7 +741,7 @@ class Model_Nestedset extends Model
 	public function delete_tree($all = false)
 	{
 		// get params to avoid excessive method calls
-		$tree_field = $this->get_param('tree_field');
+		$tree_field = $this->get_config('tree_field');
 
 		// delete the tree
 		$query = \DB::delete(static::table());
@@ -841,7 +822,7 @@ class Model_Nestedset extends Model
 	public function __unset($property)
 	{
 		// make sure we're not unsetting a read-only value
-		if (in_array($property, $this->get_param('read-only')))
+		if (in_array($property, $this->get_config('read-only')))
 		{
 			throw new \InvalidArgumentException('Property "'.$property.'" is read-only and can not be changed');
 		}
@@ -868,7 +849,7 @@ class Model_Nestedset extends Model
 		}
 
 		// make sure we're not setting a read-only value
-		if (in_array($property, $this->get_param('read-only')) and $this->{$property} !== $value)
+		if (in_array($property, $this->get_config('read-only')) and $this->{$property} !== $value)
 		{
 			throw new \InvalidArgumentException('Property "'.$property.'" is read-only and can not be changed');
 		}
@@ -886,9 +867,9 @@ class Model_Nestedset extends Model
 	public function save($cascade = null, $use_transaction = false)
 	{
 		// get params to avoid excessive method calls
-		$tree_field = $this->get_param('tree_field');
-		$left_field = $this->get_param('left_field');
-		$right_field = $this->get_param('right_field');
+		$tree_field = $this->get_config('tree_field');
+		$left_field = $this->get_config('left_field');
+		$right_field = $this->get_config('right_field');
 
 		// deal with new objects
 		if ($this->_is_new)
@@ -1047,19 +1028,19 @@ class Model_Nestedset extends Model
 					switch ($this->_node_operation['action'])
 					{
 						case 'next_sibling':
-							$this->_move_subtree($this->_node_operation['to']->{$this->get_param('right_field')} + 1);
+							$this->_move_subtree($this->_node_operation['to']->{$this->get_config('right_field')} + 1);
 						break;
 
 						case 'previous_sibling':
-							$this->_move_subtree($this->_node_operation['to']->{$this->get_param('left_field')});
+							$this->_move_subtree($this->_node_operation['to']->{$this->get_config('left_field')});
 						break;
 
 						case 'first_child':
-							$this->_move_subtree($this->_node_operation['to']->{$this->get_param('left_field')} + 1);
+							$this->_move_subtree($this->_node_operation['to']->{$this->get_config('left_field')} + 1);
 						break;
 
 						case 'last_child':
-							$this->_move_subtree($this->_node_operation['to']->{$this->get_param('right_field')});
+							$this->_move_subtree($this->_node_operation['to']->{$this->get_config('right_field')});
 						break;
 
 						default:
@@ -1105,8 +1086,8 @@ class Model_Nestedset extends Model
 		$result = parent::delete($cascade, $use_transaction);
 
 		// get params to avoid excessive method calls
-		$left_field = $this->get_param('left_field');
-		$right_field = $this->get_param('right_field');
+		$left_field = $this->get_config('left_field');
+		$right_field = $this->get_config('right_field');
 
 		// re-index the tree
 		try
@@ -1239,9 +1220,9 @@ class Model_Nestedset extends Model
 		}
 
 		// get params to avoid excessive method calls
-		$left_field = $this->get_param('left_field');
-		$right_field = $this->get_param('right_field');
-		$tree_field = $this->get_param('tree_field');
+		$left_field = $this->get_config('left_field');
+		$right_field = $this->get_config('right_field');
+		$tree_field = $this->get_config('tree_field');
 
 		// construct the query
 		switch ($this->_node_operation['action'])
@@ -1340,12 +1321,12 @@ class Model_Nestedset extends Model
 
 			case 'previous_sibling':
 				$query = $this->get_query()
-					->where($this->get_param('right_field'), $this->{$this->get_param('left_field')} - 1);
+					->where($this->get_config('right_field'), $this->{$this->get_config('left_field')} - 1);
 			break;
 
 			case 'next_sibling':
 				$query = $this->get_query()
-					->where($this->get_param('left_field'), $this->{$this->get_param('right_field')} + 1);
+					->where($this->get_config('left_field'), $this->{$this->get_config('right_field')} + 1);
 			break;
 
 			case 'siblings':
@@ -1364,7 +1345,7 @@ class Model_Nestedset extends Model
 
 			case 'path':
 				// do we have a title field defined?
-				if ($title_field = $this->get_param('title_field'))
+				if ($title_field = $this->get_config('title_field'))
 				{
 					// storage for the path
 					$path = '';
@@ -1422,9 +1403,9 @@ class Model_Nestedset extends Model
 	protected function _shift_rl_values($first, $delta)
 	{
 		// get params to avoid excessive method calls
-		$tree_field = $this->get_param('tree_field');
-		$left_field = $this->get_param('left_field');
-		$right_field = $this->get_param('right_field');
+		$tree_field = $this->get_config('tree_field');
+		$left_field = $this->get_config('left_field');
+		$right_field = $this->get_config('right_field');
 
 		$query = \DB::update(static::table());
 
@@ -1524,9 +1505,9 @@ class Model_Nestedset extends Model
 	protected function _shift_rl_range($first, $last, $delta)
 	{
 		// get params to avoid excessive method calls
-		$tree_field = $this->get_param('tree_field');
-		$left_field = $this->get_param('left_field');
-		$right_field = $this->get_param('right_field');
+		$tree_field = $this->get_config('tree_field');
+		$left_field = $this->get_config('left_field');
+		$right_field = $this->get_config('right_field');
 
 		$query = \DB::update(static::table());
 
@@ -1596,9 +1577,9 @@ class Model_Nestedset extends Model
 	protected function _move_subtree($destination_id)
 	{
 		// get params to avoid excessive method calls
-		$tree_field = $this->get_param('tree_field');
-		$left_field = $this->get_param('left_field');
-		$right_field = $this->get_param('right_field');
+		$tree_field = $this->get_config('tree_field');
+		$left_field = $this->get_config('left_field');
+		$right_field = $this->get_config('right_field');
 
 		// catch a move into the subtree
 		if ( $destination_id >= $this->{$left_field} and $destination_id <= $this->{$right_field} )
