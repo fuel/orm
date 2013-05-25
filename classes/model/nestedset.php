@@ -43,38 +43,6 @@ class Model_Nestedset extends Model
 		'read-only'      => array(),		// list of properties to protect against direct updates
 	);
 
-	/**
-	 * @var  array  store the node operation we need to execute on save() or get()
-	 */
-	protected $_node_operation = array();
-
-	/**
-	 * @var  mixed  id value of the current tree in multi-tree models
-	 */
-	protected $_current_tree_id = null;
-
-	/*
-	 * Initialize the nestedset model instance
-	 *
-	 * @param  array    any data passed to this model
-	 * @param  bool     whether or not this is a new model instance
-	 * @param  string   name of a database view to use instead of a table
-	 * @param  bool     whether or not to cache this object
-	 *
-	 * @throws  OutOfBoundsException  if the model has a compound primary key defined
-	 */
-	public function __construct(array $data = array(), $new = true, $view = null, $cache = true)
-	{
-		// check for a compound key, we don't do that (yet)
-		if (count(static::$_primary_key) > 1)
-		{
-			throw new \OutOfBoundsException('The Nestedset ORM model doesn\'t support compound primary keys.');
-		}
-
-		// call the ORM base model constructor
-		parent::__construct($data, $new, $view, $cache);
-	}
-
 	// -------------------------------------------------------------------------
 	// tree configuration
 	// -------------------------------------------------------------------------
@@ -117,6 +85,42 @@ class Model_Nestedset extends Model
 		{
 			return array_key_exists($name, static::$_tree_cached[$class]) ? static::$_tree_cached[$class][$name] :  null;
 		}
+	}
+
+	// -------------------------------------------------------------------------
+	// updated constructor, capture un-supported compound PK's
+	// -------------------------------------------------------------------------
+
+	/**
+	 * @var  array  store the node operation we need to execute on save() or get()
+	 */
+	protected $_node_operation = array();
+
+	/**
+	 * @var  mixed  id value of the current tree in multi-tree models
+	 */
+	protected $_current_tree_id = null;
+
+	/*
+	 * Initialize the nestedset model instance
+	 *
+	 * @param  array    any data passed to this model
+	 * @param  bool     whether or not this is a new model instance
+	 * @param  string   name of a database view to use instead of a table
+	 * @param  bool     whether or not to cache this object
+	 *
+	 * @throws  OutOfBoundsException  if the model has a compound primary key defined
+	 */
+	public function __construct(array $data = array(), $new = true, $view = null, $cache = true)
+	{
+		// check for a compound key, we don't do that (yet)
+		if (count(static::$_primary_key) > 1)
+		{
+			throw new \OutOfBoundsException('The Nestedset ORM model doesn\'t support compound primary keys.');
+		}
+
+		// call the ORM base model constructor
+		parent::__construct($data, $new, $view, $cache);
 	}
 
 	// -------------------------------------------------------------------------
@@ -1059,23 +1063,45 @@ class Model_Nestedset extends Model
 			$db->start_transaction();
 		}
 
-		// delete it
-		$result = parent::delete($cascade, $use_transaction);
-
 		// get params to avoid excessive method calls
 		$left_field = static::tree_config('left_field');
 		$right_field = static::tree_config('right_field');
+		$pk = reset(static::$_primary_key);
 
-		// re-index the tree
+		// put the entire operation in a try/catch, so we can rollback if needed
 		try
 		{
-			$this->_shift_rl_values($this->{$right_field} + 1, $this->{$left_field} - $this->{$right_field} - 1);
+			// check if the node has children
+			if ($this->has_children())
+			{
+				// get them
+				$children = $this->children()->get();
+
+				// and delete them to
+				foreach ($children as $child)
+				{
+					if ($child->delete($cascade) === false)
+					{
+						throw new \UnexpectedValueException('delete of child node with PK "'.$child->{$pk}.'" failed.');
+					}
+				}
+			}
+
+			// delete the node itself
+			$result = parent::delete($cascade);
+
+			// check if the delete was succesful
+			if ($result !== false)
+			{
+				// re-index the tree
+				$this->_shift_rl_values($this->{$right_field} + 1, $this->{$left_field} - $this->{$right_field} - 1);
+			}
 		}
 		catch (\Exception $e)
 		{
 			$use_transaction and $db->rollback_transaction();
 			throw $e;
- 		}
+		}
 
 		// reset the node operation store to make sure nothings pending...
 		$this->_node_operation = array();
