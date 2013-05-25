@@ -728,72 +728,6 @@ class Model_Nestedset extends Model
 	}
 
 	// -------------------------------------------------------------------------
-	// tree destructors
-	// -------------------------------------------------------------------------
-
-	/**
-	 * Deletes the entire tree structure including all records
-	 *
-	 * @param  boolean  if true, delete all trees
-	 * @return  mixed  result of the delete operation
-	 */
-	public function delete_tree($all = false)
-	{
-		// get params to avoid excessive method calls
-		$tree_field = static::tree_config('tree_field');
-
-		// delete the tree
-		$query = \DB::delete(static::table());
-
-		// if we have multiple roots
-		if ( ! is_null($tree_field))
-		{
-			// by default, only delete the current tree
-			$all === true or $query->where($tree_field, $this->{$tree_field});
-		}
-
-		// fire the delete query
-		$result = $query->execute(static::connection(true));
-
-		// get the classname of this model
-		$class = get_called_class();
-
-		// cleanup the object cache
-		if (array_key_exists($class, static::$_cached_objects))
-		{
-			// what do we need to cleanup?
-			is_null($tree_field) and $all = true;
-
-			// loop over the cached objects
-			foreach (static::$_cached_objects[$class] as $key => $object)
-			{
-				if ($all or $this->{$tree_field} === $object->{$tree_field})
-				{
-					// reset the objects PK's
-					foreach ($object->primary_key() as $pk)
-					{
-						unset($object->_data[$pk]);
-					}
-					foreach($object->relations() as $rel_name => $rel)
-					{
-						$object->_original_relations[$rel_name] = $rel->singular ? null : array();
-					}
-
-					// and return the object to new state
-					$object->_is_new = true;
-					$object->_original = array();
-				}
-			}
-		}
-
-		// reset the node operation store to make sure nothings pending...
-		$this->_node_operation = array();
-
-		// and return the result
-		return $result;
-	}
-
-	// -------------------------------------------------------------------------
 
 	/**
 	 * Capture __unset() to make sure no read-only properties are erased
@@ -1056,6 +990,58 @@ class Model_Nestedset extends Model
 	 * @return  Model  this instance as a new object without primary key(s)
 	 */
 	public function delete($cascade = null, $use_transaction = false)
+	{
+		if ($use_transaction)
+		{
+			$db = \Database_Connection::instance(static::connection(true));
+			$db->start_transaction();
+		}
+
+		// get params to avoid excessive method calls
+		$left_field = static::tree_config('left_field');
+		$right_field = static::tree_config('right_field');
+
+		// put the entire operation in a try/catch, so we can rollback if needed
+		try
+		{
+			// delete the node itself
+			$result = parent::delete($cascade);
+
+			// check if the delete was succesful
+			if ($result !== false)
+			{
+				// re-index the tree
+				$this->_shift_rl_range($this->{$left_field} + 1, $this->{$right_field} - 1, -1);
+				$this->_shift_rl_values($this->{$right_field} + 1, -2);
+			}
+		}
+		catch (\Exception $e)
+		{
+			$use_transaction and $db->rollback_transaction();
+			throw $e;
+		}
+
+		// reset the node operation store to make sure nothings pending...
+		$this->_node_operation = array();
+
+		// and return the result
+		return $result;
+	}
+
+	// -------------------------------------------------------------------------
+	// tree destructors
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Deletes the entire tree structure using the current node as starting point
+	 *
+	 * @param   mixed  $cascade
+	 *     null = use default config,
+	 *     bool = force/prevent cascade,
+	 *     array cascades only the relations that are in the array
+	 * @return  Model  this instance as a new object without primary key(s)
+	 */
+	public function delete_tree($cascade = null, $use_transaction = false)
 	{
 		if ($use_transaction)
 		{
