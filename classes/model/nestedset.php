@@ -718,13 +718,21 @@ class Model_Nestedset extends Model
 		$left_field = static::tree_config('left_field');
 		$right_field = static::tree_config('right_field');
 
-		// if we have a valid object, run the query to calculate the depth
-		$query = $this->build_query()
-			->where($left_field, '<', $this->{$left_field})
-			->where($right_field, '>', $this->{$right_field});
+		// we need a valid object for this to work
+		if ($this->is_new())
+		{
+			return false;
+		}
+		else
+		{
+			// if we have a valid object, run the query to calculate the depth
+			$query = $this->build_query()
+				->where($left_field, '<', $this->{$left_field})
+				->where($right_field, '>', $this->{$right_field});
 
-		// return the result count
-		return $query->count();
+			// return the result count
+			return $query->count();
+		}
 	}
 
 	// -------------------------------------------------------------------------
@@ -988,6 +996,8 @@ class Model_Nestedset extends Model
 	 *     bool = force/prevent cascade,
 	 *     array cascades only the relations that are in the array
 	 * @return  Model  this instance as a new object without primary key(s)
+	 *
+	 * @throws DomainException if you try to delete a root node with multiple children
 	 */
 	public function delete($cascade = null, $use_transaction = false)
 	{
@@ -1000,6 +1010,12 @@ class Model_Nestedset extends Model
 		// get params to avoid excessive method calls
 		$left_field = static::tree_config('left_field');
 		$right_field = static::tree_config('right_field');
+
+		// if this is a root node with multiple children, bail out
+		if ($this->is_root() and $this->count_children() > 1)
+		{
+			throw new \DomainException('You can not delete a tree root with multiple children.');
+		}
 
 		// put the entire operation in a try/catch, so we can rollback if needed
 		try
@@ -1269,7 +1285,7 @@ class Model_Nestedset extends Model
 				// construct the query to find all child objects
 				$query = $this->build_query()
 					->where($pk, 'IN', $pks)
-					->order_by($right_field, 'ASC');
+					->order_by($left_field, 'ASC');
 			break;
 
 			case 'ancestors':
@@ -1296,14 +1312,16 @@ class Model_Nestedset extends Model
 			case 'descendants':
 				$query = $this->build_query()
 					->where($left_field, '>', $this->{$left_field})
-					->where($right_field, '<', $this->{$right_field});
+					->where($right_field, '<', $this->{$right_field})
+					->order_by($left_field, 'ASC');
 			break;
 
 			case 'leaf_descendants':
 				$query = $this->build_query()
 					->where($left_field, '>', $this->{$left_field})
 					->where($right_field, '<', $this->{$right_field})
-					->where(\DB::expr(\DB::quote_identifier($right_field) . ' - ' . \DB::quote_identifier($left_field)), '=', 1);
+					->where(\DB::expr(\DB::quote_identifier($right_field) . ' - ' . \DB::quote_identifier($left_field)), '=', 1)
+					->order_by($left_field, 'ASC');
 			break;
 
 			case 'previous_sibling':
