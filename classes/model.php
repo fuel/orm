@@ -594,7 +594,7 @@ class Model implements \ArrayAccess, \Iterator
 	 */
 	public static function count(array $options = array())
 	{
-		return Query::forge(get_called_class(), array(static::connection(), static::connection(true)), $options)->count();
+		return static::query($options)->count();
 	}
 
 	/**
@@ -606,7 +606,7 @@ class Model implements \ArrayAccess, \Iterator
 	 */
 	public static function max($key = null)
 	{
-		return Query::forge(get_called_class(), array(static::connection(), static::connection(true)))->max($key ?: static::primary_key());
+		return static::query()->max($key ?: static::primary_key());
 	}
 
 	/**
@@ -618,7 +618,7 @@ class Model implements \ArrayAccess, \Iterator
 	 */
 	public static function min($key = null)
 	{
-		return Query::forge(get_called_class(), array(static::connection(), static::connection(true)))->min($key ?: static::primary_key());
+		return static::query()->min($key ?: static::primary_key());
 	}
 
 	public static function __callStatic($method, $args)
