@@ -527,7 +527,7 @@ class Model implements \ArrayAccess, \Iterator
 		// Return Query object
 		if (is_null($id))
 		{
-			if (func_num_args() === 1)
+			if (func_num_args() !== 2)
 			{
 				throw new \FuelException('Invalid method call.  You need to specify a key value.', 0);
 			}
