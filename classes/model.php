@@ -524,20 +524,19 @@ class Model implements \ArrayAccess, \Iterator
      */
 	public static function find($id = null, array $options = array())
 	{
-		// Return Query object
+		// deal with null valued PK's
 		if (is_null($id))
 		{
-			if (func_num_args() !== 2)
-			{
-				throw new \FuelException('Invalid method call.  You need to specify a key value.', 0);
-			}
-			return static::query($options);
+			// if no options are present, simply return null. a PK with a null value can exist
+			return func_num_args() === 2 ? static::query($options) : null;
 		}
+
 		// Return all that match $options array
 		elseif ($id === 'all')
 		{
 			return static::query($options)->get();
 		}
+
 		// Return first or last row that matches $options array
 		elseif ($id === 'first' or $id === 'last')
 		{
@@ -550,6 +549,7 @@ class Model implements \ArrayAccess, \Iterator
 
 			return $query->get_one();
 		}
+
 		// Return specific request row by ID
 		else
 		{
