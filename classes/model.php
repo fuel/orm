@@ -633,8 +633,16 @@ class Model implements \ArrayAccess, \Iterator
 		// Otherwise, lets find stuff
 		elseif (strpos($method, 'find_') === 0)
 		{
-			$find_type = strncmp($method, 'find_all_by_', 12) === 0 ? 'all' : (strncmp($method, 'find_by_', 8) === 0 ? 'first' : false);
-			$fields = $find_type === 'first' ? substr($method, 8) : substr($method, 12);
+			if ($method == 'find_by')
+			{
+				$find_type = 'all';
+				$fields = array_shift($args);
+			}
+			else
+			{
+				$find_type = strncmp($method, 'find_all_by_', 12) === 0 ? 'all' : (strncmp($method, 'find_by_', 8) === 0 ? 'first' : false);
+				$fields = $find_type === 'first' ? substr($method, 8) : substr($method, 12);
+			}
 		}
 
 		// God knows, complain
