@@ -1352,7 +1352,7 @@ class Query
 	/**
 	 * Run INSERT with the current values
 	 *
-	 * @return  bool|int    Last inserted ID or false on failure
+	 * @return  bool|int    Last inserted ID (if present) or false on failure
 	 */
 	public function insert()
 	{
@@ -1361,7 +1361,7 @@ class Query
 			->execute($this->write_connection);
 
 		// Failed to save the new record
-		if ($res[0] === 0)
+		if ($res[1] === 0)
 		{
 			return false;
 		}
