@@ -1125,6 +1125,17 @@ class Model_Nestedset extends Model
 	 */
 	public function get_query()
 	{
+		// make sure there's a node operation defined
+		if (empty($this->_node_operation))
+		{
+			// assume a get-all operation
+			$this->_node_operation = array(
+				'single' => false,
+				'action' => 'all',
+				'to' => null,
+			);
+		}
+
 		return $this->_fetch_nodes('query');
 	}
 
@@ -1157,6 +1168,17 @@ class Model_Nestedset extends Model
 			}
 		}
 
+		// make sure there's a node operation defined
+		if (empty($this->_node_operation))
+		{
+			// assume a get-all operation
+			$this->_node_operation = array(
+				'single' => false,
+				'action' => 'all',
+				'to' => null,
+			);
+		}
+
 		// no parameters, so we need to fetch something
 		$result = $this->_fetch_nodes('multiple');
 		return $result;
@@ -1179,6 +1201,17 @@ class Model_Nestedset extends Model
 		{
 			// return the query result
 			return $query->get_one();
+		}
+
+		// make sure there's a node operation defined
+		if (empty($this->_node_operation))
+		{
+			// assume a get-all operation
+			$this->_node_operation = array(
+				'single' => true,
+				'action' => 'all',
+				'to' => null,
+			);
 		}
 
 		// so we need to fetch something
@@ -1216,12 +1249,6 @@ class Model_Nestedset extends Model
 	 */
 	protected function _fetch_nodes($action)
 	{
-		// make sure there's something to fetch
-		if (empty($this->_node_operation))
-		{
-			throw new \BadMethodCallException('No node type requested, there is nothing to get.');
-		}
-
 		// get params to avoid excessive method calls
 		$left_field = static::tree_config('left_field');
 		$right_field = static::tree_config('right_field');
@@ -1230,6 +1257,10 @@ class Model_Nestedset extends Model
 		// construct the query
 		switch ($this->_node_operation['action'])
 		{
+			case 'all':
+				// no additional selection, we want them all
+			break;
+
 			case 'root':
 				$query = $this->build_query()
 					->where($left_field, '=', 1);
