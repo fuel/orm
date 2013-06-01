@@ -1258,7 +1258,7 @@ class Model_Nestedset extends Model
 		switch ($this->_node_operation['action'])
 		{
 			case 'all':
-				// no additional selection, we want them all
+				$query = $this->build_query();
 			break;
 
 			case 'root':
