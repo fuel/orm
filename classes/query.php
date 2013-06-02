@@ -160,6 +160,14 @@ class Query
 				case 'use_view':
 					$this->use_view($val);
 					break;
+				case 'or_where':
+					$this->and_where_open();
+					foreach ($val as $where)
+					{
+						call_user_func_array(array($this, '_where'), array($where, 'or_where'));
+					}
+					$this->and_where_close();
+					break;
 				case 'where':
 					$this->_parse_where_array($val);
 					break;
