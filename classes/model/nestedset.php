@@ -804,7 +804,7 @@ class Model_Nestedset extends Model
 			}
 		}
 
-		return $tree;
+		return $as_object ? $this : $tree;
 	}
 
 	// -------------------------------------------------------------------------
