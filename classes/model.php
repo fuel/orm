@@ -661,13 +661,13 @@ class Model implements \ArrayAccess, \Iterator
 
 				if (count($or_parts) == 1)
 				{
-					$where[] = array($or_parts[0] => array_shift($args));
+					$where[] = array($or_parts[0], array_shift($args));
 				}
 				else
 				{
 					foreach($or_parts as $or_part)
 					{
-						$or_where[] = array($or_part => array_shift($args));
+						$or_where[] = array($or_part, array_shift($args));
 					}
 				}
 			}
