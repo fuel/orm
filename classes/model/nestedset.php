@@ -740,10 +740,11 @@ class Model_Nestedset extends Model
 	/**
 	 * Return the tree, with the current node as root, as a nested array structure
 	 *
-	 * @param   bool  wether or not to return an array of objects
+	 * @param   bool    whether or not to return an array of objects
+	 * @param   string  property name to store the node's children
 	 * @return	array
 	 */
-	public function dump_tree($as_object = false)
+	public function dump_tree($as_object = false, $children = 'children')
 	{
 		// get the PK
 		$pk = reset(static::$_primary_key);
@@ -753,7 +754,7 @@ class Model_Nestedset extends Model
 		$right_field = static::tree_config('right_field');
 
 		// storage for the result, start with the current node
-		$this['_children'] = array();
+		$this[$children] = array();
 		$tree = $as_object ? array($this->{$pk} => $this) : array($this->{$pk} => $this->to_array(true));
 
 		// parent tracker
@@ -768,7 +769,7 @@ class Model_Nestedset extends Model
 			$node = $as_object ? $treenode : $treenode->to_array(true);
 
 			// make sure we have a place to store child information
-			$node['_children'] = array();
+			$node[$children] = array();
 
 			// is this node a child of the current parent?
 			if ($treenode->{$left_field} > $tracker[$index][$right_field])
@@ -780,11 +781,11 @@ class Model_Nestedset extends Model
 			// add it as a child to the current parent
 			if ($as_object)
 			{
-				$tracker[$index]->_children[$treenode->{$pk}] = $node;
+				$tracker[$index]->{$children}[$treenode->{$pk}] = $node;
 			}
 			else
 			{
-				$tracker[$index]['_children'][$treenode->{$pk}] = $node;
+				$tracker[$index][$children][$treenode->{$pk}] = $node;
 			}
 
 			// does this node have children?
@@ -793,11 +794,11 @@ class Model_Nestedset extends Model
 				// create a new parent level
 				if ($as_object)
 				{
-					$tracker[$index+1] =& $tracker[$index]->_children[$treenode->{$pk}];
+					$tracker[$index+1] =& $tracker[$index]->{$children}[$treenode->{$pk}];
 				}
 				else
 				{
-					$tracker[$index+1] =& $tracker[$index]['_children'][$treenode->{$pk}];
+					$tracker[$index+1] =& $tracker[$index][$children][$treenode->{$pk}];
 				}
 				$index++;
 			}
