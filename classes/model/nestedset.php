@@ -738,6 +738,58 @@ class Model_Nestedset extends Model
 	// -------------------------------------------------------------------------
 
 	/**
+	 * Return the tree, with the current node as root, as a nested array structure
+	 *
+	 * @return	array
+	 */
+	public function tree_as_array()
+	{
+		// get the PK
+		$pk = reset(static::$_primary_key);
+
+		// and the tree pointers
+		$left_field = static::tree_config('left_field');
+		$right_field = static::tree_config('right_field');
+
+		// storage for the result, start with the current node
+		$tree = array($this->{$pk} => $this->to_array());
+
+		// parent tracker
+		$tracker = array();
+		$index = 0;
+		$tracker[$index] =& $tree[$this->{$pk}];
+
+		// loop over the descendants
+		foreach ($this->descendants()->get() as $node)
+		{
+			// make sure we have a place to store child information
+			isset($tracker[$index]['_children']) or $tracker[$index]['_children'] = array();
+
+			// is this node a child of the current parent?
+			if ($node->{$left_field} > $tracker[$index][$right_field])
+			{
+				// no, so pop the last parent and move a level back up
+				$index--;
+			}
+
+			// add it as a child to the current parent
+			$tracker[$index]['_children'][$node->{$pk}] = $node->to_array();
+
+			// does this node have children?
+			if ($node->{$right_field} - $node->{$left_field} > 1)
+			{
+				// create a new parent level
+				$tracker[$index+1] =& $tracker[$index]['_children'][$node->{$pk}];
+				$index++;
+			}
+		}
+
+		return $tree;
+	}
+
+	// -------------------------------------------------------------------------
+
+	/**
 	 * Capture __unset() to make sure no read-only properties are erased
 	 *
 	 * @param   string  $property
