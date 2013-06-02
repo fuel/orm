@@ -740,9 +740,10 @@ class Model_Nestedset extends Model
 	/**
 	 * Return the tree, with the current node as root, as a nested array structure
 	 *
+	 * @param   bool  wether or not to return an array of objects
 	 * @return	array
 	 */
-	public function tree_as_array()
+	public function dump_tree($as_object = false)
 	{
 		// get the PK
 		$pk = reset(static::$_primary_key);
@@ -752,7 +753,8 @@ class Model_Nestedset extends Model
 		$right_field = static::tree_config('right_field');
 
 		// storage for the result, start with the current node
-		$tree = array($this->{$pk} => $this->to_array());
+		$this['_children'] = array();
+		$tree = $as_object ? array($this->{$pk} => $this) : array($this->{$pk} => $this->to_array(true));
 
 		// parent tracker
 		$tracker = array();
@@ -760,26 +762,43 @@ class Model_Nestedset extends Model
 		$tracker[$index] =& $tree[$this->{$pk}];
 
 		// loop over the descendants
-		foreach ($this->descendants()->get() as $node)
+		foreach ($this->descendants()->get() as $treenode)
 		{
+			// get the data for this node
+			$node = $as_object ? $treenode : $treenode->to_array(true);
+
 			// make sure we have a place to store child information
-			isset($tracker[$index]['_children']) or $tracker[$index]['_children'] = array();
+			$node['_children'] = array();
 
 			// is this node a child of the current parent?
-			if ($node->{$left_field} > $tracker[$index][$right_field])
+			if ($treenode->{$left_field} > $tracker[$index][$right_field])
 			{
 				// no, so pop the last parent and move a level back up
 				$index--;
 			}
 
 			// add it as a child to the current parent
-			$tracker[$index]['_children'][$node->{$pk}] = $node->to_array();
+			if ($as_object)
+			{
+				$tracker[$index]->_children[$treenode->{$pk}] = $node;
+			}
+			else
+			{
+				$tracker[$index]['_children'][$treenode->{$pk}] = $node;
+			}
 
 			// does this node have children?
-			if ($node->{$right_field} - $node->{$left_field} > 1)
+			if ($treenode->{$right_field} - $treenode->{$left_field} > 1)
 			{
 				// create a new parent level
-				$tracker[$index+1] =& $tracker[$index]['_children'][$node->{$pk}];
+				if ($as_object)
+				{
+					$tracker[$index+1] =& $tracker[$index]->_children[$treenode->{$pk}];
+				}
+				else
+				{
+					$tracker[$index+1] =& $tracker[$index]['_children'][$treenode->{$pk}];
+				}
 				$index++;
 			}
 		}
@@ -810,7 +829,6 @@ class Model_Nestedset extends Model
 	/**
 	 * Capture set() to make sure no read-only properties are overwritten
 	 *
-	 * @access  public
 	 * @param   string|array  $property
 	 * @param   string  $value in case $property is a string
 	 * @return  Model
