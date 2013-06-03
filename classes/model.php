@@ -675,22 +675,28 @@ class Model implements \ArrayAccess, \Iterator
 
 		$options = count($args) > 0 ? array_pop($args) : array();
 
-		if ( ! array_key_exists('where', $options))
+		if ( ! empty($where))
 		{
-			$options['where'] = $where;
-		}
-		else
-		{
-			$options['where'] = array_merge($where, $options['where']);
+			if ( ! array_key_exists('where', $options))
+			{
+				$options['where'] = $where;
+			}
+			else
+			{
+				$options['where'] = array_merge($where, $options['where']);
+			}
 		}
 
-		if ( ! array_key_exists('or_where', $options))
+		if ( ! empty($or_where))
 		{
-			$options['or_where'] = $or_where;
-		}
-		else
-		{
-			$options['or_where'] = array_merge($or_where, $options['or_where']);
+			if ( ! array_key_exists('or_where', $options))
+			{
+				$options['or_where'] = $or_where;
+			}
+			else
+			{
+				$options['or_where'] = array_merge($or_where, $options['or_where']);
+			}
 		}
 
 		if ($find_type == 'count')
