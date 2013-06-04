@@ -394,7 +394,7 @@ class Model_Temporal extends Model
 				self::enable_primary_key_check();
 
 				// Make sure relations stay the same
-				$revision->_original_relations = $this->_relations;
+				$revision->_original_relations = $this->_data_relations;
 
 				// save that, now we have our archive
 				self::enable_id_only_primary_key();
