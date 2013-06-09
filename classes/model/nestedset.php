@@ -873,6 +873,12 @@ class Model_Nestedset extends Model
 			{
 				if ($this->_node_operation['to'])
 				{
+					// do we have a model? if not, try to autoload it
+					if ( ! $this->_node_operation['to'] instanceOf Model_Nestedset)
+					{
+						$this->_node_operation['to'] = static::find($this->_node_operation['to']);
+					}
+
 					// verify that both objects are from the same model
 					$this->_same_model_as($this->_node_operation['to'], __METHOD__);
 
@@ -998,6 +1004,12 @@ class Model_Nestedset extends Model
 			{
 				if ($this->_node_operation['to'])
 				{
+					// do we have a model? if not, try to autoload it
+					if ( ! $this->_node_operation['to'] instanceOf Model_Nestedset)
+					{
+						$this->_node_operation['to'] = static::find($this->_node_operation['to']);
+					}
+
 					// verify that both objects are from the same model
 					$this->_same_model_as($this->_node_operation['to'], __METHOD__);
 
