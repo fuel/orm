@@ -383,10 +383,10 @@ class Model_Nestedset extends Model
 	/**
 	 * Alias for last_child()
 	 *
-	 * @param   Model_Nestedset
+	 * @param   Model_Nestedset, or PK of the parent object, or null
 	 * @return  Model_Nestedset  this object, for chaining
 	 */
-	public function child(Model_Nestedset $to = null)
+	public function child($to = null)
 	{
 		return $this->last_child($to);
 	}
@@ -396,10 +396,10 @@ class Model_Nestedset extends Model
 	/**
 	 * Gets or sets the first child of a node
 	 *
-	 * @param   Model_Nestedset
+	 * @param   Model_Nestedset, or PK of the parent object, or null
 	 * @return  Model_Nestedset  this object, for chaining
 	 */
-	public function first_child(Model_Nestedset $to = null)
+	public function first_child($to = null)
 	{
 		$this->_node_operation = array(
 			'single' => true,
@@ -416,10 +416,10 @@ class Model_Nestedset extends Model
 	/**
 	 * Gets or sets the last child of a node
 	 *
-	 * @param   Model_Nestedset
+	 * @param   Model_Nestedset, or PK of the parent object, or null
 	 * @return  Model_Nestedset  this object, for chaining
 	 */
-	public function last_child(Model_Nestedset $to = null)
+	public function last_child($to = null)
 	{
 		$this->_node_operation = array(
 			'single' => true,
@@ -436,10 +436,10 @@ class Model_Nestedset extends Model
 	/**
 	 * Alias for next_sibling()
 	 *
-	 * @param   Model_Nestedset
+	 * @param   Model_Nestedset, or PK of the parent object, or null
 	 * @return  Model_Nestedset  this object, for chaining
 	 */
-	public function sibling(Model_Nestedset $to = null)
+	public function sibling($to = null)
 	{
 		return $this->next_sibling($to);
 	}
@@ -449,10 +449,10 @@ class Model_Nestedset extends Model
 	/**
 	 * Gets or sets the previous sibling of a node
 	 *
-	 * @param   Model_Nestedset
+	 * @param   Model_Nestedset, or PK of the parent object, or null
 	 * @return  Model_Nestedset  this object, for chaining
 	 */
-	public function previous_sibling(Model_Nestedset $to = null)
+	public function previous_sibling($to = null)
 	{
 		$this->_node_operation = array(
 			'single' => true,
@@ -469,10 +469,10 @@ class Model_Nestedset extends Model
 	/**
 	 * Gets or sets the next sibling of a node
 	 *
-	 * @param   Model_Nestedset
+	 * @param   Model_Nestedset, or PK of the parent object, or null
 	 * @return  Model_Nestedset  this object, for chaining
 	 */
-	public function next_sibling(Model_Nestedset $to = null)
+	public function next_sibling($to = null)
 	{
 		$this->_node_operation = array(
 			'single' => true,
