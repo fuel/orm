@@ -254,11 +254,13 @@ class Model implements \ArrayAccess, \Iterator
 		return $pk;
 	}
 
-	/**
-	 * Get the class's properties
-	 *
-	 * @return  array
-	 */
+    /**
+     * Get the class's properties
+     *
+     * @throws \FuelException Listing columns failed
+     *
+     * @return  array
+     */
 	public static function properties()
 	{
 		$class = get_called_class();
@@ -323,11 +325,13 @@ class Model implements \ArrayAccess, \Iterator
 		return \Arr::get(static::$_properties_cached[$class], $key, $default);
 	}
 
-	/**
-	 * Fetch the model's views
-	 *
-	 * @return  array
-	 */
+    /**
+     * Fetch the model's views
+     *
+     * @throws \InvalidArgumentException Database view is defined without columns
+     *
+     * @return  array
+     */
 	public static function views()
 	{
 		$class = get_called_class();
@@ -360,8 +364,8 @@ class Model implements \ArrayAccess, \Iterator
 	/**
 	 * Get the class's relations
 	 *
-	 * @param   string
-	 * @return  array
+	 * @param bool $specific
+	 * @return  HasOne|HasMany|ManyMany|Belongsto|HasOne[]|HasMany[]|ManyMany[]|Belongsto[]
 	 */
 	public static function relations($specific = false)
 	{
@@ -399,6 +403,30 @@ class Model implements \ArrayAccess, \Iterator
 
 			return static::$_relations_cached[$class][$specific];
 		}
+	}
+
+	/**
+	 * Get the name of the class that defines a relation
+	 *
+	 * @param   string
+	 * @return  array
+	 */
+	public static function related_class($relation)
+	{
+		$class = get_called_class();
+
+		foreach (static::$_valid_relations as $rel_name => $rel_class)
+		{
+			if (property_exists($class, '_'.$rel_name))
+			{
+				if (isset(static::${'_'.$rel_name}[$relation]))
+				{
+					return static::${'_'.$rel_name}[$relation]['model_to'];
+				}
+			}
+		}
+
+		return null;
 	}
 
 	/**
@@ -484,29 +512,31 @@ class Model implements \ArrayAccess, \Iterator
 		}
 	}
 
-	/**
-	 * Find one or more entries
-	 *
-	 * @param   mixed
-	 * @param   array
-	 * @return  Model|Model[]
-	 */
+    /**
+     * Find one or more entries
+     *
+     * @param int|null $id
+     * @param array $options
+     *
+     * @throws \FuelException
+     *
+     * @return  Model|Model[]
+     */
 	public static function find($id = null, array $options = array())
 	{
-		// Return Query object
+		// deal with null valued PK's
 		if (is_null($id))
 		{
-			if (func_num_args() === 1)
-			{
-				throw new \FuelException('Invalid method call.  You need to specify a key value.', 0);
-			}
-			return static::query($options);
+			// if no options are present, simply return null. a PK with a null value can exist
+			return func_num_args() === 2 ? static::query($options) : null;
 		}
+
 		// Return all that match $options array
 		elseif ($id === 'all')
 		{
 			return static::query($options)->get();
 		}
+
 		// Return first or last row that matches $options array
 		elseif ($id === 'first' or $id === 'last')
 		{
@@ -519,6 +549,7 @@ class Model implements \ArrayAccess, \Iterator
 
 			return $query->get_one();
 		}
+
 		// Return specific request row by ID
 		else
 		{
@@ -563,7 +594,7 @@ class Model implements \ArrayAccess, \Iterator
 	 */
 	public static function count(array $options = array())
 	{
-		return Query::forge(get_called_class(), array(static::connection(), static::connection(true)), $options)->count();
+		return static::query($options)->count();
 	}
 
 	/**
@@ -575,7 +606,7 @@ class Model implements \ArrayAccess, \Iterator
 	 */
 	public static function max($key = null)
 	{
-		return Query::forge(get_called_class(), array(static::connection(), static::connection(true)))->max($key ?: static::primary_key());
+		return static::query()->max($key ?: static::primary_key());
 	}
 
 	/**
@@ -587,7 +618,7 @@ class Model implements \ArrayAccess, \Iterator
 	 */
 	public static function min($key = null)
 	{
-		return Query::forge(get_called_class(), array(static::connection(), static::connection(true)))->min($key ?: static::primary_key());
+		return static::query()->min($key ?: static::primary_key());
 	}
 
 	public static function __callStatic($method, $args)
@@ -602,8 +633,16 @@ class Model implements \ArrayAccess, \Iterator
 		// Otherwise, lets find stuff
 		elseif (strpos($method, 'find_') === 0)
 		{
-			$find_type = strncmp($method, 'find_all_by_', 12) === 0 ? 'all' : (strncmp($method, 'find_by_', 8) === 0 ? 'first' : false);
-			$fields = $find_type === 'first' ? substr($method, 8) : substr($method, 12);
+			if ($method == 'find_by')
+			{
+				$find_type = 'all';
+				$fields = array_shift($args);
+			}
+			else
+			{
+				$find_type = strncmp($method, 'find_all_by_', 12) === 0 ? 'all' : (strncmp($method, 'find_by_', 8) === 0 ? 'first' : false);
+				$fields = $find_type === 'first' ? substr($method, 8) : substr($method, 12);
+			}
 		}
 
 		// God knows, complain
@@ -622,13 +661,13 @@ class Model implements \ArrayAccess, \Iterator
 
 				if (count($or_parts) == 1)
 				{
-					$where[] = array($or_parts[0] => array_shift($args));
+					$where[] = array($or_parts[0], array_shift($args));
 				}
 				else
 				{
 					foreach($or_parts as $or_part)
 					{
-						$or_where[] = array($or_part => array_shift($args));
+						$or_where[] = array($or_part, array_shift($args));
 					}
 				}
 			}
@@ -636,22 +675,28 @@ class Model implements \ArrayAccess, \Iterator
 
 		$options = count($args) > 0 ? array_pop($args) : array();
 
-		if ( ! array_key_exists('where', $options))
+		if ( ! empty($where))
 		{
-			$options['where'] = $where;
-		}
-		else
-		{
-			$options['where'] = array_merge($where, $options['where']);
+			if ( ! array_key_exists('where', $options))
+			{
+				$options['where'] = $where;
+			}
+			else
+			{
+				$options['where'] = array_merge($where, $options['where']);
+			}
 		}
 
-		if ( ! array_key_exists('or_where', $options))
+		if ( ! empty($or_where))
 		{
-			$options['or_where'] = $or_where;
-		}
-		else
-		{
-			$options['or_where'] = array_merge($or_where, $options['or_where']);
+			if ( ! array_key_exists('or_where', $options))
+			{
+				$options['or_where'] = $or_where;
+			}
+			else
+			{
+				$options['or_where'] = array_merge($or_where, $options['or_where']);
+			}
 		}
 
 		if ($find_type == 'count')
@@ -826,13 +871,17 @@ class Model implements \ArrayAccess, \Iterator
 		}
 	}
 
-	/**
-	 * Fetch or set relations on this object
-	 * To be used only after having fetched them from the database!
-	 *
-	 * @param   array|null  $rels
-	 * @return  void|array
-	 */
+    /**
+     * Fetch or set relations on this object
+     * To be used only after having fetched them from the database!
+     *
+     * @param array|bool|null $rels
+     *
+     * @throws \FuelException  Invalid input for _relate(), should be an array
+     * @throws FrozenObject    No changes allowed
+     *
+     * @return  void|array
+     */
 	public function _relate($rels = false)
 	{
 		if ($this->_frozen)
@@ -870,6 +919,8 @@ class Model implements \ArrayAccess, \Iterator
 	 *
 	 * @param  string
 	 * @param  mixed
+	 *
+	 * @return Model
 	 */
 	public function __set($property, $value)
 	{
@@ -919,6 +970,10 @@ class Model implements \ArrayAccess, \Iterator
 		{
 			$this->_reset_relations[$property] = true;
 			$this->_data_relations[$property] = $rel->singular ? null : array();
+		}
+		elseif ($this->_get_eav($property, true, true))
+		{
+			// no additional work needed here
 		}
 		elseif (array_key_exists($property, $this->_custom_data))
 		{
@@ -1039,18 +1094,23 @@ class Model implements \ArrayAccess, \Iterator
 		}
 	}
 
-	/**
-	 * Set
-	 *
-	 * Sets a property or
-	 * relation of the
-	 * object
-	 *
-	 * @access  public
-	 * @param   string|array  $property
-	 * @param   string  $value in case $property is a string
-	 * @return  Orm\Model
-	 */
+    /**
+     * Set
+     *
+     * Sets a property or
+     * relation of the
+     * object
+     *
+     * @access  public
+     * @param   string|array $property
+     * @param   string $value in case $property is a string
+     *
+     * @throws \FuelException Primary key on model cannot be changed
+     * @throws \InvalidArgumentException You need to pass both a property name and a value to set()
+     * @throws FrozenObject No changes allowed
+     *
+     * @return  Model
+     */
 	public function set($property, $value = null)
 	{
 		if ($this->_frozen)
@@ -1101,7 +1161,9 @@ class Model implements \ArrayAccess, \Iterator
 	 *     null = use default config,
 	 *     bool = force/prevent cascade,
 	 *     array cascades only the relations that are in the array
-	 */
+     *
+     * @return bool
+     */
 	public function save($cascade = null, $use_transaction = false)
 	{
 		if ($this->frozen())
@@ -1304,15 +1366,19 @@ class Model implements \ArrayAccess, \Iterator
 		}
 	}
 
-	/**
-	 * Delete current object
-	 *
-	 * @param   mixed  $cascade
-	 *     null = use default config,
-	 *     bool = force/prevent cascade,
-	 *     array cascades only the relations that are in the array
-	 * @return  Model  this instance as a new object without primary key(s)
-	 */
+    /**
+     * Delete current object
+     *
+     * @param   mixed $cascade
+     *     null = use default config,
+     *     bool = force/prevent cascade,
+     *     array cascades only the relations that are in the array
+     * @param bool $use_transaction
+     *
+     * @throws \Exception
+     *
+     * @return  Model  this instance as a new object without primary key(s)
+     */
 	public function delete($cascade = null, $use_transaction = false)
 	{
 		// New objects can't be deleted, neither can frozen
@@ -1470,6 +1536,9 @@ class Model implements \ArrayAccess, \Iterator
 	 * Compare current state with the retrieved state
 	 *
 	 * @param   string|array $property
+	 *
+	 * @throws \OutOfBoundsException
+	 *
 	 * @return  bool
 	 */
 	public function is_changed($property = null)
@@ -1573,6 +1642,7 @@ class Model implements \ArrayAccess, \Iterator
 			$rel = static::relations($key);
 			if ($rel->singular)
 			{
+				$new_pk = null;
 				if (empty($this->_original_relations[$key]) !== empty($val)
 					or ( ! empty($this->_original_relations[$key]) and ! empty($val)
 						and $this->_original_relations[$key] !== $new_pk = $val->implode_pk($val)
@@ -1612,6 +1682,8 @@ class Model implements \ArrayAccess, \Iterator
 
 	/***
 	 * Returns whether the given relation is fetched. If no relation is
+	 *
+	 * @param string $relation Name of relation
 	 *
 	 * @return  bool
 	 */
@@ -1740,7 +1812,11 @@ class Model implements \ArrayAccess, \Iterator
 	/**
 	 * Allow converting this object to an array
 	 *
-	 * @param	bool	whether or not to include the custom data array
+	 * @param bool $custom
+	 * @param bool $recurse
+	 *
+	 * @internal param \Orm\whether $bool or not to include the custom data array
+	 *
 	 * @return  array
 	 */
 	public function to_array($custom = false, $recurse = false)
@@ -1845,15 +1921,17 @@ class Model implements \ArrayAccess, \Iterator
 	}
 
 	/**
-	 * EAV attribute getter
+	 * EAV attribute getter. Also deals with isset() and unset()
 	 *
-	 * @param   string  $attribute, the attribute value to get
-	 * @param	bool	$isset, if true, do an exists check instead of returning the value
+	 * @param   string $attribute, the attribute value to get
+	 * @param    bool $isset, if true, do an exists check instead of returning the value
+	 * @param    bool $unset, if true, delete the EAV attribute if it exists
+	 *
+	 * @throws \OutOfBoundsException if the defined EAV relation does not exist or of the wrong type
 	 *
 	 * @return  mixed
-	 * @throws	OutOfBoundsException if the defined EAV relation does not exist or of the wrong type
 	 */
-	protected function _get_eav($attribute, $isset = false)
+	protected function _get_eav($attribute, $isset = false, $unset = false)
 	{
 		// get the current class name
 		$class = get_called_class();
@@ -1893,10 +1971,21 @@ class Model implements \ArrayAccess, \Iterator
 					// loop over the resultset
 					foreach ($result as $key => $record)
 					{
-						// and return the value if found
+						// check if this is the attribute we need
 						if ($record->{$attr} === $attribute)
 						{
-							return $isset ? true : $record->{$val};
+							if ($unset)
+							{
+								// delete the related object if we need to unset
+								unset($this->{$rel->name}[$key]);
+								$record->delete();
+								return true;
+							}
+							else
+							{
+								// else return its existence or its value
+								return $isset ? true : $record->{$val};
+							}
 						}
 					}
 				}
@@ -1909,8 +1998,10 @@ class Model implements \ArrayAccess, \Iterator
 	/**
 	 * EAV attribute setter
 	 *
-	 * @param   string  $attribute
-	 * @param   string  $value
+	 * @param   string $attribute
+	 * @param   string $value
+	 *
+	 * @throws \OutOfBoundsException
 	 *
 	 * @return  mixed
 	 */
@@ -1933,13 +2024,13 @@ class Model implements \ArrayAccess, \Iterator
 				}
 
 				// fetch the relation object for this EAV container
-				if ( ! $rel = static::relations($rel))
+				if ( ! $relation = static::relations($rel))
 				{
 					throw new \OutOfBoundsException('EAV container defines a relation that does not exist in '.get_class($this).'.');
 				}
 
 				// EAV containers must be of the "Many type"
-				if ($rel instanceOf \Orm\HasOne or $rel instanceOf \Orm\BelongsTo )
+				if ($relation instanceOf \Orm\HasOne or $relation instanceOf \Orm\BelongsTo)
 				{
 					throw new \OutOfBoundsException('EAV containers can only be defined on "HasMany" or "ManyMany" relations in '.get_class($this).'.');
 				}
@@ -1949,13 +2040,23 @@ class Model implements \ArrayAccess, \Iterator
 				$val = isset($settings['value']) ? $settings['value'] : 'value';
 
 				// loop over the resultset
-				foreach ($this->{$rel->name} as $key => $record)
+				foreach ($this->{$relation->name} as $key => $record)
 				{
 					if ($record->{$attr} === $attribute)
 					{
 						$record->{$val} = $value;
 						return true;
 					}
+				}
+
+				// not found, we've got outselfs a new attribute, so add it
+				if ($rel = static::related_class($rel))
+				{
+					$this->{$relation->name}[] = $rel::forge(array(
+						$attr => $attribute,
+						$val => $value,
+					));
+					return true;
 				}
 			}
 		}

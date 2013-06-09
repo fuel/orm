@@ -147,7 +147,7 @@ class BelongsTo extends Relation
 
 		// if not check the model_from's foreign_keys against the model_to's primary keys
 		// because that is how the model stores them
-		else
+		elseif ($current_model_id != null)
 		{
 			$foreign_keys = count($this->key_to) == 1 ? array($original_model_id) : explode('][', substr($original_model_id, 1, -1));
 			$changed      = false;
