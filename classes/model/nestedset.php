@@ -1377,17 +1377,28 @@ class Model_Nestedset extends Model
 				$left = $this->{$left_field};
 				$right = $this->{$right_field};
 
-				$query = \DB::select('child.'.$pk)
-					->from(array(static::table(), 'child'))
-					->join(array(static::table(), 'ancestor'), 'left')
-					->on('ancestor.' . $left_field, 'BETWEEN', \DB::expr(($left + 1) . ' AND ' . ($right - 1)))
-					->on('child.' . $left_field, 'BETWEEN', \DB::expr('ancestor.'.$left_field.' + 1 AND ancestor.'.$right_field.' - 1'))
-					->where('child.' . $left_field, 'BETWEEN', \DB::expr(($left + 1) . ' AND ' . ($right - 1)))
-					->and_where('ancestor.'.$pk, null);
-
-				if ( ! is_null($tree_field))
+				// if we're multitree, add the tree filter to the query
+				if (is_null($tree_field))
 				{
-					$query->where('child.'.$tree_field, '=', $this->get_tree_id());
+					$query = \DB::select('child.'.$pk)
+						->from(array(static::table(), 'child'))
+						->join(array(static::table(), 'ancestor'), 'left')
+						->on(\DB::identifier('ancestor.' . $left_field), 'BETWEEN', \DB::expr(($left + 1) . ' AND ' . ($right - 1)))
+						->on(\DB::identifier('child.' . $left_field), 'BETWEEN', \DB::expr(\DB::identifier('ancestor.'.$left_field).' + 1 AND '.\DB::identifier('ancestor.'.$right_field).' - 1'))
+						->where(\DB::identifier('child.' . $left_field), 'BETWEEN', \DB::expr(($left + 1) . ' AND ' . ($right - 1)))
+						->and_where('ancestor.'.$pk, null);
+				}
+				else
+				{
+					$query = \DB::select('child.'.$pk)
+						->from(array(static::table(), 'child'))
+						->join(array(static::table(), 'ancestor'), 'left')
+						->on(\DB::identifier('ancestor.' . $left_field), 'BETWEEN', \DB::expr(($left + 1) . ' AND ' . ($right - 1) . ' AND '.\DB::identifier('ancestor.'.$tree_field).' = '.$this->get_tree_id()))
+						->on(\DB::identifier('child.' . $left_field), 'BETWEEN', \DB::expr(\DB::identifier('ancestor.'.$left_field).' + 1 AND '.\DB::identifier('ancestor.'.$right_field).' - 1'))
+						->where(\DB::identifier('child.' . $left_field), 'BETWEEN', \DB::expr(($left + 1) . ' AND ' . ($right - 1)))
+						->and_where('ancestor.'.$pk, null)
+						->and_where('child.'.$tree_field, '=', $this->get_tree_id());
+
 				}
 
 				// extract the PK's, and bail out if no children found
