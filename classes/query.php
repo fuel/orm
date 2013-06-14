@@ -1182,7 +1182,10 @@ class Query
 			$this->hydrate($row, $models, $result, $model, $select, $primary_key);
 			unset($rows[$id]);
 		}
-
+		
+		$collectionClass = $model::_collection_class();
+		$result = $collectionClass::forge($model,$result);
+		
 		// It's all built, now lets execute and start hydration
 		return $result;
 	}
