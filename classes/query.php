@@ -1183,9 +1183,12 @@ class Query
 			unset($rows[$id]);
 		}
 		
-		$collectionClass = $model::_collection_class();
-		$result = $collectionClass::forge($model,$result);
+		\Config::load('orm', true);
 		
+		if (\Config::get('orm.use_collections')){
+			$collectionClass = $model::_collection_class();
+			$result = $collectionClass::forge($model,$result);
+		}
 		// It's all built, now lets execute and start hydration
 		return $result;
 	}

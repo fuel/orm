@@ -5,7 +5,7 @@
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
  * @package    Fuel
- * @version    1.6
+ * @version    1.7
  * @author     Fuel Development Team
  * @license    MIT License
  * @copyright  2010 - 2013 Fuel Development Team
@@ -28,7 +28,7 @@ class Collection extends \ArrayIterator
 	 * @return void
 	 */
 	public static function forge($model,array $data = array()){
-		return new self($model, $data);
+		return new static($model, $data);
 	}
 	
 	/**
@@ -50,14 +50,22 @@ class Collection extends \ArrayIterator
 	 * @access public
 	 * @return void
 	 */
-	public function getMode(){
+	public function get_mode(){
 		return $this->_model;
 	}
 	
+	/**
+	 * implode_pk function.
+	 * 
+	 * @access public
+	 * @param mixed $data
+	 * @return void
+	 */
 	public function implode_pk($data){
 		$data = array();
 		
-		foreach($data as $n=>$v){
+		foreach($data as $n=>$v)
+		{
 			$data[] = $v->implode_pk($v);
 		}
 		

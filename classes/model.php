@@ -122,7 +122,7 @@ class Model implements \ArrayAccess, \Iterator
 	/**
 	 * @var  string  collection object to be used when fetching an object of this type
 	 */
-	protected static $_collection_class = 'Orm\\Collection';
+	// protected static $_collection_class = 'Orm\\Collection';
 
 	public static function forge($data = array(), $new = true, $view = null, $cache = true)
 	{
@@ -442,8 +442,9 @@ class Model implements \ArrayAccess, \Iterator
 	 */
 	public static function _collection_class()
 	{
-		
-		return self::$_collection_class;
+		$class = get_called_class();
+		if (property_exists($class, '_collection_class')) return static::$_collection_class;
+		else return 'Orm\\Collection';
 
 	}
 
