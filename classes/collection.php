@@ -44,13 +44,47 @@ class Collection extends \ArrayIterator
 		return parent::__construct($array);
 	}
 	
+	
+	/**
+	 * __get function.
+	 * 
+	 * @access public
+	 * @param mixed $name
+	 * @return void
+	 */
+	public function __get($name){
+		
+		$class = get_called_class();
+		$results = new $class($this->get_model());
+		
+		$is_nested = true;
+		
+		foreach ($this as $n=>$v){
+			$results[$n] = $v->{$name};
+			
+			if (!is_subclass_of($v,$class) && get_class($v) != $class) $is_nested = false;
+			
+		}
+		
+		if (count($this) && $is_nested){
+			$_results = array();
+			
+			foreach ($results as $result) $_results = $_results + $result->getArrayCopy();
+			
+			$results = new $class($this->get_model(),$_results);
+		}
+		
+		return $results;
+		
+	}
+	
 	/**
 	 * getMode function.
 	 * 
 	 * @access public
 	 * @return void
 	 */
-	public function get_mode(){
+	public function get_model(){
 		return $this->_model;
 	}
 	
