@@ -449,7 +449,7 @@ class Observer_Typing
 	 */
 	public static function type_unserialize($var)
 	{
-		return unserialize($var);
+		return empty($var) ? array() : unserialize($var);
 	}
 
 	/**
