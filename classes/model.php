@@ -80,6 +80,12 @@ class Model implements \ArrayAccess, \Iterator
 	protected static $_to_array_exclude = array();
 
 	/**
+	 * @var	array	Stores the all of the active records of the various classes
+	 */
+	
+	protected static $_active_record = array();
+
+	/**
 	 * @var  array  cached tables
 	 */
 	protected static $_table_names_cached = array();
@@ -211,6 +217,33 @@ class Model implements \ArrayAccess, \Iterator
 		$result = ( ! empty(static::$_cached_objects[$class][$id])) ? static::$_cached_objects[$class][$id] : false;
 
 		return $result;
+	}
+
+	/**
+	 * getActiveRecord function.
+	 * 
+	 * @access public
+	 * @static
+	 * @return self
+	 */
+	static function active_record(){
+		$c=get_called_class();
+		
+		// I am not sure whether this should return false, a blank class, or return false;
+		if (@!self::$_active_record[$c]) return $c::forge();
+		return self::$_active_record[$c];
+	}
+	
+	/**
+	 * setActiveRecord function.
+	 * 
+	 * @access public
+	 * @return $this
+	 */
+	function set_active_record(){
+		$c=get_called_class();
+		self::$_active_record[$c] = $this;
+		return $this;
 	}
 
 	/**
