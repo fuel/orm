@@ -230,8 +230,8 @@ class Model implements \ArrayAccess, \Iterator
 		$c=get_called_class();
 		
 		// I am not sure whether this should return false, a blank class, or return false;
-		if (@!self::$_active_record[$c]) return $c::forge();
-		return self::$_active_record[$c];
+		if (!array_key_exists($c,static::$_active_record)) return $c::forge();
+		return static::$_active_record[$c];
 	}
 	
 	/**
@@ -242,7 +242,7 @@ class Model implements \ArrayAccess, \Iterator
 	 */
 	function set_active_record(){
 		$c=get_called_class();
-		self::$_active_record[$c] = $this;
+		static::$_active_record[$c] = $this;
 		return $this;
 	}
 
