@@ -953,9 +953,10 @@ class Model_Nestedset extends Model
 				// set the left- and right pointers for the new root
 				$this->_data[$left_field] = 1;
 				$this->_data[$right_field] = 2;
+				$pk = reset(static::$_primary_key);
 
 				// we need to check if we don't already have this root
-				$query = \DB::select('id')
+				$query = \DB::select($pk)
 					->from(static::table())
 					->where($left_field, '=', 1);
 
