@@ -1166,7 +1166,7 @@ class Model_Nestedset extends Model
 				// and delete them to
 				foreach ($children as $child)
 				{
-					if ($child->delete($cascade) === false)
+					if ($child->delete_tree($cascade) === false)
 					{
 						throw new \UnexpectedValueException('delete of child node with PK "'.$child->{$pk}.'" failed.');
 					}
