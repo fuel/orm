@@ -363,12 +363,13 @@ class Model_Nestedset extends Model
 	 *
 	 * @return  Model_Nestedset  this object, for chaining
 	 */
-	public function path()
+	public function path($addroot = true)
 	{
 		$this->_node_operation = array(
 			'single' => false,
 			'action' => 'path',
 			'to' => null,
+			'addroot' => $addroot,
 		);
 
 		// return the object for chaining
@@ -1480,13 +1481,19 @@ class Model_Nestedset extends Model
 					// storage for the path
 					$path = '';
 
+					// do we need to add the root?
+					$addroot = $this->_node_operation['addroot'];
+
 					// get all parents
 					$result = $this->ancestors()->get();
 
 					// construct the path
 					foreach($result as $object)
 					{
-						$path .= $object->{$title_field}.'/';
+						if ($addroot or $object->{$left_field} > 1)
+						{
+							$path .= $object->{$title_field}.'/';
+						}
 					}
 					$path .= $this->{$title_field}.'/';
 
