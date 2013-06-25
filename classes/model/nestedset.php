@@ -745,7 +745,7 @@ class Model_Nestedset extends Model
 	 * @param   string  property name to store the node's children
 	 * @return	array
 	 */
-	public function dump_tree($as_object = false, $children = 'children')
+	public function dump_tree($as_object = false, $children = 'children', $path = 'path')
 	{
 		// get the PK
 		$pk = reset(static::$_primary_key);
@@ -753,10 +753,16 @@ class Model_Nestedset extends Model
 		// and the tree pointers
 		$left_field = static::tree_config('left_field');
 		$right_field = static::tree_config('right_field');
+		$title_field = static::tree_config('title_field');
 
 		// storage for the result, start with the current node
 		$this[$children] = array();
 		$tree = $as_object ? array($this->{$pk} => $this) : array($this->{$pk} => $this->to_array(true));
+
+		if ( ! empty($title_field))
+		{
+			isset($this->{$title_field}) and $this[$path] = '/';
+		}
 
 		// parent tracker
 		$tracker = array();
@@ -768,6 +774,12 @@ class Model_Nestedset extends Model
 		{
 			// get the data for this node
 			$node = $as_object ? $treenode : $treenode->to_array(true);
+
+			// add the path to this node
+			if ( ! empty($title_field))
+			{
+				isset($node->{$title_field}) and $node[$path] = rtrim($tracker[$index][$path],'/').'/'.$node->{$title_field};
+			}
 
 			// make sure we have a place to store child information
 			$node[$children] = array();
