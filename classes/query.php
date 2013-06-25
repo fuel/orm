@@ -1229,7 +1229,7 @@ class Query
 		$limit = $this->limit;
 		$rows_limit = $this->rows_limit;
 
-		if ($this->rows_limit !== null or ! empty($this->relations))
+		if ($this->rows_limit !== null)
 		{
 			$this->limit = null;
 			$this->rows_limit = 1;
