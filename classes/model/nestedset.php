@@ -775,12 +775,6 @@ class Model_Nestedset extends Model
 			// get the data for this node
 			$node = $as_object ? $treenode : $treenode->to_array(true);
 
-			// add the path to this node
-			if ( ! empty($title_field))
-			{
-				isset($node->{$title_field}) and $node[$path] = rtrim($tracker[$index][$path],'/').'/'.$node->{$title_field};
-			}
-
 			// make sure we have a place to store child information
 			$node[$children] = array();
 
@@ -789,6 +783,12 @@ class Model_Nestedset extends Model
 			{
 				// no, so pop the last parent and move a level back up
 				$index--;
+			}
+
+			// add the path to this node
+			if ( ! empty($title_field))
+			{
+				isset($node->{$title_field}) and $node[$path] = rtrim($tracker[$index][$path],'/').'/'.$node->{$title_field};
 			}
 
 			// add it as a child to the current parent
