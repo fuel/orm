@@ -1065,12 +1065,6 @@ class Model implements \ArrayAccess, \Iterator
 		{
 			if ( ! array_key_exists($property, $this->_data_relations))
 			{
-				if ($this->_frozen)
-				{
-					// avoid a notice, we're returning by reference
-					$var = null;
-					return $var;
-				}
 				$this->_data_relations[$property] = $rel->get($this);
 				$this->_update_original_relations(array($property));
 			}

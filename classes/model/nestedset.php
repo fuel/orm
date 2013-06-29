@@ -363,12 +363,13 @@ class Model_Nestedset extends Model
 	 *
 	 * @return  Model_Nestedset  this object, for chaining
 	 */
-	public function path()
+	public function path($addroot = true)
 	{
 		$this->_node_operation = array(
 			'single' => false,
 			'action' => 'path',
 			'to' => null,
+			'addroot' => $addroot,
 		);
 
 		// return the object for chaining
@@ -744,7 +745,7 @@ class Model_Nestedset extends Model
 	 * @param   string  property name to store the node's children
 	 * @return	array
 	 */
-	public function dump_tree($as_object = false, $children = 'children')
+	public function dump_tree($as_object = false, $children = 'children', $path = 'path')
 	{
 		// get the PK
 		$pk = reset(static::$_primary_key);
@@ -752,10 +753,16 @@ class Model_Nestedset extends Model
 		// and the tree pointers
 		$left_field = static::tree_config('left_field');
 		$right_field = static::tree_config('right_field');
+		$title_field = static::tree_config('title_field');
 
 		// storage for the result, start with the current node
 		$this[$children] = array();
 		$tree = $as_object ? array($this->{$pk} => $this) : array($this->{$pk} => $this->to_array(true));
+
+		if ( ! empty($title_field))
+		{
+			isset($this->{$title_field}) and $this[$path] = '/';
+		}
 
 		// parent tracker
 		$tracker = array();
@@ -776,6 +783,12 @@ class Model_Nestedset extends Model
 			{
 				// no, so pop the last parent and move a level back up
 				$index--;
+			}
+
+			// add the path to this node
+			if ( ! empty($title_field))
+			{
+				isset($node->{$title_field}) and $node[$path] = rtrim($tracker[$index][$path],'/').'/'.$node->{$title_field};
 			}
 
 			// add it as a child to the current parent
@@ -953,9 +966,10 @@ class Model_Nestedset extends Model
 				// set the left- and right pointers for the new root
 				$this->_data[$left_field] = 1;
 				$this->_data[$right_field] = 2;
+				$pk = reset(static::$_primary_key);
 
 				// we need to check if we don't already have this root
-				$query = \DB::select('id')
+				$query = \DB::select($pk)
 					->from(static::table())
 					->where($left_field, '=', 1);
 
@@ -1165,7 +1179,7 @@ class Model_Nestedset extends Model
 				// and delete them to
 				foreach ($children as $child)
 				{
-					if ($child->delete($cascade) === false)
+					if ($child->delete_tree($cascade) === false)
 					{
 						throw new \UnexpectedValueException('delete of child node with PK "'.$child->{$pk}.'" failed.');
 					}
@@ -1480,13 +1494,19 @@ class Model_Nestedset extends Model
 					// storage for the path
 					$path = '';
 
+					// do we need to add the root?
+					$addroot = $this->_node_operation['addroot'];
+
 					// get all parents
 					$result = $this->ancestors()->get();
 
 					// construct the path
 					foreach($result as $object)
 					{
-						$path .= $object->{$title_field}.'/';
+						if ($addroot or $object->{$left_field} > 1)
+						{
+							$path .= $object->{$title_field}.'/';
+						}
 					}
 					$path .= $this->{$title_field}.'/';
 

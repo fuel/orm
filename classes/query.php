@@ -1229,7 +1229,6 @@ class Query
 		$limit = $this->limit;
 		$rows_limit = $this->rows_limit;
 
-		// if a row limit is set, use that
 		if ($this->rows_limit !== null)
 		{
 			$this->limit = null;
