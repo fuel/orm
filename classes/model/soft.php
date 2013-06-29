@@ -263,9 +263,9 @@ class Model_Soft extends Model
 	 *
 	 * @return boolean
 	 */
-	public function delete_forever($cascade = null, $use_transaction = false)
+	public function purge($cascade = null, $use_transaction = false)
 	{
-		parent::delete();
+		parent::delete($cascade, $use_transaction);
 	}
 
 	protected function should_cascade_delete($rel)
