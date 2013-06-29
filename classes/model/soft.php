@@ -255,6 +255,19 @@ class Model_Soft extends Model
 		return $this;
 	}
 
+	/**
+	 * Permanently deletes records using the parent Model delete function
+	 *
+	 * @param $cascade         boolean
+	 * @param $use_transaction boolean
+	 *
+	 * @return boolean
+	 */
+	public function purge($cascade = null, $use_transaction = false)
+	{
+		parent::delete($cascade, $use_transaction);
+	}
+
 	protected function should_cascade_delete($rel)
 	{
 		//Because temporal includes soft delete functionality it can be deleted too
