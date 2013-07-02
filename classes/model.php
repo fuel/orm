@@ -1915,9 +1915,9 @@ class Model implements \ArrayAccess, \Iterator
 	 *
 	 * @return  object
 	 */
-	public function to_object()
+	public function to_object($custom = false, $recurse = false)
 	{
-		return (object) $this->to_array();
+		return (object) $this->to_array($custom, $recurse);
 	}
 
 	/**
