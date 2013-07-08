@@ -193,7 +193,7 @@ class Model_Soft extends Model
 			$this->freeze();
 			foreach($this->relations() as $rel_name => $rel)
 			{
-				$rel->delete($this, $this->{$rel_name}, false, is_array($cascade) ? in_array($rel_name, $cascade) : $cascade);
+				$rel->delete($this, $this->{$rel_name}, false, is_array($cascade) ? in_array($rel_name, $cascade) : $cascade, false);
 			}
 			$this->unfreeze();
 
