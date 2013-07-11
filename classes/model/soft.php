@@ -193,7 +193,7 @@ class Model_Soft extends Model
 			$this->freeze();
 			foreach($this->relations() as $rel_name => $rel)
 			{
-				$rel->delete($this, $this->{$rel_name}, false, is_array($cascade) ? in_array($rel_name, $cascade) : $cascade);
+				$rel->delete($this, $this->{$rel_name}, false, is_array($cascade) ? in_array($rel_name, $cascade) : $cascade, !($rel instanceof \Orm\BelongsTo));
 			}
 			$this->unfreeze();
 
@@ -271,7 +271,7 @@ class Model_Soft extends Model
 	protected function should_cascade_delete($rel)
 	{
 		//Because temporal includes soft delete functionality it can be deleted too
-		if ( ! is_subclass_of($rel->model_to, 'Orm\Model_Soft') && ! is_subclass_of($rel->model_to, 'Orm\Model_Temporal'))
+		if ( !is_subclass_of($rel->model_to, 'Orm\Model') && ! is_subclass_of($rel->model_to, 'Orm\Model_Soft') && ! is_subclass_of($rel->model_to, 'Orm\Model_Temporal'))
 		{
 			//Throw if other is not soft
 			throw new RelationNotSoft('Both sides of the relation must be subclasses of Model_Soft or Model_Temporal if cascade delete is true. '.$rel->model_to.' was found instead.');
