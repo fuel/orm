@@ -37,10 +37,32 @@ class Query_Soft extends Query
 	public function set_soft_filter($col_name)
 	{
 		$this->_col_name = $col_name;
-
-		$this->where($col_name, null);
-
 		return $this;
+	}
+
+	public function get()
+	{
+		if ( ! is_null($this->_col_name))
+		{
+			// Capture any filtering that has already been added
+			$current_where = $this->where;
+
+			// If there is no filtering then we don't need to add any special organization
+			if ( ! empty($current_where))
+			{
+				$this->where = array();
+
+				// Make sure the existing filtering is wrapped safely
+				$this->and_where_open();
+				$this->where = array_merge($this->where, $current_where);
+				$this->and_where_close();
+			}
+
+			// Finally add the soft delete filtering
+			$this->where($this->_col_name, null);
+		}
+
+		return parent::get();
 	}
 
 	protected function modify_join_result($join_result, $name)
