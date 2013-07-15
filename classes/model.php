@@ -1394,20 +1394,21 @@ class Model implements \ArrayAccess, \Iterator
 			$this->freeze();
 			foreach($this->relations() as $rel_name => $rel)
 			{
-				$rel->delete($this, $this->{$rel_name}, false, is_array($cascade) ? in_array($rel_name, $cascade) : $cascade);
+				$should_cascade = is_array($cascade) ? in_array($rel_name, $cascade) : $rel->cascade_delete;
+
+				// Give model subclasses a chance to chip in.
+				if ($should_cascade && ! $this->should_cascade_delete($rel))
+				{
+					// The function returned false so something does not want this relation to be cascade deleted
+					$should_cascade = false;
+				}
+
+				$rel->delete($this, $this->{$rel_name}, false, $should_cascade);
 			}
 			$this->unfreeze();
 
-			// Create the query and limit to primary key(s)
-			$query = Query::forge(get_called_class(), static::connection(true))->limit(1);
-			$primary_key = static::primary_key();
-			foreach ($primary_key as $pk)
-			{
-				$query->where($pk, '=', $this->{$pk});
-			}
-
-			// Return success of update operation
-			if ( ! $query->delete())
+			// Delete the model in question
+			if ( ! $this->delete_self())
 			{
 				return false;
 			}
@@ -1415,12 +1416,12 @@ class Model implements \ArrayAccess, \Iterator
 			$this->freeze();
 			foreach($this->relations() as $rel_name => $rel)
 			{
-				$should_cascade = is_array($cascade) ? in_array($rel_name, $cascade) : $cascade;
+				$should_cascade = is_array($cascade) ? in_array($rel_name, $cascade) : $rel->cascade_delete;
 
-				//Give model subclasses a chance to chip in.
+				// Give model subclasses a chance to chip in.
 				if ($should_cascade && ! $this->should_cascade_delete($rel))
 				{
-					//The function returned false so something does not want this relation to be cascade deleted
+					// The function returned false so something does not want this relation to be cascade deleted
 					$should_cascade = false;
 				}
 
@@ -1460,6 +1461,25 @@ class Model implements \ArrayAccess, \Iterator
 		}
 
 		return $this;
+	}
+
+	/**
+	 * Deletes this model instance from the database.
+	 *
+	 * @return bool
+	 */
+	protected function delete_self()
+	{
+		// Create the query and limit to primary key(s)
+		$query = Query::forge(get_called_class(), static::connection(true))->limit(1);
+		$primary_key = static::primary_key();
+		foreach ($primary_key as $pk)
+		{
+			$query->where($pk, '=', $this->{$pk});
+		}
+
+		// Return success of update operation
+		return $query->delete();
 	}
 
 	/**
