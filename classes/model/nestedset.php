@@ -1422,9 +1422,11 @@ class Model_Nestedset extends Model
 				if ( ! $this->is_new())
 				{
 					$parent = $this;
+					$pk = reset(static::$_primary_key);
+					
 					while (($parent = $parent->parent()->get_one()) !== null)
 					{
-						$result[$parent->id] = $parent;
+						$result[$parent->{$pk}] = $parent;
 					}
 				}
 
