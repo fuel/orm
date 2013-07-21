@@ -14,7 +14,18 @@ namespace Orm;
 
 class Query {
 
+	/**
+	 * This method is deprecated...use forge() instead.
+	 *
+	 * @deprecated until 1.2
+	 */
 	public static function factory($model, $connection = null, $options = array())
+	{
+		logger(\Fuel::L_WARNING, 'This method is deprecated.  Please use a forge() instead.', __METHOD__);
+		return static::forge($model, $connection, $options);
+	}
+
+	public static function forge($model, $connection = null, $options = array())
 	{
 		return new static($model, $connection, $options);
 	}
@@ -50,14 +61,24 @@ class Query {
 	protected $select = array();
 
 	/**
-	 * @var  int  max number of returned rows
+	 * @var  int  max number of returned base model instances
 	 */
 	protected $limit;
 
 	/**
-	 * @var  int  offset
+	 * @var  int  offset of base model table
 	 */
 	protected $offset;
+
+	/**
+	 * @var  int  max number of requested rows
+	 */
+	protected $rows_limit;
+
+	/**
+	 * @var  int  offset of requested rows
+	 */
+	protected $rows_offset;
 
 	/**
 	 * @var  array  where conditions
@@ -133,6 +154,12 @@ class Query {
 					break;
 				case 'offset':
 					$this->offset($val);
+					break;
+				case 'rows_limit':
+					$this->rows_limit($val);
+					break;
+				case 'rows_offset':
+					$this->rows_offset($val);
 					break;
 			}
 		}
@@ -213,6 +240,30 @@ class Query {
 	public function offset($offset)
 	{
 		$this->offset = intval($offset);
+
+		return $this;
+	}
+
+	/**
+	 * Set the limit of rows requested
+	 *
+	 * @param  int
+	 */
+	public function rows_limit($limit)
+	{
+		$this->rows_limit = intval($limit);
+
+		return $this;
+	}
+
+	/**
+	 * Set the offset of rows requested
+	 *
+	 * @param  int
+	 */
+	public function rows_offset($offset)
+	{
+		$this->rows_offset = intval($offset);
 
 		return $this;
 	}
@@ -520,9 +571,12 @@ class Query {
 					continue;
 				}
 
-				if (empty($conditional) or strpos($conditional[0], $this->alias.'.') === 0)
+				if (empty($conditional)
+					or strpos($conditional[0], $this->alias.'.') === 0
+					or ($type != 'select' and $conditional[0] instanceof \Fuel\Core\Database_Expression))
 				{
-					if ( ! empty($conditional) and $type != 'select')
+					if ($type != 'select' and ! empty($conditional)
+						and ! $conditional[0] instanceof \Fuel\Core\Database_Expression)
 					{
 						$conditional[0] = substr($conditional[0], strlen($this->alias.'.'));
 					}
@@ -686,6 +740,11 @@ class Query {
 			}
 		}
 
+		// Set the row limit and offset, these are applied to the outer query when a subquery
+		// is used or overwrite limit/offset when it's a normal query
+		! is_null($this->rows_limit) and $query->limit($this->rows_limit);
+		! is_null($this->rows_offset) and $query->offset($this->rows_offset);
+
 		return array('query' => $query, 'models' => $models);
 	}
 
@@ -743,7 +802,7 @@ class Query {
 				$obj[substr($s[0], strpos($s[0], '.') + 1)] = $row[$s[1]];
 				unset($row[$s[1]]);
 			}
-			$obj = $model::factory($obj, false);
+			$obj = $model::forge($obj, false);
 		}
 
 		// if the result to be generated is an array and the current object is not yet in there
@@ -911,15 +970,15 @@ class Query {
 	 * @param   bool  false for random selected column or specific column, only works for main model currently
 	 * @return  int   number of rows OR false
 	 */
-	public function count($distinct = false)
+	public function count($column = null, $distinct = true)
 	{
-		$select = $this->select ?: call_user_func($this->model.'::primary_key');
-		$select = $distinct ?: reset($select);
-		$select = \Database_Connection::instance()->table_prefix().
-			(strpos($select, '.') === false ? $this->alias.'.'.$select : $select);
+		$select = $column ?: \Arr::get(call_user_func($this->model.'::primary_key'), 0);
+		$select = (strpos($select, '.') === false ? $this->alias.'.'.$select : $select);
 
 		// Get the columns
-		$columns = \DB::expr('COUNT('.($distinct ? 'DISTINCT ' : '').$select.') AS count_result');
+		$columns = \DB::expr('COUNT('.($distinct ? 'DISTINCT ' : '').
+			\Database_Connection::instance()->quote_identifier($select).
+			') AS count_result');
 
 		// Remove the current select and
 		$query = call_user_func('DB::select', $columns);
@@ -927,7 +986,7 @@ class Query {
 		// Set from table
 		$query->from(array(call_user_func($this->model.'::table'), $this->alias));
 
-		$tmp   = $this->build_query($query, $columns, 'count');
+		$tmp   = $this->build_query($query, $columns, 'select');
 		$query = $tmp['query'];
 		$count = $query->execute($this->connection)->get('count_result');
 
@@ -951,7 +1010,10 @@ class Query {
 		is_array($column) and $column = array_shift($column);
 
 		// Get the columns
-		$columns = \DB::expr('MAX('.\Database_Connection::instance()->table_prefix().$this->alias.'.'.$column.') AS max_result');
+		$columns = \DB::expr('MAX('.
+			\Database_Connection::instance()->quote_identifier(
+				\Database_Connection::instance()->table_prefix().$this->alias.'.'.$column).
+			') AS max_result');
 
 		// Remove the current select and
 		$query = call_user_func('DB::select', $columns);
@@ -983,7 +1045,10 @@ class Query {
 		is_array($column) and $column = array_shift($column);
 
 		// Get the columns
-		$columns = \DB::expr('MIN('.\Database_Connection::instance()->table_prefix().$this->alias.'.'.$column.') AS min_result');
+		$columns = \DB::expr('MIN('.
+			\Database_Connection::instance()->quote_identifier(
+				\Database_Connection::instance()->table_prefix().$this->alias.'.'.$column).
+			') AS min_result');
 
 		// Remove the current select and
 		$query = call_user_func('DB::select', $columns);
