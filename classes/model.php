@@ -884,17 +884,16 @@ class Model implements \ArrayAccess, \Iterator
      */
 	public function _relate($rels = false)
 	{
-		if ($this->_frozen)
-		{
-			throw new FrozenObject('No changes allowed.');
-		}
-
 		if ($rels === false)
 		{
 			return $this->_data_relations;
 		}
 		elseif (is_array($rels))
 		{
+			if ($this->_frozen)
+			{
+				throw new FrozenObject('No changes allowed.');
+			}
 			$this->_data_relations = $rels;
 		}
 		else
