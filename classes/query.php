@@ -958,7 +958,30 @@ class Query
 		// Get the grouping
 		if ( ! empty($this->group_by))
 		{
-			call_user_func_array(array($query, 'group_by'), $this->group_by);
+			foreach ($this->group_by as $gb)
+			{
+				if ( ! $gb instanceof \Fuel\Core\Database_Expression)
+				{
+					if (strpos($gb, $this->alias.'.') === false)
+					{
+						// try to rewrite on the relations to their table alias
+						$dotpos = strrpos($gb, '.');
+						$relation = substr($gb, 0, $dotpos);
+						if ($dotpos > 0)
+						{
+							if(array_key_exists($relation, $models))
+							{
+								$gb = $models[$relation]['table'][1].substr($gb, $dotpos);
+							}
+						}
+						else
+						{
+							$gb = $this->alias.'.'.$gb;
+						}
+					}
+				}
+				$query->group_by($gb);
+			}
 		}
 
 		// put omitted where conditions back
