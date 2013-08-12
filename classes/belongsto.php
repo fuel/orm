@@ -210,12 +210,16 @@ class BelongsTo extends Relation
 			return;
 		}
 
-		// break current relations
-		$model_from->unfreeze();
-		$rels = $model_from->_relate();
-		$rels[$this->name] = null;
-		$model_from->_relate($rels);
-		$model_from->freeze();
+		// don't break relation for Model_Soft::restore() if $model_from and $model_to are subclass of Model_Soft
+		if(!is_subclass_of($model_from, 'Orm\Model_Soft')
+			or empty($model_to) or !is_subclass_of($model_to, 'Orm\Model_Soft')){
+			// break current relations
+			$model_from->unfreeze();
+			$rels = $model_from->_relate();
+			$rels[$this->name] = null;
+			$model_from->_relate($rels);
+			$model_from->freeze();
+		}
 
 		$cascade = is_null($cascade) ? $this->cascade_delete : (bool) $cascade;
 		if ($cascade and ! empty($model_to))
