@@ -47,7 +47,7 @@ class BelongsTo extends Relation
 		$this->model_to = get_real_class($this->model_to);
 	}
 
-	public function get(Model $from)
+	public function get(Model $from, array $conditions = array())
 	{
 		$query = call_user_func(array($this->model_to, 'query'));
 		reset($this->key_to);
@@ -62,7 +62,9 @@ class BelongsTo extends Relation
 			next($this->key_to);
 		}
 
-		foreach (\Arr::get($this->conditions, 'where', array()) as $key => $condition)
+		$conditions = \Arr::merge($this->conditions, $conditions);
+
+		foreach (\Arr::get($conditions, 'where', array()) as $key => $condition)
 		{
 			is_array($condition) or $condition = array($key, '=', $condition);
 			$query->where($condition);

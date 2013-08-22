@@ -1045,9 +1045,10 @@ class Model implements \ArrayAccess, \Iterator
 	 *
 	 * @access  public
 	 * @param   string  $property
+	 * @param   array   $conditions
 	 * @return  mixed
 	 */
-	public function & get($property)
+	public function & get($property, array $conditions = array())
 	{
 		if (array_key_exists($property, static::properties()))
 		{
@@ -1064,7 +1065,7 @@ class Model implements \ArrayAccess, \Iterator
 		{
 			if ( ! array_key_exists($property, $this->_data_relations))
 			{
-				$this->_data_relations[$property] = $rel->get($this);
+				$this->_data_relations[$property] = $rel->get($this, $conditions);
 				$this->_update_original_relations(array($property));
 			}
 			return $this->_data_relations[$property];
