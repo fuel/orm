@@ -779,7 +779,7 @@ class Model_Nestedset extends Model
 			$node[$children] = array();
 
 			// is this node a child of the current parent?
-			if ($treenode->{$left_field} > $tracker[$index][$right_field])
+			while ($treenode->{$left_field} > $tracker[$index][$right_field])
 			{
 				// no, so pop the last parent and move a level back up
 				$index--;
