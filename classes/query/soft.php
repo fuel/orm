@@ -40,9 +40,59 @@ class Query_Soft extends Query
 		return $this;
 	}
 
+	/**
+	 * Make sure the soft-filter is added to get() calls
+	 */
 	public function get()
 	{
-		if ( ! is_null($this->_col_name))
+		$this->add_soft_filter();
+		return parent::get();
+	}
+
+	/**
+	 * Make sure the soft-filter is added to count() calls
+	 */
+	public function count()
+	{
+		$this->add_soft_filter();
+		return parent::count();
+	}
+
+	/**
+	 * Make sure the soft-filter is added to min() calls
+	 */
+	public function min()
+	{
+		$this->add_soft_filter();
+		return parent::min();
+	}
+
+	/**
+	 * Make sure the soft-filter is added to max() calls
+	 */
+	public function max()
+	{
+		$this->add_soft_filter();
+		return parent::max();
+	}
+
+	protected function modify_join_result($join_result, $name)
+	{
+		if ( ! is_null($this->_col_name) and is_subclass_of($join_result[$name]['model'], '\Orm\Model_Soft'))
+		{
+			$table = $join_result[$name]['table'][1];
+			$join_result[$name]['join_on'][] = array("$table.$this->_col_name", 'IS', \DB::expr('NULL'));
+		}
+
+		return parent::modify_join_result($join_result, $name);
+	}
+
+	/**
+	 * Add an additional where clause if needed to execute the soft-filter
+	 */
+	protected function add_soft_filter()
+	{
+		if ($this->_col_name !== null)
 		{
 			// Capture any filtering that has already been added
 			$current_where = $this->where;
@@ -61,19 +111,6 @@ class Query_Soft extends Query
 			// Finally add the soft delete filtering
 			$this->where($this->_col_name, null);
 		}
-
-		return parent::get();
-	}
-
-	protected function modify_join_result($join_result, $name)
-	{
-		if ( ! is_null($this->_col_name) and is_subclass_of($join_result[$name]['model'], '\Orm\Model_Soft'))
-		{
-			$table = $join_result[$name]['table'][1];
-			$join_result[$name]['join_on'][] = array("$table.$this->_col_name", 'IS', \DB::expr('NULL'));
-		}
-
-		return parent::modify_join_result($join_result, $name);
 	}
 
 }
