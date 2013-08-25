@@ -1323,8 +1323,9 @@ class Query
 	 * and it's much more complicated to add offset and limit. For example, you get the total, get the IDs, apply offset + limit
 	 * with PHP, and then add where('id', 'IN', $ids) to the final query to do "bogus" pagination
 	 * 
-	 * @param  [type] $column [description]
-	 * @return [type]         [description]
+	 * @param  string $column Column to get the value(s) of. Defaults to primary key
+	 * @return array array of values
+	 * @author  Jason Raede <jason.raede@gmail.com>
 	 */
 	public function values($column = null) {
 		$select = $column ?: \Arr::get(call_user_func($this->model.'::primary_key'), 0);
@@ -1343,6 +1344,15 @@ class Query
 		return array_keys($query->execute($this->connection)->as_array($select));
 	}
 
+	/**
+	 * Applies pagination without the use of limit or offset, thus mitigating any issue caused by relations, subqueries, etc
+	 * 	
+	 * @param  int  $per_page   Results to show per page
+	 * @param  integer $page       Current page
+	 * @param  mixed $pagination This can either be an instance of \Fuel\Core\Pagination or just a blank variable passed by reference which will then become the pagination object
+	 * @return $this for chaining
+	 * @author  Jason Raede <jason.raede@gmail.com>
+	 */
 	public function apply_pagination($per_page, $page = 1, &$pagination) {
 		// Should be already ordered.
 		$values = array_unique($this->values());
