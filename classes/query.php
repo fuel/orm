@@ -1357,10 +1357,8 @@ class Query
 		// Should be already ordered.
 		$values = array_unique($this->values());
 		$total = count($values);
-		if(!$total) {
-			return $this;
-		}
 		
+
 		$config = array(
 			'total_items'    => $total,
 			'current_page'=>$page,
@@ -1376,6 +1374,10 @@ class Query
 			foreach($config as $key=>$val) {
 				$pagination->$key = $val;
 			}
+		}
+
+		if(!$total) {
+			return $this;
 		}
 		
 
