@@ -119,6 +119,14 @@ class Model implements \ArrayAccess, \Iterator
 		'many_many'     => 'Orm\\ManyMany',
 	);
 
+	/**
+	 * @var  array  global array to track circular references in to_array()
+	 */
+	protected static $to_array_references = array();
+
+	/**
+	 * Create a new model instance
+	 */
 	public static function forge($data = array(), $new = true, $view = null, $cache = true)
 	{
 		return new static($data, $new, $view, $cache);
@@ -1835,12 +1843,11 @@ class Model implements \ArrayAccess, \Iterator
 	 */
 	public function to_array($custom = false, $recurse = false)
 	{
-		static $references = array();
-
+		// storage for the result
 		$array = array();
 
 		// reset the references array on first call
-		$recurse or $references = array();
+		$recurse or static::$to_array_references = array();
 
 		// make sure all data is scalar or array
 		if ($custom)
@@ -1891,12 +1898,12 @@ class Model implements \ArrayAccess, \Iterator
 					{
 						$array[$name][$id] = $r->to_array($custom, true);
 					}
-					$references[] = get_class($r);
+					static::$to_array_references[] = get_class($r);
 				}
 			}
 			else
 			{
-				if ( ! in_array(get_class($rel), $references))
+				if ( ! in_array(get_class($rel), static::$to_array_references))
 				{
 					if (is_null($rel))
 					{
@@ -1905,7 +1912,7 @@ class Model implements \ArrayAccess, \Iterator
 					else
 					{
 						$array[$name] = $rel->to_array($custom, true);
-						$references[] = get_class($rel);
+						static::$to_array_references[] = get_class($rel);
 					}
 				}
 			}
