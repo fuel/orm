@@ -1357,7 +1357,10 @@ class Query
 		// Should be already ordered.
 		$values = array_unique($this->values());
 		$total = count($values);
-
+		if(!$total) {
+			return $this;
+		}
+		
 		$config = array(
 			'total_items'    => $total,
 			'current_page'=>$page,
@@ -1417,7 +1420,7 @@ class Query
 			return false;
 		}
 
-		return (int) $max;
+		return $max;
 	}
 
 	/**
@@ -1452,7 +1455,7 @@ class Query
 			return false;
 		}
 
-		return (int) $min;
+		return $min;
 	}
 
 	/**
