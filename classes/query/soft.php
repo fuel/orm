@@ -52,28 +52,28 @@ class Query_Soft extends Query
 	/**
 	 * Make sure the soft-filter is added to count() calls
 	 */
-	public function count()
+	public function count($column = null, $distinct = true)
 	{
 		$this->add_soft_filter();
-		return parent::count();
+		return parent::count($column, $distinct);
 	}
 
 	/**
 	 * Make sure the soft-filter is added to min() calls
 	 */
-	public function min()
+	public function min($column)
 	{
 		$this->add_soft_filter();
-		return parent::min();
+		return parent::min($column);
 	}
 
 	/**
 	 * Make sure the soft-filter is added to max() calls
 	 */
-	public function max()
+	public function max($column)
 	{
 		$this->add_soft_filter();
-		return parent::max();
+		return parent::max($column);
 	}
 
 	protected function modify_join_result($join_result, $name)
