@@ -1341,7 +1341,7 @@ class Query
 			return false;
 		}
 
-		return (int) $max;
+		return $max;
 	}
 
 	/**
@@ -1376,7 +1376,7 @@ class Query
 			return false;
 		}
 
-		return (int) $min;
+		return $min;
 	}
 
 	/**
