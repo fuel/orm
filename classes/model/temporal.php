@@ -182,7 +182,7 @@ class Model_Temporal extends Model
 	 * @param string $property
 	 * @return mixed
 	 */
-	public function & get($property)
+	public function & get($property, array $conditions = array())
 	{
 		// if a timestamp is set and that we have a temporal relation
 		$rel = static::relations($property);
