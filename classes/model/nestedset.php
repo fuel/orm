@@ -1247,7 +1247,7 @@ class Model_Nestedset extends Model
 	 * @returns  mixed
 	 * @throws  BadMethodCallException if called without a parameter and without a node to fetch
 	 */
-	public function & get($query = null)
+	public function & get($query = null, array $conditions = array()))
 	{
 		// do we have any parameters passed?
 		if (func_num_args())
@@ -1261,7 +1261,7 @@ class Model_Nestedset extends Model
 			else
 			{
 				// assume it's a model getter call
-				return parent::get($query);
+				return parent::get($query, $conditions);
 			}
 		}
 
@@ -1436,7 +1436,7 @@ class Model_Nestedset extends Model
 				{
 					$parent = $this;
 					$pk = reset(static::$_primary_key);
-					
+
 					while (($parent = $parent->parent()->get_one()) !== null)
 					{
 						$result[$parent->{$pk}] = $parent;

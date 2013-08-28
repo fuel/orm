@@ -194,13 +194,13 @@ class Model_Temporal extends Model
 			$class_name = $rel->model_to;
 
 			$class_name::make_query_temporal($lazy_timestamp);
-			$result =& parent::get($property);
+			$result =& parent::get($property, $conditions);
 			$class_name::make_query_temporal(null);
 
 			return $result;
 		}
 
-		return parent::get($property);
+		return parent::get($property, $conditions);
 	}
 
 	/**
