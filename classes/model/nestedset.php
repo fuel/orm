@@ -1247,7 +1247,7 @@ class Model_Nestedset extends Model
 	 * @returns  mixed
 	 * @throws  BadMethodCallException if called without a parameter and without a node to fetch
 	 */
-	public function & get($query = null, array $conditions = array()))
+	public function & get($query = null, array $conditions = array())
 	{
 		// do we have any parameters passed?
 		if (func_num_args())
