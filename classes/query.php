@@ -742,13 +742,14 @@ class Query
 		$where_backup = $this->where;
 		if ( ! empty($this->where))
 		{
+			
 			$open_nests = 0;
 			$where_nested = array();
 			$include_nested = true;
 			foreach ($this->where as $key => $w)
 			{
+				
 				list($method, $conditional) = $w;
-
 				if ($type == 'select' and (empty($conditional) or $open_nests > 0))
 				{
 					$include_nested and $where_nested[$key] = $w;
@@ -773,10 +774,16 @@ class Query
 					call_user_func_array(array($query, $method), $conditional);
 					unset($this->where[$key]);
 				}
+
+				// Look for valid columns inside of a DB expr
+				/*elseif($conditional[0] instanceof \Fuel\Core\Database_Expression) {
+					$columns
+				}*/
 			}
 
 			if ($include_nested and ! empty($where_nested))
 			{
+
 				foreach ($where_nested as $key => $w)
 				{
 					list($method, $conditional) = $w;
@@ -987,6 +994,7 @@ class Query
 		// put omitted where conditions back
 		if ( ! empty($this->where))
 		{
+			\Log::debug('Where not empty!:', var_export($this->where, true));
 			foreach ($this->where as $w)
 			{
 				list($method, $conditional) = $w;
@@ -1308,6 +1316,79 @@ class Query
 		}
 
 		return (int) $count;
+	}
+
+	/**
+	 * This method gets an array of the values of a column for use in pagination where you have filters on related models
+	 * and it's much more complicated to add offset and limit. For example, you get the total, get the IDs, apply offset + limit
+	 * with PHP, and then add where('id', 'IN', $ids) to the final query to do "bogus" pagination
+	 * 
+	 * @param  string $column Column to get the value(s) of. Defaults to primary key
+	 * @return array array of values
+	 * @author  Jason Raede <jason.raede@gmail.com>
+	 */
+	public function values($column = null) {
+		$select = $column ?: \Arr::get(call_user_func($this->model.'::primary_key'), 0);
+
+
+		$aliased = (strpos($select, '.') === false ? $this->alias.'.'.$select : $select);
+
+		// Remove the current select and
+		$query = \DB::select($aliased);
+
+		// Set from view or table
+		$query->from(array($this->_table(), $this->alias));
+
+		$tmp   = $this->build_query($query, $aliased, 'select');
+		$query = $tmp['query'];
+		return array_keys($query->execute($this->connection)->as_array($select));
+	}
+
+	/**
+	 * Applies pagination without the use of limit or offset, thus mitigating any issue caused by relations, subqueries, etc
+	 * 	
+	 * @param  int  $per_page   Results to show per page
+	 * @param  integer $page       Current page
+	 * @param  mixed $pagination This can either be an instance of \Fuel\Core\Pagination or just a blank variable passed by reference which will then become the pagination object
+	 * @return $this for chaining
+	 * @author  Jason Raede <jason.raede@gmail.com>
+	 */
+	public function apply_pagination($per_page, $page = 1, &$pagination) {
+		// Should be already ordered.
+		$values = array_unique($this->values());
+		$total = count($values);
+		
+
+		$config = array(
+			'total_items'    => $total,
+			'current_page'=>$page,
+			'per_page'       => $per_page,
+		);
+
+
+		if(!$pagination || !$pagination instanceof \Fuel\Core\Pagination) {
+			$pagination = \Pagination::forge(uniqid(), $config);
+		}
+		else {
+			// Apply the config
+			foreach($config as $key=>$val) {
+				$pagination->$key = $val;
+			}
+		}
+
+		if(!$total) {
+			return $this;
+		}
+		
+
+
+		$paged_values = array_slice($values, $pagination->offset, $pagination->per_page);
+
+		$primary_key = \Arr::get(call_user_func($this->model.'::primary_key'), 0);
+		$this->where($primary_key, 'IN', $paged_values);
+
+		return $this;
+
 	}
 
 	/**
