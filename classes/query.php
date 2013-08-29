@@ -1205,7 +1205,13 @@ class Query
 			$this->hydrate($row, $models, $result, $model, $select, $primary_key);
 			unset($rows[$id]);
 		}
-
+		
+		\Config::load('orm', true);
+		
+		if (\Config::get('orm.use_collections')){
+			$collectionClass = $model::_collection_class();
+			$result = $collectionClass::forge($model,$result);
+		}
 		// It's all built, now lets execute and start hydration
 		return $result;
 	}

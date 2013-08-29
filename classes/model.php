@@ -118,6 +118,11 @@ class Model implements \ArrayAccess, \Iterator
 		'has_many'      => 'Orm\\HasMany',
 		'many_many'     => 'Orm\\ManyMany',
 	);
+	
+	/**
+	 * @var  string  collection object to be used when fetching an object of this type
+	 */
+	// protected static $_collection_class = 'Orm\\Collection';
 
 	/**
 	 * @var  array  global array to track circular references in to_array()
@@ -435,6 +440,20 @@ class Model implements \ArrayAccess, \Iterator
 		}
 
 		return null;
+	}
+
+	/**
+	 * Get the name of the class that is used for the collection
+	 *
+	 * @param   string
+	 * @return  array
+	 */
+	public static function _collection_class()
+	{
+		$class = get_called_class();
+		if (property_exists($class, '_collection_class')) return static::$_collection_class;
+		else return 'Orm\\Collection';
+
 	}
 
 	/**
