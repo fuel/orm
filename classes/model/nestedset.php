@@ -1510,7 +1510,7 @@ class Model_Nestedset extends Model
 							$path .= $object->{$title_field}.'/';
 						}
 					}
-					$path .= $this->{$title_field}.'/';
+					$path .= $this->{$title_field};
 
 					// and return it
 					return $path;
