@@ -1847,7 +1847,7 @@ class Model implements \ArrayAccess, \Iterator
 		$array = array();
 
 		// reset the references array on first call
-		$recurse or static::$to_array_references = array();
+		$recurse or static::$to_array_references = array(get_class($this));
 
 		// make sure all data is scalar or array
 		if ($custom)
@@ -1894,11 +1894,11 @@ class Model implements \ArrayAccess, \Iterator
 				$array[$name] = array();
 				if ( ! empty($rel))
 				{
+					static::$to_array_references[] = get_class(reset($rel));
 					foreach ($rel as $id => $r)
 					{
 						$array[$name][$id] = $r->to_array($custom, true);
 					}
-					static::$to_array_references[] = get_class($r);
 				}
 			}
 			else
@@ -1911,8 +1911,8 @@ class Model implements \ArrayAccess, \Iterator
 					}
 					else
 					{
-						$array[$name] = $rel->to_array($custom, true);
 						static::$to_array_references[] = get_class($rel);
+						$array[$name] = $rel->to_array($custom, true);
 					}
 				}
 			}
