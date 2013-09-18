@@ -1068,7 +1068,7 @@ class Query
 			$obj[$pk] = $row[$pk_c];
 		}
 
-		// Check for already builed object
+		// Check for already built object
 		$pk  = count($primary_key) == 1 ? reset($obj) : '['.implode('][', $obj).']';
 		// if the result to be generated is an array and the current object is yet in there
 		if (is_array($result) and array_key_exists($pk, $result))
@@ -1076,7 +1076,7 @@ class Query
 			$obj = $result[$pk];
 		}
 		// if the result to be generated is a single object and not empty, this is the current object
-		elseif ( ! is_array($result) and !empty($result))
+		elseif ( ! is_array($result) and ! empty($result))
 		{
 			$obj = $result;
 		}
