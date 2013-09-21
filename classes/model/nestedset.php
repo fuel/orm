@@ -100,6 +100,10 @@ class Model_Nestedset extends Model
 	 * @var  mixed  id value of the current tree in multi-tree models
 	 */
 	protected $_current_tree_id = null;
+	/**
+	 * @var  array  field names of dump to be returned by reference
+	 */
+	protected $_dump_fields = array();
 
 	/*
 	 * Initialize the nestedset model instance
@@ -755,6 +759,9 @@ class Model_Nestedset extends Model
 		$right_field = static::tree_config('right_field');
 		$title_field = static::tree_config('title_field');
 
+		// set dump fields
+		$this->_dump_fields = array($children, $path);
+
 		// storage for the result, start with the current node
 		$this[$children] = array();
 		$tree = $as_object ? array($this->{$pk} => $this) : array($this->{$pk} => $this->to_array(true));
@@ -859,6 +866,11 @@ class Model_Nestedset extends Model
 		if (in_array($property, static::tree_config('read-only')) and $this->{$property} !== $value)
 		{
 			throw new \InvalidArgumentException('Property "'.$property.'" is read-only and can not be changed');
+		}
+		elseif (in_array($property, $this->_dump_fields))
+		{
+			$this->{$property} = $value;
+			return $this;
 		}
 
 		return parent::set($property, $value);
@@ -1257,6 +1269,10 @@ class Model_Nestedset extends Model
 			{
 				// run a get() on the query
 				return $query->get();
+			}
+			elseif (in_array($query, $this->_dump_fields))
+			{
+				return @$this->{$query};
 			}
 			else
 			{
