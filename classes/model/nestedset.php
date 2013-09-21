@@ -760,7 +760,7 @@ class Model_Nestedset extends Model
 		$title_field = static::tree_config('title_field');
 
 		// set dump fields
-		$this->_dump_fields = array($children, $path);
+		$this->set_dump_fields($children, $path);
 
 		// storage for the result, start with the current node
 		$this[$children] = array();
@@ -801,6 +801,9 @@ class Model_Nestedset extends Model
 			// add it as a child to the current parent
 			if ($as_object)
 			{
+				// set dump fields
+				$node->set_dump_fields($children, $path);
+
 				$tracker[$index]->{$children}[$treenode->{$pk}] = $node;
 			}
 			else
@@ -825,6 +828,22 @@ class Model_Nestedset extends Model
 		}
 
 		return $as_object ? $this : $tree;
+	}
+
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Set property names to be returned by reference
+	 */
+	public function set_dump_fields()
+	{
+		$args = func_get_args();
+		$this->_dump_fields = array();
+
+		foreach ($args as $arg)
+		{
+			empty($arg) or $this->_dump_fields[] = $arg;
+		}
 	}
 
 	// -------------------------------------------------------------------------
@@ -1272,7 +1291,8 @@ class Model_Nestedset extends Model
 			}
 			elseif (in_array($query, $this->_dump_fields))
 			{
-				return @$this->{$query};
+				$var =& $this->{$query};
+				return $var;
 			}
 			else
 			{
