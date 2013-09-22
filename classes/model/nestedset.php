@@ -779,6 +779,9 @@ class Model_Nestedset extends Model
 		// loop over the descendants
 		foreach ($this->descendants()->get() as $treenode)
 		{
+			// set dump fields
+			$treenode->set_dump_fields($children, $path);
+
 			// get the data for this node
 			$node = $as_object ? $treenode : $treenode->to_array(true);
 
@@ -801,9 +804,6 @@ class Model_Nestedset extends Model
 			// add it as a child to the current parent
 			if ($as_object)
 			{
-				// set dump fields
-				$node->set_dump_fields($children, $path);
-
 				$tracker[$index]->{$children}[$treenode->{$pk}] = $node;
 			}
 			else
@@ -886,7 +886,9 @@ class Model_Nestedset extends Model
 		{
 			throw new \InvalidArgumentException('Property "'.$property.'" is read-only and can not be changed');
 		}
-		elseif (in_array($property, $this->_dump_fields))
+
+		// check if property is a dump field and set it if yes
+		if (in_array($property, $this->_dump_fields))
 		{
 			$this->{$property} = $value;
 			return $this;
