@@ -35,10 +35,7 @@ class Query_Temporal extends Query
 	 * @param string $timestamp_end_col Name of the end timestamp column
 	 * @param string $timestamp_start_col Name of teh start timestamp column
 	 */
-	public function set_temporal_properties(
-		$stamp,
-		$timestamp_end_col,
-		$timestamp_start_col)
+	public function set_temporal_properties($stamp, $timestamp_end_col, $timestamp_start_col)
 	{
 		$this->timestamp = $stamp;
 		$this->timestamp_end_col = $timestamp_end_col;
