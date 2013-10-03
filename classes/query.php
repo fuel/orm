@@ -558,7 +558,7 @@ class Query
 			if (is_array($v_w) and ! empty($v_w[0]) and is_string($v_w[0]))
 			{
 				! $v_w[0] instanceof \Database_Expression and strpos($v_w[0], '.') === false and $v_w[0] = $base.$v_w[0];
-				call_user_func_array(array($this, ($k_w === 'or' ? 'or_' : '').'where'), $v_w);
+				call_user_func_array(array($this, ($k_w === 'or' || strpos($k_w, 'or:') === 0 ? 'or_' : '').'where'), $v_w);
 			}
 			elseif (is_int($k_w) or $k_w == 'or')
 			{
