@@ -1191,6 +1191,7 @@ class Model implements \ArrayAccess, \Iterator
 					if (method_exists($rel, 'delete_related'))
 					{
 						$rel->delete_related($this);
+						$this->_original_relations[$rel_name] = $rel->singular ? null : array();
 					}
 					else
 					{
