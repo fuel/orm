@@ -1823,6 +1823,10 @@ class Model implements \ArrayAccess, \Iterator
 					}
 				}
 			}
+			elseif (property_exists($this, '_eav') and ! empty(static::$_eav))
+			{
+				$this->{$property} = $value;
+			}
 			else
 			{
 				$this->_custom_data[$property] = $value;
