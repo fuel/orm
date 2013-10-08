@@ -176,7 +176,7 @@ class Query
 					$this->order_by($val);
 					break;
 				case 'group_by':
-					$this->group_by($val);
+					call_fuel_func_array(array($this, 'group_by'), $val);
 					break;
 				case 'limit':
 					$this->limit($val);
