@@ -1115,6 +1115,7 @@ class Query
 
 		// start fetching relationships
 		$rel_objs = $obj->_relate();
+		$relations_updated = array();
 		foreach ($models as $m)
 		{
 			// when the expected model is empty, there's nothing to be done
@@ -1122,6 +1123,7 @@ class Query
 			{
 				continue;
 			}
+			$relations_updated[] = $m['rel_name'];
 
 			// when not yet set, create the relation result var with null or array
 			if ( ! array_key_exists($m['rel_name'], $rel_objs))
@@ -1142,7 +1144,7 @@ class Query
 
 		// attach the retrieved relations to the object and update its original DB values
 		$obj->_relate($rel_objs);
-		$obj->_update_original_relations();
+		$obj->_update_original_relations($relations_updated);
 
 		return $obj;
 	}
