@@ -1288,7 +1288,7 @@ class Query
 
 		// Get the columns
 		$columns = \DB::expr('COUNT('.($distinct ? 'DISTINCT ' : '').
-			\Database_Connection::instance()->quote_identifier($select).
+			\Database_Connection::instance($this->connection)->quote_identifier($select).
 			') AS count_result');
 
 		// Remove the current select and
@@ -1322,7 +1322,7 @@ class Query
 
 		// Get the columns
 		$columns = \DB::expr('MAX('.
-			\Database_Connection::instance()->quote_identifier($this->alias.'.'.$column).
+			\Database_Connection::instance($this->connection)->quote_identifier($this->alias.'.'.$column).
 			') AS max_result');
 
 		// Remove the current select and
@@ -1357,7 +1357,7 @@ class Query
 
 		// Get the columns
 		$columns = \DB::expr('MIN('.
-			\Database_Connection::instance()->quote_identifier($this->alias.'.'.$column).
+			\Database_Connection::instance($this->connection)->quote_identifier($this->alias.'.'.$column).
 			') AS min_result');
 
 		// Remove the current select and
