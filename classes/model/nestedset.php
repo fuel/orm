@@ -756,12 +756,27 @@ class Model_Nestedset extends Model
 		$title_field = static::tree_config('title_field');
 
 		// storage for the result, start with the current node
-		$this[$children] = array();
-		$tree = $as_object ? array($this->{$pk} => $this) : array($this->{$pk} => $this->to_array(true));
-
-		if ( ! empty($title_field))
+		if ($as_object)
 		{
-			isset($this->{$title_field}) and $this[$path] = '/';
+			$this->_custom_data[$children] = array();
+			$tree = array($this->{$pk} => $this);
+		}
+		else
+		{
+			$this[$children] = array();
+			$tree = array($this->{$pk} => $this->to_array(true));
+		}
+
+		if ( ! empty($title_field) and isset($this->{$title_field}))
+		{
+			if ($as_object)
+			{
+				$this->_custom_data[$path] = '/';
+			}
+			else
+			{
+				$this[$path] = '/';
+			}
 		}
 
 		// parent tracker
@@ -772,11 +787,16 @@ class Model_Nestedset extends Model
 		// loop over the descendants
 		foreach ($this->descendants()->get() as $treenode)
 		{
-			// get the data for this node
-			$node = $as_object ? $treenode : $treenode->to_array(true);
-
-			// make sure we have a place to store child information
-			$node[$children] = array();
+			// get the data for this node and make sure we have a place to store child information
+			if ($as_object)
+			{
+				$node->_custom_data[$children] = array();
+			}
+			else
+			{
+				$node = $treenode->to_array(true);
+				$node[$children] = array();
+			}
 
 			// is this node a child of the current parent?
 			while ($treenode->{$left_field} > $tracker[$index][$right_field])
@@ -786,15 +806,22 @@ class Model_Nestedset extends Model
 			}
 
 			// add the path to this node
-			if ( ! empty($title_field))
+			if ( ! empty($title_field) and isset($treenode->{$title_field}))
 			{
-				isset($node->{$title_field}) and $node[$path] = rtrim($tracker[$index][$path],'/').'/'.$node->{$title_field};
+				if ($as_object)
+				{
+					$node->_custom_data[$path] = rtrim($tracker[$index][$path],'/').'/'.$node->{$title_field};
+				}
+				else
+				{
+					$node[$path] = rtrim($tracker[$index][$path],'/').'/'.$node[$title_field];
+				}
 			}
 
 			// add it as a child to the current parent
 			if ($as_object)
 			{
-				$tracker[$index]->{$children}[$treenode->{$pk}] = $node;
+				$tracker[$index]->_custom_data[$children][$treenode->{$pk}] = $node;
 			}
 			else
 			{
@@ -807,7 +834,7 @@ class Model_Nestedset extends Model
 				// create a new parent level
 				if ($as_object)
 				{
-					$tracker[$index+1] =& $tracker[$index]->{$children}[$treenode->{$pk}];
+					$tracker[$index+1] =& $tracker[$index]->_custom_data[$children][$treenode->{$pk}];
 				}
 				else
 				{
