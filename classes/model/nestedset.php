@@ -100,6 +100,10 @@ class Model_Nestedset extends Model
 	 * @var  mixed  id value of the current tree in multi-tree models
 	 */
 	protected $_current_tree_id = null;
+	/**
+	 * @var  array  field names of dump to be returned by reference
+	 */
+	protected $_dump_fields = array();
 
 	/*
 	 * Initialize the nestedset model instance
@@ -755,6 +759,9 @@ class Model_Nestedset extends Model
 		$right_field = static::tree_config('right_field');
 		$title_field = static::tree_config('title_field');
 
+		// set dump fields
+		$this->set_dump_fields($children, $path);
+
 		// storage for the result, start with the current node
 		$this[$children] = array();
 		$tree = $as_object ? array($this->{$pk} => $this) : array($this->{$pk} => $this->to_array(true));
@@ -772,6 +779,9 @@ class Model_Nestedset extends Model
 		// loop over the descendants
 		foreach ($this->descendants()->get() as $treenode)
 		{
+			// set dump fields
+			$treenode->set_dump_fields($children, $path);
+
 			// get the data for this node
 			$node = $as_object ? $treenode : $treenode->to_array(true);
 
@@ -823,6 +833,22 @@ class Model_Nestedset extends Model
 	// -------------------------------------------------------------------------
 
 	/**
+	 * Set property names to be returned by reference
+	 */
+	public function set_dump_fields()
+	{
+		$args = func_get_args();
+		$this->_dump_fields = array();
+
+		foreach ($args as $arg)
+		{
+			empty($arg) or $this->_dump_fields[] = $arg;
+		}
+	}
+
+	// -------------------------------------------------------------------------
+
+	/**
 	 * Capture __unset() to make sure no read-only properties are erased
 	 *
 	 * @param   string  $property
@@ -859,6 +885,13 @@ class Model_Nestedset extends Model
 		if (in_array($property, static::tree_config('read-only')) and $this->{$property} !== $value)
 		{
 			throw new \InvalidArgumentException('Property "'.$property.'" is read-only and can not be changed');
+		}
+
+		// check if property is a dump field and set it if yes
+		if (in_array($property, $this->_dump_fields))
+		{
+			$this->{$property} = $value;
+			return $this;
 		}
 
 		return parent::set($property, $value);
@@ -1257,6 +1290,11 @@ class Model_Nestedset extends Model
 			{
 				// run a get() on the query
 				return $query->get();
+			}
+			elseif (in_array($query, $this->_dump_fields))
+			{
+				$var =& $this->{$query};
+				return $var;
 			}
 			else
 			{
