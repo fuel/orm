@@ -790,6 +790,7 @@ class Model_Nestedset extends Model
 			// get the data for this node and make sure we have a place to store child information
 			if ($as_object)
 			{
+				$node = $treenode;
 				$node->_custom_data[$children] = array();
 			}
 			else
