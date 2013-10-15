@@ -755,18 +755,6 @@ class Model_Nestedset extends Model
 		$right_field = static::tree_config('right_field');
 		$title_field = static::tree_config('title_field');
 
-		// storage for the result, start with the current node
-		if ($as_object)
-		{
-			$this->_custom_data[$children] = array();
-			$tree = array($this->{$pk} => $this);
-		}
-		else
-		{
-			$this[$children] = array();
-			$tree = array($this->{$pk} => $this->to_array(true));
-		}
-
 		if ( ! empty($title_field) and isset($this->{$title_field}))
 		{
 			if ($as_object)
@@ -777,6 +765,18 @@ class Model_Nestedset extends Model
 			{
 				$this[$path] = '/';
 			}
+		}
+
+		// storage for the result, start with the current node
+		if ($as_object)
+		{
+			$this->_custom_data[$children] = array();
+			$tree = array($this->{$pk} => $this);
+		}
+		else
+		{
+			$this[$children] = array();
+			$tree = array($this->{$pk} => $this->to_array(true));
 		}
 
 		// parent tracker
