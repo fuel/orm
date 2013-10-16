@@ -24,7 +24,7 @@ class RecordNotFound extends \OutOfBoundsException {}
  */
 class FrozenObject extends \RuntimeException {}
 
-class Model implements \ArrayAccess, \Iterator
+class Model implements \ArrayAccess, \Iterator, \Fuel\Core\SelfSanitize
 {
 	/* ---------------------------------------------------------------------------
 	 * Static usage
@@ -771,6 +771,11 @@ class Model implements \ArrayAccess, \Iterator
 	protected $_view;
 
 	/**
+	 * @var  callable  get-time sanitization callback
+         */
+        protected $_sanitizer;
+
+	/**
 	 * Constructor
 	 *
 	 * @param  array
@@ -1067,7 +1072,7 @@ class Model implements \ArrayAccess, \Iterator
 				return $var;
 			}
 
-			return $this->_data[$property];
+			$data =& $this->_data[$property];
 		}
 		elseif ($rel = static::relations($property))
 		{
@@ -1076,24 +1081,32 @@ class Model implements \ArrayAccess, \Iterator
 				$this->_data_relations[$property] = $rel->get($this, $conditions);
 				$this->_update_original_relations(array($property));
 			}
-			return $this->_data_relations[$property];
+
+			$data =& $this->_data_relations[$property];
 		}
 		elseif (($value = $this->_get_eav($property)) !== false)
 		{
-			return $value;
+			$data =& $value;
 		}
 		elseif ($this->_view and in_array($property, static::$_views_cached[get_class($this)][$this->_view]['columns']))
 		{
-			return $this->_data[$property];
+			$data =& $this->_data[$property];
 		}
 		elseif (array_key_exists($property, $this->_custom_data))
 		{
-				return $this->_custom_data[$property];
+			$data =& $this->_custom_data[$property];
 		}
 		else
 		{
 			throw new \OutOfBoundsException('Property "'.$property.'" not found for '.get_class($this).'.');
 		}
+
+		if ($this->_sanitizer) {
+			$callback = $this->_sanitizer;
+			$data = $callback($data);
+		}
+
+		return $data;
 	}
 
     /**
@@ -2158,6 +2171,10 @@ class Model implements \ArrayAccess, \Iterator
 	public function valid()
 	{
 		return key($this->_iterable) !== null;
+	}
+
+	public function set_sanitizer(callable $callback) {
+		$this->_sanitizer = $callback;
 	}
 
 }
