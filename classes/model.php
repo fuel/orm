@@ -1121,7 +1121,8 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 			}
 			else
 			{
-				$result = \Security::clean($result, null, 'security.output_filter');
+				$cleaned = \Security::clean($result, null, 'security.output_filter');
+				return $cleaned;
 			}
 		}
 
