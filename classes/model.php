@@ -24,7 +24,7 @@ class RecordNotFound extends \OutOfBoundsException {}
  */
 class FrozenObject extends \RuntimeException {}
 
-class Model implements \ArrayAccess, \Iterator
+class Model implements \ArrayAccess, \Iterator, \Sanitization
 {
 	/* ---------------------------------------------------------------------------
 	 * Static usage
@@ -736,6 +736,11 @@ class Model implements \ArrayAccess, \Iterator
 	protected $_frozen = false;
 
 	/**
+	 * @var  bool  $_sanitization_enabled  If this is a records data will be sanitized on get
+	 */
+	protected $_sanitization_enabled = false;
+
+	/**
 	 * @var  array  keeps the current state of the object
 	 */
 	protected $_data = array();
@@ -1063,11 +1068,16 @@ class Model implements \ArrayAccess, \Iterator
 			if ( ! array_key_exists($property, $this->_data))
 			{
 				// avoid a notice, we're returning by reference
-				$var = null;
-				return $var;
+				$result = null;
 			}
-
-			return $this->_data[$property];
+			elseif ($this->_sanitization_enabled)
+			{
+				$result = \Security::clean($this->_data[$property], null, 'security.output_filter');
+			}
+			else
+			{
+				$result =& $this->_data[$property];
+			}
 		}
 		elseif ($rel = static::relations($property))
 		{
@@ -1076,24 +1086,46 @@ class Model implements \ArrayAccess, \Iterator
 				$this->_data_relations[$property] = $rel->get($this, $conditions);
 				$this->_update_original_relations(array($property));
 			}
-			return $this->_data_relations[$property];
+
+			$result =& $this->_data_relations[$property];
 		}
-		elseif (($value = $this->_get_eav($property)) !== false)
+		elseif (($result = $this->_get_eav($property)) !== false)
 		{
-			return $value;
+			// nothing else to do here
 		}
 		elseif ($this->_view and in_array($property, static::$_views_cached[get_class($this)][$this->_view]['columns']))
 		{
-			return $this->_data[$property];
+			$result =& $this->_data[$property];
 		}
 		elseif (array_key_exists($property, $this->_custom_data))
 		{
-				return $this->_custom_data[$property];
+			$result =& $this->_custom_data[$property];
 		}
 		else
 		{
 			throw new \OutOfBoundsException('Property "'.$property.'" not found for '.get_class($this).'.');
 		}
+
+		if ($this->sanitized())
+		{
+			if (is_array($result))
+			{
+				foreach ($result as $key => $value)
+				{
+					$value instanceOf \Sanitization and $value->sanitize();
+				}
+			}
+			elseif ($result instanceOf \Sanitization)
+			{
+				$result->sanitize();
+			}
+			else
+			{
+				$result = \Security::clean($result, null, 'security.output_filter');
+			}
+		}
+
+		return $result;
 	}
 
     /**
@@ -1754,6 +1786,40 @@ class Model implements \ArrayAccess, \Iterator
 	public function unfreeze()
 	{
 		$this->_frozen = false;
+	}
+
+	/**
+	 * Enable sanitization mode in the object
+	 *
+	 * @return  $this
+	 */
+	public function sanitize()
+	{
+		$this->_sanitization_enabled = true;
+
+		return $this;
+	}
+
+	/**
+	 * Disable sanitization mode in the object
+	 *
+	 * @return  $this
+	 */
+	public function unsanitize()
+	{
+		$this->_sanitization_enabled = false;
+
+		return $this;
+	}
+
+	/**
+	 * Returns the current sanitization state of the object
+	 *
+	 * @return  bool
+	 */
+	public function sanitized()
+	{
+		return $this->_sanitization_enabled;
 	}
 
 	/**
