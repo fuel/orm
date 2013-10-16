@@ -1892,7 +1892,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 			}
 			elseif (property_exists($this, '_eav') and ! empty(static::$_eav))
 			{
-				$this->{$property} = $value;
+				$this->_set_eav($property, $value);
 			}
 			else
 			{
