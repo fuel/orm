@@ -155,7 +155,7 @@ class Observer_Validation extends Observer
 						array_unshift($args, $rule);
 					}
 
-					call_user_func_array(array($field, 'add_rule'), $args);
+					call_fuel_func_array(array($field, 'add_rule'), $args);
 				}
 			}
 		}

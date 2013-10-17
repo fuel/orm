@@ -207,7 +207,7 @@ class BelongsTo extends Relation
 
 	public function delete($model_from, $model_to, $parent_deleted, $cascade)
 	{
-		if ($parent_deleted)
+		if ( ! $parent_deleted)
 		{
 			return;
 		}
