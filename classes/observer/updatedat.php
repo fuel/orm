@@ -40,6 +40,9 @@ class Observer_UpdatedAt extends Observer
 	 */
 	protected $_property;
 
+	/**
+	 * @var array Names of any relations that should be taken into account when checking if the model has been updated
+	 */
 	protected $_relations;
 
 	/**
