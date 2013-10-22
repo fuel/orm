@@ -153,4 +153,14 @@ abstract class Relation
 
 		return $this->{$property};
 	}
+
+	/**
+	 * Returns true if this relation is a singular relation. Eg, has_one not has_many
+	 *
+	 * @return bool
+	 */
+	public function is_singular()
+	{
+		return $this->singular;
+	}
 }

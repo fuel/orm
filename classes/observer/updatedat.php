@@ -116,7 +116,16 @@ class Observer_UpdatedAt extends Observer
 			return false;
 		}
 
-		// Now we know the relation exists loop through all the models and see if anything has changed
+		$relation_object = $obj->relations($relation);
+
+		// Check if whe have a singular relation
+		if ($relation_object->is_singular())
+		{
+			// If so check that one model
+			return $obj->{$relation}->is_changed();
+		}
+
+		// Else we have an array of related objects so start checking them all
 		foreach ($obj->{$relation} as $related_model)
 		{
 			if ($related_model->is_changed())
