@@ -83,7 +83,7 @@ class Observer_UpdatedAt extends Observer
 			if ($this->relation_changed($obj, $relation))
 			{
 				$relation_changed = true;
-				continue;
+				break;
 			}
 		}
 
@@ -108,6 +108,12 @@ class Observer_UpdatedAt extends Observer
 		if ($obj->relations($relation) === false)
 		{
 			throw new \InvalidArgumentException('Unknown relation '.$relation);
+		}
+
+		// If the relation is not loaded then ignore it.
+		if ( ! $obj->is_fetched($relation))
+		{
+			return false;
 		}
 
 		// Now we know the relation exists loop through all the models and see if anything has changed
