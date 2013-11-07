@@ -1238,7 +1238,7 @@ class Query
 		// Build the query further
 		$tmp     = $this->build_query($query, $columns);
 
-		return $tmp['query'];
+		return $tmp['query']->compile($this->connection);
 	}
 
 	/**
