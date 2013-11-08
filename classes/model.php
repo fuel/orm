@@ -1455,6 +1455,8 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 				return false;
 			}
 
+			// Duplicated code, exactly the same as just above the call to self_delete above.
+			/*
 			$this->freeze();
 			foreach($this->relations() as $rel_name => $rel)
 			{
@@ -1470,6 +1472,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 				$rel->delete($this, $this->{$rel_name}, true, $should_cascade);
 			}
 			$this->unfreeze();
+			*/
 
 			// Perform cleanup:
 			// remove from internal object cache, remove PK's, set to non saved object, remove db original values
