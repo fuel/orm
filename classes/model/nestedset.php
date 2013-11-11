@@ -775,7 +775,7 @@ class Model_Nestedset extends Model
 			}
 			else
 			{
-				$this[$path] = '/';
+				$tree[$this->{$pk}][$path] = '/';
 			}
 		}
 
