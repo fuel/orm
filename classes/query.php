@@ -1232,6 +1232,9 @@ class Query
 		}
 		$query = call_fuel_func_array('DB::select', $select);
 
+		// Set the defined connection on the query
+		$query->set_connection($this->connection);
+
 		// Set from table
 		$query->from(array($this->_table(), $this->alias));
 
