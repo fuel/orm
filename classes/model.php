@@ -1063,22 +1063,26 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	 */
 	public function & get($property, array $conditions = array())
 	{
+		// database columns
 		if (array_key_exists($property, static::properties()))
 		{
 			if ( ! array_key_exists($property, $this->_data))
 			{
-				// avoid a notice, we're returning by reference
 				$result = null;
 			}
 			elseif ($this->_sanitization_enabled)
 			{
-				$result = \Security::clean($this->_data[$property], null, 'security.output_filter');
+				// use a copy
+				$result = $this->_data[$property];
 			}
 			else
 			{
+				// use a reference
 				$result =& $this->_data[$property];
 			}
 		}
+
+		// related models
 		elseif ($rel = static::relations($property))
 		{
 			if ( ! array_key_exists($property, $this->_data_relations))
@@ -1089,41 +1093,52 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 
 			$result =& $this->_data_relations[$property];
 		}
+
+		// EAV properties
 		elseif (($result = $this->_get_eav($property)) !== false)
 		{
 			// nothing else to do here
 		}
+
+		// database view columns
 		elseif ($this->_view and in_array($property, static::$_views_cached[get_class($this)][$this->_view]['columns']))
 		{
-			$result =& $this->_data[$property];
+			if ($this->_sanitization_enabled)
+			{
+				// use a copy
+				$result = $this->_data[$property]);
+			}
+			else
+			{
+				// use a reference
+				$result =& $this->_data[$property];
+			}
 		}
+
+		// stored custom data
 		elseif (array_key_exists($property, $this->_custom_data))
 		{
-			$result =& $this->_custom_data[$property];
+			if ($this->_sanitization_enabled)
+			{
+				// use a copy
+				$result = $this->_custom_data[$property]);
+			}
+			else
+			{
+				// use a reference
+				$result =& $this->_custom_data[$property];
+			}
 		}
 		else
 		{
 			throw new \OutOfBoundsException('Property "'.$property.'" not found for '.get_class($this).'.');
 		}
 
-		if ($this->sanitized())
+		// do we need to clean before returning the result?
+		if ($this->_sanitization_enabled)
 		{
-			if (is_array($result))
-			{
-				foreach ($result as $key => $value)
-				{
-					$value instanceOf \Sanitization and $value->sanitize();
-				}
-			}
-			elseif ($result instanceOf \Sanitization)
-			{
-				$result->sanitize();
-			}
-			else
-			{
-				$cleaned = \Security::clean($result, null, 'security.output_filter');
-				return $cleaned;
-			}
+			$cleaned = \Security::clean($result, null, 'security.output_filter');
+			return $cleaned;
 		}
 
 		return $result;
