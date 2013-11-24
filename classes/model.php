@@ -1106,7 +1106,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 			if ($this->_sanitization_enabled)
 			{
 				// use a copy
-				$result = $this->_data[$property]);
+				$result = $this->_data[$property];
 			}
 			else
 			{
@@ -1121,7 +1121,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 			if ($this->_sanitization_enabled)
 			{
 				// use a copy
-				$result = $this->_custom_data[$property]);
+				$result = $this->_custom_data[$property];
 			}
 			else
 			{
