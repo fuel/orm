@@ -60,6 +60,9 @@ class Observer_CreatedAt extends Observer
 	 */
 	public function before_insert(Model $obj)
 	{
-		$obj->{$this->_property} = $this->_mysql_timestamp ? \Date::time()->format('mysql') : \Date::time()->get_timestamp();
+		if (empty($obj->{$this->_property}))
+		{
+			$obj->{$this->_property} = $this->_mysql_timestamp ? \Date::time()->format('mysql') : \Date::time()->get_timestamp();
+		}
 	}
 }
