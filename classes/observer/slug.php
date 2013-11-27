@@ -30,6 +30,11 @@ class Observer_Slug extends Observer
 	public static $property = 'slug';
 
 	/**
+	 * @var  string  Default disable_soft property, allows Model_Soft objects to be deleted and created with the same title
+	 */
+	public static $disable_soft = false;	
+	
+	/**
 	 * @var  mixed  Source property or array of properties, which is/are used to create the slug
 	 */
 	protected $_source;
@@ -38,6 +43,11 @@ class Observer_Slug extends Observer
 	 * @var  string  Slug property
 	 */
 	protected $_property;
+	
+	/**
+	 * @var  string  Disable_soft property, allows Model_Soft objects to be deleted and created with the same title
+	 */
+	protected $_disable_soft;
 
 	/**
 	 * Set the properties for this observer instance, based on the parent model's
@@ -50,6 +60,7 @@ class Observer_Slug extends Observer
 		$props = $class::observers(get_class($this));
 		$this->_source    = isset($props['source']) ? $props['source'] : static::$source;
 		$this->_property  = isset($props['property']) ? $props['property'] : static::$property;
+		$this->_disable_soft  = isset($props['disable_soft']) ? $props['disable_soft'] : static::$disable_soft;
 	}
 
 	/**
@@ -68,8 +79,22 @@ class Observer_Slug extends Observer
 		}
 		$slug = \Inflector::friendly_title(substr($source, 1), '-', true);
 
-		// query to check for existence of this slug
-		$query = $obj->query()->where($this->_property, 'like', $slug.'%');
+		// Allow Model_Soft objects to be deleted, then re-created with the same title
+		if ($obj instanceOf Model_Soft && $this->_disable_soft)
+		{
+			// Disable the soft delete column filter so deleted rows can be found
+			$obj::disable_filter();
+			
+			// query to check for existence of this slug
+			$query = $obj->query()->where($this->_property, 'like', $slug.'%');
+
+			$obj::enable_filter();
+		}
+		else
+		{
+			// query to check for existence of this slug
+			$query = $obj->query()->where($this->_property, 'like', $slug.'%');
+		}
 
 		// is this a temporal model?
 		if ($obj instanceOf Model_Temporal)
