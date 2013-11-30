@@ -166,7 +166,7 @@ class Model_Temporal extends Model
 		}
 
 		$query_result = $query->get_one();
-		
+
 		// If the query did not return a result but null, then we cannot call
 		//  set_lazy_timestamp on it without throwing errors
 		if ( $query_result !== null )
