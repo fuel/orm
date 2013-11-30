@@ -30,6 +30,11 @@ class Observer_Slug extends Observer
 	public static $property = 'slug';
 
 	/**
+	 * @var  string  Default separator
+	 */
+	public static $separator = '-';
+
+	/**
 	 * @var  mixed  Source property or array of properties, which is/are used to create the slug
 	 */
 	protected $_source;
@@ -38,6 +43,11 @@ class Observer_Slug extends Observer
 	 * @var  string  Slug property
 	 */
 	protected $_property;
+
+	/**
+	 * @var  string  Slug separator
+	 */
+	protected $_separator;
 
 	/**
 	 * Set the properties for this observer instance, based on the parent model's
@@ -50,6 +60,7 @@ class Observer_Slug extends Observer
 		$props = $class::observers(get_class($this));
 		$this->_source    = isset($props['source']) ? $props['source'] : static::$source;
 		$this->_property  = isset($props['property']) ? $props['property'] : static::$property;
+		$this->_separator = isset($props['separator']) ? $props['separator'] : static::$separator;
 	}
 
 	/**
@@ -64,9 +75,9 @@ class Observer_Slug extends Observer
 		$source = '';
 		foreach ($properties as $property)
 		{
-			$source .= '-'.$obj->{$property};
+			$source .= $this->_separator.$obj->{$property};
 		}
-		$slug = \Inflector::friendly_title(substr($source, 1), '-', true);
+		$slug = \Inflector::friendly_title(substr($source, 1), $this->_separator, true);
 
 		// query to check for existence of this slug
 		$query = $obj->query()->where($this->_property, 'like', $slug.'%');
@@ -100,7 +111,7 @@ class Observer_Slug extends Observer
 				}
 			}
 
-			$max < 0 or $slug .= '-'.($max + 1);
+			$max < 0 or $slug .= $this->_separator.($max + 1);
 		}
 
 		$obj->{$this->_property} = $slug;
@@ -118,9 +129,9 @@ class Observer_Slug extends Observer
 		$source = '';
 		foreach ($properties as $property)
 		{
-			$source .= '-'.$obj->{$property};
+			$source .= $this->_separator.$obj->{$property};
 		}
-		$slug = \Inflector::friendly_title(substr($source, 1), '-', true);
+		$slug = \Inflector::friendly_title(substr($source, 1), $this->_separator, true);
 
 		// update it if it's different from the current one
 		$obj->{$this->_property} === $slug or $this->before_insert($obj);
