@@ -45,3 +45,6 @@ Autoloader::add_classes(array(
 	'Orm\\ValidationFailed'     => __DIR__.'/classes/observer/validation.php',
 	'Orm\\RelationNotSoft'      => __DIR__.'/classes/model/soft.php',
 ));
+
+// Ensure the orm's config is loaded for Temporal
+\Config::load('orm', true);

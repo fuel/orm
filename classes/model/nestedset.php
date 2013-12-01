@@ -184,9 +184,11 @@ class Model_Nestedset extends Model
 	/**
 	 * Returns a query object on the selected tree
 	 *
+	 * @param  bool  whether or not to include related models
+	 *
 	 * @return  Query  the constructed query object
 	 */
-	public function build_query()
+	public function build_query($include_related = true)
 	{
 		// create a new query object
 		$query = $this->query();
@@ -198,6 +200,15 @@ class Model_Nestedset extends Model
 		if ( ! is_null($tree_field))
 		{
 			$query->where($tree_field, $this->get_tree_id());
+		}
+
+		// add any relations if needed
+		if ($include_related and isset($this->_node_operation['related']))
+		{
+			foreach ($this->_node_operation['related'] as $relation => $conditions)
+			{
+				$query->related($relation, $conditions);
+			}
 		}
 
 		// return the query object
@@ -214,6 +225,7 @@ class Model_Nestedset extends Model
 	public function root()
 	{
 		$this->_node_operation = array(
+			'related' => array(),
 			'single' => true,
 			'action' => 'root',
 			'to' => null,
@@ -233,6 +245,7 @@ class Model_Nestedset extends Model
 	public function roots()
 	{
 		$this->_node_operation = array(
+			'related' => array(),
 			'single' => false,
 			'action' => 'roots',
 			'to' => null,
@@ -252,6 +265,7 @@ class Model_Nestedset extends Model
 	public function parent()
 	{
 		$this->_node_operation = array(
+			'related' => array(),
 			'single' => true,
 			'action' => 'parent',
 			'to' => null,
@@ -271,6 +285,7 @@ class Model_Nestedset extends Model
 	public function children()
 	{
 		$this->_node_operation = array(
+			'related' => array(),
 			'single' => false,
 			'action' => 'children',
 			'to' => null,
@@ -290,6 +305,7 @@ class Model_Nestedset extends Model
 	public function ancestors()
 	{
 		$this->_node_operation = array(
+			'related' => array(),
 			'single' => false,
 			'action' => 'ancestors',
 			'to' => null,
@@ -309,6 +325,7 @@ class Model_Nestedset extends Model
 	public function descendants()
 	{
 		$this->_node_operation = array(
+			'related' => array(),
 			'single' => false,
 			'action' => 'descendants',
 			'to' => null,
@@ -328,6 +345,7 @@ class Model_Nestedset extends Model
 	public function leaf_descendants()
 	{
 		$this->_node_operation = array(
+			'related' => array(),
 			'single' => false,
 			'action' => 'leaf_descendants',
 			'to' => null,
@@ -347,6 +365,7 @@ class Model_Nestedset extends Model
 	public function siblings()
 	{
 		$this->_node_operation = array(
+			'related' => array(),
 			'single' => false,
 			'action' => 'siblings',
 			'to' => null,
@@ -366,6 +385,7 @@ class Model_Nestedset extends Model
 	public function path($addroot = true)
 	{
 		$this->_node_operation = array(
+			'related' => array(),
 			'single' => false,
 			'action' => 'path',
 			'to' => null,
@@ -403,6 +423,7 @@ class Model_Nestedset extends Model
 	public function first_child($to = null)
 	{
 		$this->_node_operation = array(
+			'related' => array(),
 			'single' => true,
 			'action' => 'first_child',
 			'to' => $to,
@@ -423,6 +444,7 @@ class Model_Nestedset extends Model
 	public function last_child($to = null)
 	{
 		$this->_node_operation = array(
+			'related' => array(),
 			'single' => true,
 			'action' => 'last_child',
 			'to' => $to,
@@ -456,6 +478,7 @@ class Model_Nestedset extends Model
 	public function previous_sibling($to = null)
 	{
 		$this->_node_operation = array(
+			'related' => array(),
 			'single' => true,
 			'action' => 'previous_sibling',
 			'to' => $to,
@@ -476,6 +499,7 @@ class Model_Nestedset extends Model
 	public function next_sibling($to = null)
 	{
 		$this->_node_operation = array(
+			'related' => array(),
 			'single' => true,
 			'action' => 'next_sibling',
 			'to' => $to,
@@ -727,7 +751,7 @@ class Model_Nestedset extends Model
 		else
 		{
 			// if we have a valid object, run the query to calculate the depth
-			$query = $this->build_query()
+			$query = $this->build_query(false)
 				->where($left_field, '<', $this->{$left_field})
 				->where($right_field, '>', $this->{$right_field});
 
@@ -775,7 +799,7 @@ class Model_Nestedset extends Model
 			}
 			else
 			{
-				$this[$path] = '/';
+				$tree[$this->{$pk}][$path] = '/';
 			}
 		}
 
@@ -1255,6 +1279,7 @@ class Model_Nestedset extends Model
 		{
 			// assume a get-all operation
 			$this->_node_operation = array(
+				'related' => array(),
 				'single' => false,
 				'action' => 'all',
 				'to' => null,
@@ -1298,6 +1323,7 @@ class Model_Nestedset extends Model
 		{
 			// assume a get-all operation
 			$this->_node_operation = array(
+				'related' => array(),
 				'single' => false,
 				'action' => 'all',
 				'to' => null,
@@ -1333,6 +1359,7 @@ class Model_Nestedset extends Model
 		{
 			// assume a get-all operation
 			$this->_node_operation = array(
+				'related' => array(),
 				'single' => true,
 				'action' => 'all',
 				'to' => null,
@@ -1341,6 +1368,34 @@ class Model_Nestedset extends Model
 
 		// so we need to fetch something
 		return $this->_fetch_nodes('single');
+	}
+
+	/**
+	 * Set a relation to include
+	 *
+	 * @param   string  $relation
+	 * @param   array   $conditions    Optionally
+	 *
+	 * @return  $this
+	 */
+	public function related($relation, $conditions = array())
+	{
+		// make sure there's a node operation defined
+		if (empty($this->_node_operation))
+		{
+			// assume a get-all operation
+			$this->_node_operation = array(
+				'related' => array(),
+				'single' => false,
+				'action' => 'all',
+				'to' => null,
+			);
+		}
+
+		// store the relation to include
+		$this->_node_operation['related'][$relation] = $conditions;
+
+		return $this;
 	}
 
 	// -------------------------------------------------------------------------
@@ -1371,6 +1426,8 @@ class Model_Nestedset extends Model
 	 *
 	 * @param  string  action, either 'single' or 'multiple'
 	 * @return  mixed  Model_Nestedset or an array of Model_Nestedset, or null if none found
+	 *
+	 * @throws \UnexpectedValueException Relation was not found in the model
 	 */
 	protected function _fetch_nodes($action)
 	{
