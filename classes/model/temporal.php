@@ -166,7 +166,7 @@ class Model_Temporal extends Model
 		}
 
 		$query_result = $query->get_one();
-		
+
 		// If the query did not return a result but null, then we cannot call
 		//  set_lazy_timestamp on it without throwing errors
 		if ( $query_result !== null )
@@ -240,10 +240,14 @@ class Model_Temporal extends Model
 		$class = get_called_class();
 		$timestamp = \Arr::get(static::$_lazy_filtered_classes, $class, null);
 
-		if(! is_null($timestamp) )
+		if( ! is_null($timestamp))
 		{
 			$query->where($timestamp_start_name, '<=', $timestamp)
 				->where($timestamp_end_name, '>', $timestamp);
+		}
+		else
+		{
+			$query->where($timestamp_end_name, $max_timestamp);
 		}
 
 		return $query;
