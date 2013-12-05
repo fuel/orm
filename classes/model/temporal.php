@@ -245,7 +245,7 @@ class Model_Temporal extends Model
 			$query->where($timestamp_start_name, '<=', $timestamp)
 				->where($timestamp_end_name, '>', $timestamp);
 		}
-		else
+		elseif(static::get_primary_key_status() and ! static::get_primary_key_id_only_status())
 		{
 			$query->where($timestamp_end_name, $max_timestamp);
 		}
