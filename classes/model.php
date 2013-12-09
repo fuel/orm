@@ -892,7 +892,10 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 				$this->_original_relations[$rel] = array();
 				foreach ($data as $obj)
 				{
-					$this->_original_relations[$rel][] = $obj ? $obj->implode_pk($obj) : null;
+					if (! $obj->is_new())
+					{
+						$this->_original_relations[$rel][] = $obj ? $obj->implode_pk($obj) : null;
+					}
 				}
 			}
 			else
