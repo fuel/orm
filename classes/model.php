@@ -1091,7 +1091,8 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 				$this->_update_original_relations(array($property));
 			}
 
-			$result =& $this->_data_relations[$property];
+			// no need to attempt any cleaning here
+			return $this->_data_relations[$property];
 		}
 
 		// EAV properties
