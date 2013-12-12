@@ -278,7 +278,7 @@ class ManyMany extends Relation
 					next($this->key_to);
 				}
 
-				\DB::insert($this->table_through)->set($ids)->execute(call_user_func(array($model_from, 'connection')));
+				\DB::insert($this->table_through)->set($ids)->execute(call_user_func(array($model_from, 'connection'), true));
 				$original_model_ids[] = $current_model_id; // prevents inserting it a second time
 			}
 			else
@@ -322,7 +322,7 @@ class ManyMany extends Relation
 				next($to_keys);
 			}
 
-			$query->execute(call_user_func(array($model_from, 'connection')));
+			$query->execute(call_user_func(array($model_from, 'connection'), true));
 		}
 
 		$cascade = is_null($cascade) ? $this->cascade_save : (bool) $cascade;
@@ -372,6 +372,6 @@ class ManyMany extends Relation
 			$query->where($key, '=', $model_from->{current($this->key_from)});
 			next($this->key_from);
 		}
-		$query->execute(call_user_func(array($model_from, 'connection')));
+		$query->execute(call_user_func(array($model_from, 'connection'), true));
 	}
 }
