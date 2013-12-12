@@ -1091,8 +1091,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 				$this->_update_original_relations(array($property));
 			}
 
-			// no need to attempt any cleaning here
-			return $this->_data_relations[$property];
+			$result =& $this->_data_relations[$property];
 		}
 
 		// EAV properties
@@ -1138,8 +1137,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		// do we need to clean before returning the result?
 		if ($this->_sanitization_enabled)
 		{
-			$cleaned = \Security::clean($result, null, 'security.output_filter');
-			return $cleaned;
+			$result = \Security::clean($result, null, 'security.output_filter');
 		}
 
 		return $result;
