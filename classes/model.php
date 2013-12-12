@@ -1572,7 +1572,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	 * @param string event to disable
 	 * @return void
 	 */
-	public static function disable_event($event)
+	public function disable_event($event)
 	{
 		$this->_disabled_events[$event] = true;
 	}
@@ -1584,7 +1584,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	 * @param string event to enable, or null for all events
 	 * @return void
 	 */
-	public static function enable_event($event)
+	public function enable_event($event)
 	{
 		unset($this->_disabled_events[$event]);
 	}
