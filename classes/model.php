@@ -771,6 +771,11 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	protected $_reset_relations = array();
 
 	/**
+	 * @var  array  disabled observer events
+	 */
+	protected $_disabled_events = array();
+
+	/**
 	 * @var  string  view name when used
 	 */
 	protected $_view;
@@ -1562,6 +1567,29 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	}
 
 	/**
+	 * Disable an observer event
+	 *
+	 * @param string event to disable
+	 * @return void
+	 */
+	public static function disable_event($event)
+	{
+		$this->_disabled_events[$event] = true;
+	}
+
+	/**
+	 * Enable a defined observer
+	 *
+	 * @param string class name of the observer (including namespace)
+	 * @param string event to enable, or null for all events
+	 * @return void
+	 */
+	public static function enable_event($event)
+	{
+		unset($this->_disabled_events[$event]);
+	}
+
+	/**
 	 * Calls all observers for the current event
 	 *
 	 * @param  string
@@ -1571,7 +1599,8 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		foreach ($this->observers() as $observer => $settings)
 		{
 			$events = isset($settings['events']) ? $settings['events'] : array();
-			if (empty($events) or in_array($event, $events))
+			if ((empty($events) or in_array($event, $events))
+				and empty($this->_disabled_events[$event]))
 			{
 				if ( ! class_exists($observer))
 				{
