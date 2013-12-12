@@ -389,6 +389,12 @@ class Model_Temporal extends Model
 		// If this is an update then set a new PK, save and then insert a new row
 		else
 		{
+			// run the before save observers before checking the diff
+			$this->observe('before_save');
+
+			// then disable it so it doesn't get executed by parent::save()
+			$this->disable_event('before_save');
+
 			$diff = $this->get_diff();
 
 			if (count($diff[0]) > 0)
@@ -423,14 +429,17 @@ class Model_Temporal extends Model
 				self::enable_primary_key_check();
 
 				$result = parent::save($cascade, $use_transaction);
-
-				return $result;
 			}
 			else
 			{
 				// If nothing has changed call parent::save() to insure relations are saved too
-				return parent::save($cascade, $use_transaction);
+				$result = parent::save($cascade, $use_transaction);
 			}
+
+			// make sure the before save event is enabled again
+			$this->enable_event('before_save');
+
+			return $result;
 		}
 	}
 
