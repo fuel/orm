@@ -2037,11 +2037,11 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 					{
 						$array[$name][$id] = $r->to_array($custom, true);
 
-						// get eav property
-						if (array_key_exists($name, $eav))
-						{
-							$array[$array[$name][$id][$eav[$name]['attribute']]] = $array[$name][$id][$eav[$name]['value']];
-						}
+						// get eav property if not exists in the array
+						// if (array_key_exists($name, $eav) and ! array_key_exists($array[$name][$id][$eav[$name]['attribute']], $array))
+						// {
+						// 	$array[$array[$name][$id][$eav[$name]['attribute']]] = $array[$name][$id][$eav[$name]['value']];
+						// }
 					}
 				}
 			}
@@ -2057,6 +2057,21 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 					{
 						static::$to_array_references[] = get_class($rel);
 						$array[$name] = $rel->to_array($custom, true);
+					}
+				}
+			}
+		}
+
+		// get eav property if not exists in the array
+		foreach ($eav as $rel => $def)
+		{
+			if (array_key_exists($rel, $array))
+			{
+				foreach ($array[$rel] as &$value)
+				{
+					if ( ! array_key_exists($value[$def['attribute']], $array))
+					{
+						$array[$value[$def['attribute']]] =& $value[$def['value']];
 					}
 				}
 			}
