@@ -2001,29 +2001,6 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 			$array[$key] = $val;
 		}
 
-		$eav = array();
-
-		// get eav relations
-		if (property_exists(get_called_class(), '_eav'))
-		{
-			// loop through the defined EAV containers
-			foreach (static::$_eav as $rel => $settings)
-			{
-				// normalize the container definition, could be string or array
-				if (is_string($settings))
-				{
-					$rel = $settings;
-					$settings = array();
-				}
-
-				// determine attribute and value column names
-				$eav[$rel] = array(
-					'attribute' => \Arr::get($settings, 'attribute', 'attribute'),
-					'value'     => \Arr::get($settings, 'value', 'value'),
-				);
-			}
-		}
-
 		// convert relations
 		foreach ($this->_data_relations as $name => $rel)
 		{
@@ -2036,12 +2013,6 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 					foreach ($rel as $id => $r)
 					{
 						$array[$name][$id] = $r->to_array($custom, true);
-
-						// get eav property if not exists in the array
-						// if (array_key_exists($name, $eav) and ! array_key_exists($array[$name][$id][$eav[$name]['attribute']], $array))
-						// {
-						// 	$array[$array[$name][$id][$eav[$name]['attribute']]] = $array[$name][$id][$eav[$name]['value']];
-						// }
 					}
 				}
 			}
@@ -2062,16 +2033,34 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 			}
 		}
 
-		// get eav property if not exists in the array
-		foreach ($eav as $rel => $def)
+		// get eav relations
+		if (property_exists(get_called_class(), '_eav'))
 		{
-			if (array_key_exists($rel, $array))
+			// loop through the defined EAV containers
+			foreach (static::$_eav as $rel => $settings)
 			{
-				foreach ($array[$rel] as &$value)
+				// normalize the container definition, could be string or array
+				if (is_string($settings))
 				{
-					if ( ! array_key_exists($value[$def['attribute']], $array))
+					$rel = $settings;
+					$settings = array();
+				}
+
+				// determine attribute and value column names
+				$attr = \Arr::get($settings, 'attribute', 'attribute');
+				$val  = \Arr::get($settings, 'value', 'value');
+
+				// check if relation is present
+				if (array_key_exists($rel, $array))
+				{
+					// loop through properties
+					foreach ($array[$rel] as &$value)
 					{
-						$array[$value[$def['attribute']]] =& $value[$def['value']];
+						// set eav property if not exists in the array
+						if ( ! array_key_exists($value[$attr], $array))
+						{
+							$array[$value[$attr]] =& $value[$val];
+						}
 					}
 				}
 			}
