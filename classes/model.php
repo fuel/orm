@@ -1951,6 +1951,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	 *
 	 * @param bool $custom
 	 * @param bool $recurse
+	 * @param bool $eav
 	 *
 	 * @internal param \Orm\whether $bool or not to include the custom data array
 	 *
@@ -2012,7 +2013,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 					static::$to_array_references[] = get_class(reset($rel));
 					foreach ($rel as $id => $r)
 					{
-						$array[$name][$id] = $r->to_array($custom, true);
+						$array[$name][$id] = $r->to_array($custom, true, $eav);
 					}
 				}
 			}
@@ -2027,7 +2028,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 					else
 					{
 						static::$to_array_references[] = get_class($rel);
-						$array[$name] = $rel->to_array($custom, true);
+						$array[$name] = $rel->to_array($custom, true, $eav);
 					}
 				}
 			}
@@ -2053,15 +2054,14 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 				// check if relation is present
 				if (array_key_exists($rel, $array))
 				{
-					// loop through properties
-					foreach ($array[$rel] as &$value)
-					{
-						// set eav property if not exists in the array
-						if ( ! array_key_exists($value[$attr], $array))
-						{
-							$array[$value[$attr]] =& $value[$val];
-						}
-					}
+					// get eav properties
+					$conatiner = \Arr::assoc_to_keyval($array[$rel], $attr, $val);
+
+					// merge eav properties to array without overwritting anything
+					$array = array_merge($conatiner, $array);
+
+					// we don't need this relation anymore
+					unset($array[$rel]);
 				}
 			}
 		}
