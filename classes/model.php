@@ -1956,7 +1956,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	 *
 	 * @return  array
 	 */
-	public function to_array($custom = false, $recurse = false)
+	public function to_array($custom = false, $recurse = false, $eav = false)
 	{
 		// storage for the result
 		$array = array();
@@ -2034,7 +2034,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		}
 
 		// get eav relations
-		if (property_exists(get_called_class(), '_eav'))
+		if (property_exists(get_called_class(), '_eav') and $eav)
 		{
 			// loop through the defined EAV containers
 			foreach (static::$_eav as $rel => $settings)
