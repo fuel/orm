@@ -74,6 +74,11 @@ class Query
 	protected $select = array();
 
 	/**
+	 * @var  array  additional expressions to select, will be stored into $model->_custom_data
+	 */
+	protected $select_custom = array();
+
+	/**
 	 * @var  int  max number of returned base model instances
 	 */
 	protected $limit;
@@ -270,7 +275,13 @@ class Query
 			$out = array();
 			foreach($this->select as $k => $v)
 			{
-				$out[] = array($v, $k);
+				$out[] = array($v, $k, (strpos($v, '.') === false ? $v : substr($v, strpos($v, '.') + 1)));
+			}
+
+			$i = count($out);
+			foreach($this->select_custom as $k => $v)
+			{
+				$out[] = array($v, $this->alias.'_c'.$i++, $k);
 			}
 
 			// set select back to before the PKs were added
@@ -297,6 +308,24 @@ class Query
 			}
 		}
 
+		return $this;
+	}
+
+	/**
+	 * Add custom columns to select, which are included, each as its own param.
+	 * For instance, $query->custom(array('fullname' => DB::expr('CONCAT(firstname,\' \',sirname)'))) will
+	 * add an extra property 'fullname' into the resulting model.
+	 *
+	 * @param array  $columns    Extra columns to select
+	 *
+	 * @return  void|array
+	 */
+	public function custom($columns)
+	{
+		foreach ($columns as $colname => $expr)
+		{
+		   $this->select_custom[$colname] = $expr;
+		}
 		return $this;
 	}
 
@@ -1079,7 +1108,7 @@ class Query
 			$obj = array();
 			foreach ($select as $s)
 			{
-				$f = substr($s[0], strpos($s[0], '.') + 1);
+				$f = $s[2];
 				$obj[$f] = $row[$s[1]];
 				if (in_array($f, $primary_key))
 				{
@@ -1094,7 +1123,7 @@ class Query
 			// add fields not present in the already cached version
 			foreach ($select as $s)
 			{
-				$f = substr($s[0], strpos($s[0], '.') + 1);
+				$f = $s[2];
 				if ( ! isset($obj->{$f}))
 				{
 					$obj->{$f} = $row[$s[1]];
