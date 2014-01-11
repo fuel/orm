@@ -792,46 +792,59 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		// for some weird reason, for example using the DB's as_object() function
 		if( ! empty($this->_data))
 		{
-			$this->_original = $this->_data;
+			// merge the injected data with the passed data
+			$data = array_merge($this->_data, $data);
+			$this->_data = array();
+
+			// and mark it as existing data
 			$new = false;
 		}
 
-		if ($new)
+		// move the passed data to the correct container
+		$properties = $this->properties();
+		foreach ($properties as $prop => $settings)
 		{
-			$properties = $this->properties();
-			foreach ($properties as $prop => $settings)
+			// do we have data for this this model property?
+			if (array_key_exists($prop, $data))
 			{
-				if (array_key_exists($prop, $data))
-				{
-					$this->_data[$prop] = $data[$prop];
-					unset($data[$prop]);
-				}
-				elseif (array_key_exists('default', $settings))
-				{
-					$this->_data[$prop] = $settings['default'];
-				}
+				// store it in the data container
+				$this->_data[$prop] = $data[$prop];
+				unset($data[$prop]);
 			}
-			$this->_custom_data = $data;
-		}
-		else
-		{
-			$this->_update_original($data);
-			$this->_data = array_merge($this->_data, $data);
 
-			if ($view and array_key_exists($view, $this->views()))
+			// property not present, do we have a default value?
+			elseif ($new and array_key_exists('default', $settings))
 			{
-				$this->_view = $view;
+				$this->_data[$prop] = $settings['default'];
 			}
+		}
+
+		// store the remainder in the custom data store
+		$this->_custom_data = $data;
+
+		// store the view, if one was passed
+		if ($view and array_key_exists($view, $this->views()))
+		{
+			$this->_view = $view;
 		}
 
 		if ($new === false)
 		{
-			$cache and static::$_cached_objects[get_class($this)][static::implode_pk($data)] = $this;
+			// update the original datastore and the related datastore
+			$this->_update_original($this->_data);
+
+			// update the object cache if needed
+			$cache and static::$_cached_objects[get_class($this)][static::implode_pk($this->_data)] = $this;
+
+			// mark the object as existing
 			$this->_is_new = false;
+
+			// and fire the after-load observers
 			$this->observe('after_load');
 		}
 		else
 		{
+			// new object, fire the after-create observers
 			$this->observe('after_create');
 		}
 	}
