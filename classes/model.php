@@ -2035,7 +2035,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		}
 
 		// get eav relations
-		if (property_exists(get_called_class(), '_eav') and $eav)
+		if ($eav and property_exists(get_called_class(), '_eav'))
 		{
 			// loop through the defined EAV containers
 			foreach (static::$_eav as $rel => $settings)
