@@ -2055,10 +2055,10 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 				if (array_key_exists($rel, $array))
 				{
 					// get eav properties
-					$conatiner = \Arr::assoc_to_keyval($array[$rel], $attr, $val);
+					$container = \Arr::assoc_to_keyval($array[$rel], $attr, $val);
 
 					// merge eav properties to array without overwritting anything
-					$array = array_merge($conatiner, $array);
+					$array = array_merge($container, $array);
 
 					// we don't need this relation anymore
 					unset($array[$rel]);
