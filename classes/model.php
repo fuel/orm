@@ -1964,12 +1964,13 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	 *
 	 * @param bool $custom
 	 * @param bool $recurse
+	 * @param bool $eav
 	 *
 	 * @internal param \Orm\whether $bool or not to include the custom data array
 	 *
 	 * @return  array
 	 */
-	public function to_array($custom = false, $recurse = false)
+	public function to_array($custom = false, $recurse = false, $eav = false)
 	{
 		// storage for the result
 		$array = array();
@@ -2025,7 +2026,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 					static::$to_array_references[] = get_class(reset($rel));
 					foreach ($rel as $id => $r)
 					{
-						$array[$name][$id] = $r->to_array($custom, true);
+						$array[$name][$id] = $r->to_array($custom, true, $eav);
 					}
 				}
 			}
@@ -2040,8 +2041,40 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 					else
 					{
 						static::$to_array_references[] = get_class($rel);
-						$array[$name] = $rel->to_array($custom, true);
+						$array[$name] = $rel->to_array($custom, true, $eav);
 					}
+				}
+			}
+		}
+
+		// get eav relations
+		if ($eav and property_exists(get_called_class(), '_eav'))
+		{
+			// loop through the defined EAV containers
+			foreach (static::$_eav as $rel => $settings)
+			{
+				// normalize the container definition, could be string or array
+				if (is_string($settings))
+				{
+					$rel = $settings;
+					$settings = array();
+				}
+
+				// determine attribute and value column names
+				$attr = \Arr::get($settings, 'attribute', 'attribute');
+				$val  = \Arr::get($settings, 'value', 'value');
+
+				// check if relation is present
+				if (array_key_exists($rel, $array))
+				{
+					// get eav properties
+					$container = \Arr::assoc_to_keyval($array[$rel], $attr, $val);
+
+					// merge eav properties to array without overwritting anything
+					$array = array_merge($container, $array);
+
+					// we don't need this relation anymore
+					unset($array[$rel]);
 				}
 			}
 		}
