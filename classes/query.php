@@ -1073,7 +1073,8 @@ class Query
 		$obj = $this->from_cache ? Model::cached_object($pk, $model) : false;
 
 		// Create the object when it wasn't found
-		if ( ! $obj or $frozen = $obj->frozen())
+		$frozen = $obj and $obj->frozen();
+		if ( ! $obj or $frozen)
 		{
 			// Retrieve the object array from the row
 			$obj = array();
