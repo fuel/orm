@@ -1073,7 +1073,7 @@ class Query
 		$obj = $this->from_cache ? Model::cached_object($pk, $model) : false;
 
 		// Create the object when it wasn't found
-		if ( ! $obj or $obj->frozen())
+		if ( ! $obj or $frozen = $obj->frozen())
 		{
 			// Retrieve the object array from the row
 			$obj = array();
@@ -1087,7 +1087,7 @@ class Query
 				}
 				unset($row[$s[1]]);
 			}
-			$obj = $model::forge($obj, false, $this->view ? $this->view['_name'] : null, $this->from_cache);
+			$obj = $model::forge($obj, false, $this->view ? $this->view['_name'] : null, $frozen ? false : $this->from_cache);
 		}
 		else
 		{
