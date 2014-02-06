@@ -104,7 +104,7 @@ class Observer_Slug extends Observer
 
 			foreach ($same as $record)
 			{
-				if (preg_match('/^'.$slug.'(?:-([0-9]+))?$/', $record->{$this->_property}, $matches))
+				if (preg_match('/^'.$slug.'(?:'.preg_quote($this->separator).'([0-9]+))?$/', $record->{$this->_property}, $matches))
 				{
 					$index = isset($matches[1]) ? (int) $matches[1] : 0;
 					$max < $index and $max = $index;
