@@ -524,7 +524,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
      * Find one or more entries
      *
      * @param int|null $id
-     * @param array $options
+     * @param array $options - keys include: select, related, use_view, or_where, where, order_by, group_by, limit, offset, rows_limit, rows_offset, from_cache
      *
      * @throws \FuelException
      *

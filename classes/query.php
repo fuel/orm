@@ -24,7 +24,7 @@ class Query
 	 *
 	 * @param	string  $model      name of the model this instance has to operate on
 	 * @param	mixed   $connection DB connection to use to run the query
-	 * @param	array   $options    any options to pass on to the query
+	 * @param	array   $options    any options to pass on to the query. Keys include: select, related, use_view, or_where, where, order_by, group_by, limit, offset, rows_limit, rows_offset, from_cache
 	 *
 	 * @return	Query	newly created instance
 	 */
@@ -128,7 +128,7 @@ class Query
 	 *
 	 * @param	string  $model        Name of the model this instance has to operate on
 	 * @param	mixed   $connection   DB connection to use to run the query
-	 * @param	array   $options      Any options to pass on to the query
+	 * @param	array   $options      Any options to pass on to the query. Keys include: select, related, use_view, or_where, where, order_by, group_by, limit, offset, rows_limit, rows_offset, from_cache
 	 * @param	mixed   $table_alias  Optionally, the alias to use for the models table
 	 */
 	protected function __construct($model, $connection, $options, $table_alias = null)
