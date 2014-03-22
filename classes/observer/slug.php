@@ -34,10 +34,10 @@ class Observer_Slug extends Observer
 	 */
 	public static $separator = '-';
 
-    /**
-     * @var  bool  Required to be unique
-     */
-    public static $unique = true;
+ 	/**
+	* @var  bool  Required to be unique
+ 	*/
+	public static $unique = true;
 
 	/**
 	 * @var  mixed  Source property or array of properties, which is/are used to create the slug
@@ -54,10 +54,10 @@ class Observer_Slug extends Observer
 	 */
 	protected $_separator;
 
-    /**
-     * @var  bool  If the slug is required to be unique
-     */
-    protected $_unique;
+ 	/**
+	* @var  bool  If the slug is required to be unique
+ 	*/
+ 	protected $_unique;
 
 	/**
 	 * Set the properties for this observer instance, based on the parent model's
@@ -71,7 +71,7 @@ class Observer_Slug extends Observer
 		$this->_source    = isset($props['source']) ? $props['source'] : static::$source;
 		$this->_property  = isset($props['property']) ? $props['property'] : static::$property;
 		$this->_separator = isset($props['separator']) ? $props['separator'] : static::$separator;
-        $this->_unique    = isset($props['unique']) ? $props['unique'] : static::$unique;
+        	$this->_unique    = isset($props['unique']) ? (bool)$props['unique'] : static::$unique;
 	}
 
 	/**
@@ -91,7 +91,7 @@ class Observer_Slug extends Observer
 		$slug = \Inflector::friendly_title(substr($source, 1), $this->_separator, true);
 
 
-        if($this->_unique == true)
+	if($this->_unique === true)
         {
             // query to check for existence of this slug
             $query = $obj->query()->where($this->_property, 'like', $slug.'%');
