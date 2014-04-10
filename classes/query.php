@@ -107,6 +107,11 @@ class Query
 	 * @var  array  group by clauses
 	 */
 	protected $group_by = array();
+	
+	/**
+	 * @var  array  having clauses
+	 */
+	protected $having = array();
 
 	/**
 	 * @var  array  values for insert or update
@@ -177,6 +182,9 @@ class Query
 					break;
 				case 'group_by':
 					call_fuel_func_array(array($this, 'group_by'), $val);
+					break;
+				case 'having':
+					call_fuel_func_array(array($this, 'having'), $val);
 					break;
 				case 'limit':
 					$this->limit($val);
@@ -397,6 +405,21 @@ class Query
 		$columns = func_get_args();
 
 		$this->group_by = array_merge($this->group_by, $columns);
+
+		return $this;
+	}
+	
+	/**
+	 * Creates a "HAVING ..." filter.
+	 *
+	 * @param   mixed   $coulmns    Column name or array($column, $alias) or object
+	 * @return  $this
+	 */
+	public function having()
+	{
+		$columns = func_get_args();
+
+		$this->having = array_merge($this->having, $columns);
 
 		return $this;
 	}
@@ -1055,6 +1078,35 @@ class Query
 					}
 				}
 				$query->group_by($gb);
+			}
+		}
+		
+		// Get the having
+		if ( ! empty($this->having))
+		{
+			foreach ($this->having as $h)
+			{
+				if ( ! $h instanceof \Fuel\Core\Database_Expression)
+				{
+					if (strpos($h, $this->alias.'.') === false)
+					{
+						// try to rewrite on the relations to their table alias
+						$dotpos = strrpos($h, '.');
+						$relation = substr($h, 0, $dotpos);
+						if ($dotpos > 0)
+						{
+							if(array_key_exists($relation, $models))
+							{
+								$h = $models[$relation]['table'][1].substr($h, $dotpos);
+							}
+						}
+						else
+						{
+							$h = $this->alias.'.'.$h;
+						}
+					}
+				}
+				$query->having($h);
 			}
 		}
 
