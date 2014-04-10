@@ -34,9 +34,9 @@ class Observer_Slug extends Observer
 	 */
 	public static $separator = '-';
 
- 	/**
+	/**
 	* @var  bool  Required to be unique
- 	*/
+	*/
 	public static $unique = true;
 
 	/**
@@ -54,10 +54,10 @@ class Observer_Slug extends Observer
 	 */
 	protected $_separator;
 
- 	/**
+	/**
 	* @var  bool  If the slug is required to be unique
- 	*/
- 	protected $_unique;
+	*/
+	protected $_unique;
 
 	/**
 	 * Set the properties for this observer instance, based on the parent model's
@@ -71,7 +71,7 @@ class Observer_Slug extends Observer
 		$this->_source    = isset($props['source']) ? $props['source'] : static::$source;
 		$this->_property  = isset($props['property']) ? $props['property'] : static::$property;
 		$this->_separator = isset($props['separator']) ? $props['separator'] : static::$separator;
-        	$this->_unique    = isset($props['unique']) ? (bool)$props['unique'] : static::$unique;
+		$this->_unique    = isset($props['unique']) ? (bool)$props['unique'] : static::$unique;
 	}
 
 	/**
@@ -91,43 +91,43 @@ class Observer_Slug extends Observer
 		$slug = \Inflector::friendly_title(substr($source, 1), $this->_separator, true);
 
 
-	if($this->_unique === true)
-        {
-            // query to check for existence of this slug
-            $query = $obj->query()->where($this->_property, 'like', $slug.'%');
+		if($this->_unique === true)
+		{
+			// query to check for existence of this slug
+			$query = $obj->query()->where($this->_property, 'like', $slug.'%');
 
-            // is this a temporal model?
-            if ($obj instanceOf Model_Temporal)
-            {
-                // add a filter to only check current revisions excluding the current object
-                $class = get_class($obj);
-                $query->where($class::temporal_property('end_column'), '=', $class::temporal_property('max_timestamp'));
-                foreach($class::getNonTimestampPks() as $key)
-                {
-                    $query->where($key, '!=', $obj->{$key});
-                }
-            }
+			// is this a temporal model?
+			if ($obj instanceOf Model_Temporal)
+			{
+				// add a filter to only check current revisions excluding the current object
+				$class = get_class($obj);
+				$query->where($class::temporal_property('end_column'), '=', $class::temporal_property('max_timestamp'));
+				foreach($class::getNonTimestampPks() as $key)
+				{
+					$query->where($key, '!=', $obj->{$key});
+				}
+			}
 
-            // do we have records with this slug?
-            $same = $query->get();
+			// do we have records with this slug?
+			$same = $query->get();
 
-            // make sure our slug is unique
-            if ( ! empty($same))
-            {
-                $max = -1;
+			// make sure our slug is unique
+			if ( ! empty($same))
+			{
+				$max = -1;
 
-                foreach ($same as $record)
-                {
-                    if (preg_match('/^'.$slug.'(?:-([0-9]+))?$/', $record->{$this->_property}, $matches))
-                    {
-                        $index = isset($matches[1]) ? (int) $matches[1] : 0;
-                        $max < $index and $max = $index;
-                    }
-                }
+				foreach ($same as $record)
+				{
+					if (preg_match('/^'.$slug.'(?:-([0-9]+))?$/', $record->{$this->_property}, $matches))
+					{
+						$index = isset($matches[1]) ? (int) $matches[1] : 0;
+						$max < $index and $max = $index;
+					}
+				}
 
-                $max < 0 or $slug .= $this->_separator.($max + 1);
-            }
-        }
+				$max < 0 or $slug .= $this->_separator.($max + 1);
+			}
+		}
 
 		$obj->{$this->_property} = $slug;
 	}
