@@ -280,6 +280,14 @@ class Query
 		}
 
 		$i = count($this->select);
+		if (in_array('*', $fields))
+		{
+			$fields = array_merge($fields, array_keys(call_user_func($this->model.'::properties')));
+			$kr = array_keys($fields,'*');
+			foreach($kr as $k) {
+				unset($fields[$k]);
+			}
+		}
 		foreach ($fields as $val)
 		{
 			if (is_array($val) and $val[0] instanceOf \Fuel\Core\Database_Expression)
