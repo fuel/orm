@@ -270,7 +270,7 @@ class Query
 			$out = array();
 			foreach($this->select as $k => $v)
 			{
-				$out[] = array($v, $k);
+				$out[] = is_array($v) ? array($v[0], $k) : array($v, $k);
 			}
 
 			// set select back to before the PKs were added
@@ -282,17 +282,28 @@ class Query
 		$i = count($this->select);
 		foreach ($fields as $val)
 		{
-			is_array($val) or $val = array($val => true);
-
-			foreach ($val as $field => $include)
+			if (is_array($val) and $val[0] instanceOf \Fuel\Core\Database_Expression)
 			{
-				if ($include)
+				$this->select[$this->alias.'_c'.$i++] = $val;
+			}
+			else
+			{
+				is_array($val) or $val = array($val => true);
+
+				foreach ($val as $field => $include)
 				{
-					$this->select[$this->alias.'_c'.$i++] = (strpos($field, '.') === false ? $this->alias.'.' : '').$field;
-				}
-				else
-				{
-					$this->select_filter[] = $field;
+					if ($include instanceOf \Fuel\Core\Database_Expression)
+					{
+						$this->select[$this->alias.'_c'.$i++] = $include;
+					}
+					elseif ($include)
+					{
+						$this->select[$this->alias.'_c'.$i++] = (strpos($field, '.') === false ? $this->alias.'.' : '').$field;
+					}
+					else
+					{
+						$this->select_filter[] = $field;
+					}
 				}
 			}
 		}
@@ -1050,7 +1061,14 @@ class Query
 	public function hydrate(&$row, $models, &$result, $model = null, $select = null, $primary_key = null)
 	{
 		// First check the PKs, if null it's an empty row
-		$r1c1    = reset($select);
+		foreach($select as $column)
+		{
+			if (is_string($column[0]))
+			{
+				$r1c1 = $column;
+				break;
+			}
+		}
 		$prefix  = substr($r1c1[0], 0, strpos($r1c1[0], '.') + 1);
 		$obj     = array();
 		foreach ($primary_key as $pk)
@@ -1079,7 +1097,14 @@ class Query
 			$obj = array();
 			foreach ($select as $s)
 			{
-				$f = substr($s[0], strpos($s[0], '.') + 1);
+				if ($s[0] instanceOf \Fuel\Core\Database_Expression)
+				{
+					$f = isset($this->select[$s[1]][1]) ? $this->select[$s[1]][1] : $s[1];
+				}
+				else
+				{
+					$f = substr($s[0], strpos($s[0], '.') + 1);
+				}
 				$obj[$f] = $row[$s[1]];
 				if (in_array($f, $primary_key))
 				{
@@ -1169,6 +1194,7 @@ class Query
 				$select[] = $c[0];
 			}
 		}
+
 		$query = call_fuel_func_array('DB::select', $select);
 
 		// Set from view/table
