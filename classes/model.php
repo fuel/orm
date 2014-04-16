@@ -494,12 +494,10 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	 *
 	 * @return	void
 	 */
-	public static function register_observer($name, $options = null)
+	public static function register_observer($name, $options = array())
 	{
 		$class = get_called_class();
-		$new_observer = is_null($options) ? array($name) : array($name => $options);
-
-		static::$_observers_cached[$class] = static::observers() + $new_observer;
+		static::$_observers_cached[$class] = static::observers() + array($name => $options);
 	}
 
 	/**
