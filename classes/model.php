@@ -1160,7 +1160,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		// do we need to clean before returning the result?
 		if ($this->_sanitization_enabled)
 		{
-			$result = \Security::clean($result, null, 'security.output_filter');
+			$result = $this->_sanitize($property, $result);
 		}
 
 		return $result;
@@ -1883,6 +1883,19 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	public function sanitized()
 	{
 		return $this->_sanitization_enabled;
+	}
+
+	/**
+	 * Sanitizatize a data value
+	 *
+	 * @param  string  $field  Name of the property that is being sanitized
+	 * @param  mixed   $value  Value to sanitize
+	 *
+	 * @return  mixed
+	 */
+	protected function _sanitize($field, $value)
+	{
+		return \Security::clean($value, null, 'security.output_filter');
 	}
 
 	/**
