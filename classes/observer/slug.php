@@ -115,7 +115,7 @@ class Observer_Slug extends Observer
 		}
 		else
 		{
-			$query->->where($this->_property, $slug);
+			$query->where($this->_property, $slug);
 		}
 
 
