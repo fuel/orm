@@ -698,6 +698,18 @@ class Query
 
 		return $this;
 	}
+	
+	/**
+	 * Reset the order_by
+	 *
+	 * @return  $this
+	 */
+	public function reset_order_by()
+	{
+		$this->order_by = array();
+
+		return $this;
+	}
 
 	/**
 	 * Set a relation to include
