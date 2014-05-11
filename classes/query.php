@@ -290,7 +290,7 @@ class Query
 		}
 		foreach ($fields as $val)
 		{
-			if (is_array($val) and $val[0] instanceOf \Fuel\Core\Database_Expression)
+			if (is_array($val) and isset($val[0]) and $val[0] instanceOf \Fuel\Core\Database_Expression)
 			{
 				$this->select[$this->alias.'_c'.$i++] = $val;
 			}
