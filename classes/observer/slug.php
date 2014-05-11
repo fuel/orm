@@ -93,7 +93,7 @@ class Observer_Slug extends Observer
 	public function before_insert(Model $obj)
 	{
 		// slug should be overwritten if it is enabled to be or there is no manually assigned value
-		$overwrite = $this->_overwrite === true or empty($obj->{$this->_property});
+		$overwrite = $this->_overwrite === true || empty($obj->{$this->_property});
 		$slug = $obj->{$this->_property};
 
 		// query to check for existence of this slug
