@@ -290,28 +290,22 @@ class Query
 		}
 		foreach ($fields as $val)
 		{
-			if (is_array($val) and $val[0] instanceOf \Fuel\Core\Database_Expression)
-			{
-				$this->select[$this->alias.'_c'.$i++] = $val;
-			}
-			else
-			{
-				is_array($val) or $val = array($val => true);
+			is_array($val) or $val = array($val => true);
 
-				foreach ($val as $field => $include)
+			foreach ($val as $field => $include)
+			{
+				if ($include instanceOf \Fuel\Core\Database_Expression)
 				{
-					if ($include instanceOf \Fuel\Core\Database_Expression)
-					{
-						$this->select[$this->alias.'_c'.$i++] = $include;
-					}
-					elseif ($include)
-					{
-						$this->select[$this->alias.'_c'.$i++] = (strpos($field, '.') === false ? $this->alias.'.' : '').$field;
-					}
-					else
-					{
-						$this->select_filter[] = $field;
-					}
+					$this->select[$this->alias.'_c'.$i++] = $val;
+					break;
+				}
+				elseif ($include)
+				{
+					$this->select[$this->alias.'_c'.$i++] = (strpos($field, '.') === false ? $this->alias.'.' : '').$field;
+				}
+				else
+				{
+					$this->select_filter[] = $field;
 				}
 			}
 		}
