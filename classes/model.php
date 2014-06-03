@@ -1204,7 +1204,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 				throw new \InvalidArgumentException('You need to pass both a property name and a value to set().');
 			}
 
-			if (in_array($property, static::primary_key()) and $this->{$property} !== null)
+			if (in_array($property, static::primary_key()) and $this->{$property} !== null and $this->{$property} != $value)
 			{
 				throw new \FuelException('Primary key on model '.get_class($this).' cannot be changed.');
 			}
