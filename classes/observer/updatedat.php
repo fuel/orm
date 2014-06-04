@@ -87,7 +87,10 @@ class Observer_UpdatedAt extends Observer
 			}
 		}
 
-		if ($obj->is_changed() or $relation_changed)
+		$objClassName = get_class($obj);
+		$objProperties = $objClassName::properties();
+
+		if ($obj->is_changed(array_keys($objProperties)) or $relation_changed)
 		{
 			$obj->{$this->_property} = $this->_mysql_timestamp ? \Date::time()->format('mysql') : \Date::time()->get_timestamp();
 		}
