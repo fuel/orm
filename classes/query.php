@@ -715,7 +715,7 @@ class Query
 	 *
 	 * @param   \Fuel\Core\Database_Query_Builder_Where  DB where() query object
 	 * @param   array $columns  Optionally
-	 * @param   string $type    Type of query to build (select/update/delete/insert)
+	 * @param   string $type    Type of query to build (count/select/update/delete/insert)
 	 *
 	 * @throws \FuelException            Models cannot be related between different database connections
 	 * @throws \UnexpectedValueException Trying to get the relation of an unloaded relation
@@ -724,6 +724,8 @@ class Query
 	 */
 	public function build_query(\Fuel\Core\Database_Query_Builder_Where $query, $columns = array(), $type = 'select')
 	{
+		$read_query = in_array($type, array('select', 'count'));
+		
 		// Get the limit
 		if ( ! is_null($this->limit))
 		{
@@ -749,7 +751,7 @@ class Query
 			{
 				list($method, $conditional) = $w;
 
-				if ($type == 'select' and (empty($conditional) or $open_nests > 0))
+				if ($read_query and (empty($conditional) or $open_nests > 0))
 				{
 					$include_nested and $where_nested[$key] = $w;
 					if ( ! empty($conditional) and strpos($conditional[0], $this->alias.'.') !== 0)
@@ -763,9 +765,9 @@ class Query
 
 				if (empty($conditional)
 					or strpos($conditional[0], $this->alias.'.') === 0
-					or ($type != 'select' and $conditional[0] instanceof \Fuel\Core\Database_Expression))
+					or (!$read_query and $conditional[0] instanceof \Fuel\Core\Database_Expression))
 				{
-					if ($type != 'select' and ! empty($conditional)
+					if (!$read_query and ! empty($conditional)
 						and ! $conditional[0] instanceof \Fuel\Core\Database_Expression)
 					{
 						$conditional[0] = substr($conditional[0], strlen($this->alias.'.'));
@@ -783,9 +785,9 @@ class Query
 
 					if (empty($conditional)
 						or strpos($conditional[0], $this->alias.'.') === 0
-						or ($type != 'select' and $conditional[0] instanceof \Fuel\Core\Database_Expression))
+						or (!$read_query and $conditional[0] instanceof \Fuel\Core\Database_Expression))
 					{
-						if ($type != 'select' and ! empty($conditional)
+						if (!$read_query and ! empty($conditional)
 							and ! $conditional[0] instanceof \Fuel\Core\Database_Expression)
 						{
 							$conditional[0] = substr($conditional[0], strlen($this->alias.'.'));
@@ -797,8 +799,8 @@ class Query
 			}
 		}
 
-		// If it's not a select we're done
-		if ($type != 'select')
+		// If it's not a select or count, we're done
+		if (!$read_query)
 		{
 			return array('query' => $query, 'models' => array());
 		}
@@ -831,12 +833,16 @@ class Query
 
 		if ($this->use_subquery())
 		{
-			// Get the columns for final select
-			foreach ($models as $m)
+			// Count queries should not select on anything besides the count
+			if ($type != 'count')
 			{
-				foreach ($m['columns'] as $c)
+				// Get the columns for final select
+				foreach ($models as $m)
 				{
-					$columns[] = $c;
+					foreach ($m['columns'] as $c)
+					{
+						$columns[] = $c;
+					}
 				}
 			}
 
@@ -848,7 +854,7 @@ class Query
 					if (strpos($ob[0], $this->alias.'.') === 0)
 					{
 						// order by on the current model
-						$type == 'select' or $ob[0] = substr($ob[0], strlen($this->alias.'.'));
+						$read_query or $ob[0] = substr($ob[0], strlen($this->alias.'.'));
 						$query->order_by($ob[0], $ob[1]);
 					}
 				}
@@ -860,12 +866,16 @@ class Query
 		}
 		else
 		{
-			// add additional selected columns
-			foreach ($models as $m)
+			// Count queries should not select on anything besides the count
+			if ($type != 'count')
 			{
-				foreach ($m['columns'] as $c)
+				// add additional selected columns
+				foreach ($models as $m)
 				{
-					$query->select($c);
+					foreach ($m['columns'] as $c)
+					{
+						$query->select($c);
+					}
 				}
 			}
 		}
@@ -881,8 +891,8 @@ class Query
 		}
 		foreach ($models as $m)
 		{
-			if (($type == 'select' and $m['connection'] != $this->connection) or
-				($type != 'select' and $m['connection'] != $this->write_connection))
+			if (($read_query and $m['connection'] != $this->connection) or
+				(!$read_query and $m['connection'] != $this->write_connection))
 			{
 				throw new \FuelException('Models cannot be related between different database connections.');
 			}
@@ -938,7 +948,7 @@ class Query
 					if (strpos($ob[0], $this->alias.'.') === 0)
 					{
 						// order by on the current model
-						$type == 'select' or $ob[0] = substr($ob[0], strlen($this->alias.'.'));
+						$read_query or $ob[0] = substr($ob[0], strlen($this->alias.'.'));
 					}
 					else
 					{
@@ -1300,7 +1310,7 @@ class Query
 		// Set from view or table
 		$query->from(array($this->_table(), $this->alias));
 
-		$tmp   = $this->build_query($query, $columns, 'select');
+		$tmp   = $this->build_query($query, $columns, 'count');
 		$query = $tmp['query'];
 		$count = $query->execute($this->connection)->get('count_result');
 
