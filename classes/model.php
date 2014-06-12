@@ -1664,6 +1664,11 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		$relations = static::relations();
 		$property = (array) $property ?: array_merge(array_keys($properties), array_keys($relations));
 
+		if ( $this->is_new() )
+		{
+			return true;
+		}
+
 		foreach ($property as $p)
 		{
 			if (isset($properties[$p]))
@@ -1716,11 +1721,16 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 					$orig_rels = $this->_original_relations[$p];
 					foreach ($this->{$p} as $rk => $r)
 					{
+						if ( $r->is_new() )
+						{
+							return true;
+						}
+
 						if ( ! in_array($r->implode_pk($r), $orig_rels))
 						{
 							return true;
 						}
-						unset($orig_rels[array_search($rk, $orig_rels)]);
+						unset($orig_rels[array_search($r->implode_pk($r), $orig_rels)]);
 					}
 					if ( ! empty($orig_rels))
 					{
