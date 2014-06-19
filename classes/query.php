@@ -710,6 +710,18 @@ class Query
 
 		return $this;
 	}
+	
+	/**
+	 * Reset the where
+	 *
+	 * @return  $this
+	 */
+	public function reset_where()
+	{
+		$this->where = array();
+
+		return $this;
+	}
 
 	/**
 	 * Set a relation to include
