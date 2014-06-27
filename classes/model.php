@@ -788,11 +788,14 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	{
 		// This is to deal with PHP's native hydration that happens before constructor is called
 		// for some weird reason, for example using the DB's as_object() function
-		if( ! empty($this->_data))
+		if( ! empty($this->_data) or  ! empty($this->_custom_data))
 		{
 			// merge the injected data with the passed data
-			$data = array_merge($this->_data, $data);
+			$data = array_merge($this->_custom_data, $this->_data, $data);
+
+			// and reset them
 			$this->_data = array();
+			$this->_custom_data = array();
 
 			// and mark it as existing data
 			$new = false;
