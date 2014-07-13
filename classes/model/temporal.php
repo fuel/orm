@@ -8,7 +8,7 @@
  * @version    1.7
  * @author     Fuel Development Team
  * @license    MIT License
- * @copyright  2010 - 2013 Fuel Development Team
+ * @copyright  2010 - 2014 Fuel Development Team
  * @link       http://fuelphp.com
  */
 
@@ -166,7 +166,7 @@ class Model_Temporal extends Model
 		}
 
 		$query_result = $query->get_one();
-		
+
 		// If the query did not return a result but null, then we cannot call
 		//  set_lazy_timestamp on it without throwing errors
 		if ( $query_result !== null )
@@ -240,10 +240,14 @@ class Model_Temporal extends Model
 		$class = get_called_class();
 		$timestamp = \Arr::get(static::$_lazy_filtered_classes, $class, null);
 
-		if(! is_null($timestamp) )
+		if( ! is_null($timestamp))
 		{
 			$query->where($timestamp_start_name, '<=', $timestamp)
 				->where($timestamp_end_name, '>', $timestamp);
+		}
+		elseif(static::get_primary_key_status() and ! static::get_primary_key_id_only_status())
+		{
+			$query->where($timestamp_end_name, $max_timestamp);
 		}
 
 		return $query;
@@ -385,6 +389,12 @@ class Model_Temporal extends Model
 		// If this is an update then set a new PK, save and then insert a new row
 		else
 		{
+			// run the before save observers before checking the diff
+			$this->observe('before_save');
+
+			// then disable it so it doesn't get executed by parent::save()
+			$this->disable_event('before_save');
+
 			$diff = $this->get_diff();
 
 			if (count($diff[0]) > 0)
@@ -419,14 +429,17 @@ class Model_Temporal extends Model
 				self::enable_primary_key_check();
 
 				$result = parent::save($cascade, $use_transaction);
-
-				return $result;
 			}
 			else
 			{
 				// If nothing has changed call parent::save() to insure relations are saved too
-				return parent::save($cascade, $use_transaction);
+				$result = parent::save($cascade, $use_transaction);
 			}
+
+			// make sure the before save event is enabled again
+			$this->enable_event('before_save');
+
+			return $result;
 		}
 	}
 

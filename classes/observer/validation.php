@@ -8,7 +8,7 @@
  * @version    1.7
  * @author     Fuel Development Team
  * @license    MIT License
- * @copyright  2010 - 2013 Fuel Development Team
+ * @copyright  2010 - 2014 Fuel Development Team
  * @link       http://fuelphp.com
  */
 
@@ -217,13 +217,15 @@ class Observer_Validation extends Observer
 		$fieldset = static::set_fields($obj);
 		$val = $fieldset->validation();
 
+		$is_new = $obj->is_new();
+
 		// only allow partial validation on updates, specify the fields for updates to allow null
-		$allow_partial = $obj->is_new() ? false : array();
+		$allow_partial = $is_new ? false : array();
 
 		$input = array();
 		foreach (array_keys($obj->properties()) as $p)
 		{
-			if ( ! in_array($p, $obj->primary_key()) and $obj->is_changed($p))
+			if ( ! in_array($p, $obj->primary_key()) and ($is_new or $obj->is_changed($p)))
 			{
 				$input[$p] = $obj->{$p};
 				is_array($allow_partial) and $allow_partial[] = $p;

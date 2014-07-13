@@ -8,7 +8,7 @@
  * @version    1.7
  * @author     Fuel Development Team
  * @license    MIT License
- * @copyright  2010 - 2013 Fuel Development Team
+ * @copyright  2010 - 2014 Fuel Development Team
  * @link       http://fuelphp.com
  */
 
@@ -270,7 +270,7 @@ class Query
 			$out = array();
 			foreach($this->select as $k => $v)
 			{
-				$out[] = array($v, $k);
+				$out[] = is_array($v) ? array($v[0], $k) : array($v, $k);
 			}
 
 			// set select back to before the PKs were added
@@ -280,13 +280,26 @@ class Query
 		}
 
 		$i = count($this->select);
+		if (in_array('*', $fields))
+		{
+			$fields = array_merge($fields, array_keys(call_user_func($this->model.'::properties')));
+			$kr = array_keys($fields,'*');
+			foreach($kr as $k) {
+				unset($fields[$k]);
+			}
+		}
 		foreach ($fields as $val)
 		{
 			is_array($val) or $val = array($val => true);
 
 			foreach ($val as $field => $include)
 			{
-				if ($include)
+				if ($include instanceOf \Fuel\Core\Database_Expression)
+				{
+					$this->select[$this->alias.'_c'.$i++] = $val;
+					break;
+				}
+				elseif ($include)
 				{
 					$this->select[$this->alias.'_c'.$i++] = (strpos($field, '.') === false ? $this->alias.'.' : '').$field;
 				}
@@ -1050,7 +1063,14 @@ class Query
 	public function hydrate(&$row, $models, &$result, $model = null, $select = null, $primary_key = null)
 	{
 		// First check the PKs, if null it's an empty row
-		$r1c1    = reset($select);
+		foreach($select as $column)
+		{
+			if (is_string($column[0]))
+			{
+				$r1c1 = $column;
+				break;
+			}
+		}
 		$prefix  = substr($r1c1[0], 0, strpos($r1c1[0], '.') + 1);
 		$obj     = array();
 		foreach ($primary_key as $pk)
@@ -1079,7 +1099,14 @@ class Query
 			$obj = array();
 			foreach ($select as $s)
 			{
-				$f = substr($s[0], strpos($s[0], '.') + 1);
+				if ($s[0] instanceOf \Fuel\Core\Database_Expression)
+				{
+					$f = isset($this->select[$s[1]][1]) ? $this->select[$s[1]][1] : $s[1];
+				}
+				else
+				{
+					$f = substr($s[0], strpos($s[0], '.') + 1);
+				}
 				$obj[$f] = $row[$s[1]];
 				if (in_array($f, $primary_key))
 				{
@@ -1115,6 +1142,7 @@ class Query
 
 		// start fetching relationships
 		$rel_objs = $obj->_relate();
+		$relations_updated = array();
 		foreach ($models as $m)
 		{
 			// when the expected model is empty, there's nothing to be done
@@ -1122,6 +1150,7 @@ class Query
 			{
 				continue;
 			}
+			$relations_updated[] = $m['rel_name'];
 
 			// when not yet set, create the relation result var with null or array
 			if ( ! array_key_exists($m['rel_name'], $rel_objs))
@@ -1142,7 +1171,7 @@ class Query
 
 		// attach the retrieved relations to the object and update its original DB values
 		$obj->_relate($rel_objs);
-		$obj->_update_original_relations();
+		$obj->_update_original_relations($relations_updated);
 
 		return $obj;
 	}
@@ -1167,6 +1196,7 @@ class Query
 				$select[] = $c[0];
 			}
 		}
+
 		$query = call_fuel_func_array('DB::select', $select);
 
 		// Set from view/table

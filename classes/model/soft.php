@@ -8,7 +8,7 @@
  * @version    1.7
  * @author     Fuel Development Team
  * @license    MIT License
- * @copyright  2010 - 2013 Fuel Development Team
+ * @copyright  2010 - 2014 Fuel Development Team
  * @link       http://fuelphp.com
  */
 
@@ -49,6 +49,8 @@ class Model_Soft extends Model
 	protected static $_soft_delete_cached = array();
 
 	protected static $_disable_filter = array();
+
+	protected $_disable_soft_delete = false;
 
 	/**
 	 * Gets the soft delete properties.
@@ -154,6 +156,12 @@ class Model_Soft extends Model
 
 	protected function delete_self()
 	{
+		// If soft deleting has been disabled then just call the parent's delete
+		if ($this->_disable_soft_delete)
+		{
+			return parent::delete_self();
+		}
+
 		$deleted_column = static::soft_delete_property('deleted_field', static::$_default_field_name);
 		$mysql_timestamp = static::soft_delete_property('mysql_timestamp', static::$_default_mysql_timestamp);
 
@@ -174,7 +182,12 @@ class Model_Soft extends Model
 	 */
 	public function purge($cascade = null, $use_transaction = false)
 	{
-		parent::delete($cascade, $use_transaction);
+
+		$this->_disable_soft_delete = true;
+		$result = parent::delete($cascade, $use_transaction);
+		$this->_disable_soft_delete = false;
+
+		return $result;
 	}
 
 	/**
