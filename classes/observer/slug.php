@@ -96,6 +96,14 @@ class Observer_Slug extends Observer
 		$overwrite = $this->_overwrite === true || empty($obj->{$this->_property});
 		$slug = $obj->{$this->_property};
 
+		// is this a soft model?
+		if ($obj instanceof Model_Soft)
+		{
+			$class = get_class($obj);
+
+			$class::disable_filter();
+		}
+
 		// query to check for existence of this slug
 		$query = $obj->query();
 
@@ -125,7 +133,7 @@ class Observer_Slug extends Observer
 			$query = $obj->query()->where($this->_property, 'like', $slug.'%');
 
 			// is this a temporal model?
-			if ($obj instanceOf Model_Temporal)
+			if ($obj instanceof Model_Temporal)
 			{
 				// add a filter to only check current revisions excluding the current object
 				$class = get_class($obj);
@@ -138,6 +146,12 @@ class Observer_Slug extends Observer
 
 			// do we have records with this slug?
 			$same = $query->get();
+
+			// is this a soft model?
+			if ($obj instanceof Model_Soft)
+			{
+				$class::enable_filter();
+			}
 
 			// make sure our slug is unique
 			if ( ! empty($same))
