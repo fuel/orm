@@ -99,7 +99,6 @@ class Observer_Slug extends Observer
 		// is this a soft model?
 		if ($obj instanceof Model_Soft)
 		{
-			// add a filter to only check current revisions excluding the current object
 			$class = get_class($obj);
 
 			$class::disable_filter();
