@@ -2045,10 +2045,14 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 				$array[$name] = array();
 				if ( ! empty($rel))
 				{
-					static::$to_array_references[] = get_class(reset($rel));
-					foreach ($rel as $id => $r)
+					if ( ! in_array(get_class(reset($rel)), static::$to_array_references))
 					{
-						$array[$name][$id] = $r->to_array($custom, true, $eav);
+						static::$to_array_references[] = get_class(reset($rel));
+						foreach ($rel as $id => $r)
+						{
+							$array[$name][$id] = $r->to_array($custom, true, $eav);
+							array_pop(static::$to_array_references);
+						}
 					}
 				}
 			}
