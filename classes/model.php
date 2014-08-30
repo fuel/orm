@@ -2064,6 +2064,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 					{
 						static::$to_array_references[] = get_class($rel);
 						$array[$name] = $rel->to_array($custom, true, $eav);
+						array_pop(static::$to_array_references);
 					}
 				}
 			}
