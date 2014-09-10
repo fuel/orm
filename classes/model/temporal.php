@@ -60,6 +60,11 @@ class Model_Temporal extends Model
 	 */
 	protected static $_lazy_filtered_classes = array();
 
+	/**
+	 * Flag used to avoid performing save() when trying to overwrite()
+	 */
+	protected static $_overwritten = false;
+
 	public static function _init()
 	{
 		\Config::load('orm', true);
@@ -361,6 +366,11 @@ class Model_Temporal extends Model
 	 */
 	public function save($cascade = null, $use_transaction = false)
 	{
+		if (static::$_overwritten)
+		{
+			return self::overwrite($cascade, $use_transaction);
+		}
+
 		// Load temporal properties.
 		$timestamp_start_name = static::temporal_property('start_column');
 		$timestamp_end_name = static::temporal_property('end_column');
@@ -451,7 +461,14 @@ class Model_Temporal extends Model
 	 */
 	public function overwrite($cascade = null, $use_transaction = false)
 	{
-		return parent::save($cascade, $use_transaction);
+		// Set overwritten flag to perform overwrite() instead of save() on temporal elements
+		static::$_overwritten = true;
+
+		$result = parent::save($cascade, $use_transaction);
+
+		static::$_overwritten = false;
+
+		return $result;
 	}
 
 	/**
