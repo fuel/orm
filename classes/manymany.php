@@ -122,6 +122,16 @@ class ManyMany extends Relation
 
 		foreach (\Arr::get($conditions, 'order_by', array()) as $field => $direction)
 		{
+			if (strpos($field, '.') !== false)
+			{
+				$parts = explode('.', $field);
+				if ($parts[0] == $join['table'][0])
+				{
+					$parts[0] = $join['table'][1];
+					$field = implode('.', $parts);
+				}
+			}
+
 			if (is_numeric($field))
 			{
 				$query->order_by($direction);
