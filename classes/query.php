@@ -124,6 +124,11 @@ class Query
 	protected $from_cache = true;
 
 	/**
+	 * @var  mixed  hydration result implemented to prevent https://bugs.php.net/bug.php?id=68624
+	 */
+	protected $hydration_result = null;
+
+	/**
 	 * Create a new instance of the Query class.
 	 *
 	 * @param	string  $model        Name of the model this instance has to operate on
@@ -1062,6 +1067,12 @@ class Query
 	 */
 	public function hydrate(&$row, $models, &$result, $model = null, $select = null, $primary_key = null)
 	{
+		// If $result is not null, then set the hydration_result to it
+		if ($result !== null)
+		{
+			$this->hydration_result = &$result;
+		}
+
 		// First check the PKs, if null it's an empty row
 		foreach($select as $column)
 		{
@@ -1130,14 +1141,14 @@ class Query
 		}
 
 		// if the result to be generated is an array and the current object is not yet in there
-		if (is_array($result) and ! array_key_exists($pk, $result))
+		if (is_array($this->hydration_result) and ! array_key_exists($pk, $this->hydration_result))
 		{
-			$result[$pk] = $obj;
+			$this->hydration_result[$pk] = $obj;
 		}
 		// if the result to be generated is a single object and empty
-		elseif ( ! is_array($result) and empty($result))
+		elseif ( ! is_array($this->hydration_result) and empty($this->hydration_result))
 		{
-			$result = $obj;
+			$this->hydration_result = $obj;
 		}
 
 		// start fetching relationships
@@ -1225,8 +1236,11 @@ class Query
 			}
 		}
 
+
+		// Although $result is no longer used, hydrate receives it by reference
+		$result = null;
+		$this->hydration_result = array();
 		$rows = $query->execute($this->connection)->as_array();
-		$result = array();
 		$model = $this->model;
 		$select = $this->select();
 		$primary_key = $model::primary_key();
@@ -1237,7 +1251,7 @@ class Query
 		}
 
 		// It's all built, now lets execute and start hydration
-		return $result;
+		return $this->hydration_result;
 	}
 
 	/**
