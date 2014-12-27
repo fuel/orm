@@ -110,6 +110,16 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	protected static $_cached_objects = array();
 
 	/**
+	 * @var string Name of DB connection to use
+	 */
+	protected static $_connection = null;
+
+	/**
+	 * @var string Name of the DB connection to use when writing
+	 */
+	protected static $_write_connection = null;
+
+	/**
 	 * @var  array  array of valid relation types
 	 */
 	protected static $_valid_relations = array(
@@ -142,12 +152,30 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	{
 		$class = get_called_class();
 
-		if ($writeable and property_exists($class, '_write_connection'))
+		if ($writeable and property_exists($class, '_write_connection') && static::$_write_connection !== null)
 		{
 			return static::$_write_connection;
 		}
 
 		return property_exists($class, '_connection') ? static::$_connection : null;
+	}
+
+	/**
+	 * Sets the write connection to use for this model.
+	 * @param string $connection
+	 */
+	public static function set_connection($connection)
+	{
+		static::$_connection = $connection;
+	}
+
+	/**
+	 * Sets the connection to use for this model.
+	 * @param string $connection
+	 */
+	public static function set_write_connection($connection)
+	{
+		static::$_write_connection = $connection;
 	}
 
 	/**
