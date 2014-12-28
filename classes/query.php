@@ -1486,4 +1486,15 @@ class Query
 	{
 		return $this->view ? $this->view['view'] : call_user_func($this->model.'::table');
 	}
+
+	/**
+	 * Sets the name of the connection to use for this query. Set to null to use the default DB connection
+	 *
+	 * @param string $name
+	 */
+	public function connection($name)
+	{
+		$this->connection = $name;
+		return $this;
+	}
 }
