@@ -1187,15 +1187,10 @@ class Query
 		return $obj;
 	}
 
-	/**
-	 * Build the query and return hydrated results
-	 *
-	 * @return  array
-	 */
-	public function get()
+	public function prep_query($add_pks = true)
 	{
 		// Get the columns
-		$columns = $this->select();
+		$columns = $this->select($add_pks);
 
 		// Start building the query
 		$select = $columns;
@@ -1214,10 +1209,12 @@ class Query
 		$query->from(array($this->_table(), $this->alias));
 
 		// Build the query further
-		$tmp     = $this->build_query($query, $columns);
-		$query   = $tmp['query'];
-		$models  = $tmp['models'];
+		return $this->build_query($query, $columns);
 
+	}
+
+	public function hydrate_from_result($query, $models, \Fuel\Core\Database_Result $query_result)
+	{
 		// Make models hierarchical
 		foreach ($models as $name => $values)
 		{
@@ -1240,7 +1237,8 @@ class Query
 		// Although $result is no longer used, hydrate receives it by reference
 		$result = null;
 		$this->hydration_result = array();
-		$rows = $query->execute($this->connection)->as_array();
+		// $rows = $query->execute($this->connection)->as_array();
+		$rows = $query_result->as_array();
 		$model = $this->model;
 		$select = $this->select();
 		$primary_key = $model::primary_key();
@@ -1252,6 +1250,23 @@ class Query
 
 		// It's all built, now lets execute and start hydration
 		return $this->hydration_result;
+
+	}
+
+	/**
+	 * Build the query and return hydrated results
+	 *
+	 * @return  array
+	 */
+	public function get()
+	{
+		$tmp     = $this->prep_query();
+		$query   = $tmp['query'];
+		$models  = $tmp['models'];
+
+		$result = $query->execute($this->connection);
+
+		return $this->hydrate_from_result($query, $models, $result);
 	}
 
 	/**
@@ -1261,29 +1276,7 @@ class Query
 	 */
 	public function get_query()
 	{
-		// Get the columns
-		$columns = $this->select(false);
-
-		// Start building the query
-		$select = $columns;
-		if ($this->use_subquery())
-		{
-			$select = array();
-			foreach ($columns as $c)
-			{
-				$select[] = $c[0];
-			}
-		}
-		$query = call_fuel_func_array('DB::select', $select);
-
-		// Set the defined connection on the query
-		$query->set_connection($this->connection);
-
-		// Set from table
-		$query->from(array($this->_table(), $this->alias));
-
-		// Build the query further
-		$tmp = $this->build_query($query, $columns);
+		$tmp = $this->prep_query(false);
 
 		return $tmp['query'];
 	}
