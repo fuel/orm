@@ -279,36 +279,84 @@ class Query
 			return $out;
 		}
 
-		$i = count($this->select);
-		if (in_array('*', $fields))
+		// normalize closure, pass $this as $that for PHP < 5.4
+		$normalize = function($fields, $that) use (&$normalize, &$i)
 		{
-			$fields = array_merge($fields, array_keys(call_user_func($this->model.'::properties')));
-			$kr = array_keys($fields,'*');
-			foreach($kr as $k) {
-				unset($fields[$k]);
-			}
-		}
-		foreach ($fields as $val)
-		{
-			is_array($val) or $val = array($val => true);
+			$select = array();
 
-			foreach ($val as $field => $include)
+			// for BC reasons, deal with the odd array(DB::expr, 'name') syntax first
+			if (($value = reset($fields)) instanceOf \Fuel\Core\Database_Expression and is_string($index = next($fields)))
 			{
-				if ($include instanceOf \Fuel\Core\Database_Expression)
+				$select[$that->alias.'_c'.$i++] = $fields;
+			}
+
+			// otherwise iterate
+			else
+			{
+				foreach ($fields as $index => $value)
 				{
-					$this->select[$this->alias.'_c'.$i++] = $val;
-					break;
-				}
-				elseif ($include)
-				{
-					$this->select[$this->alias.'_c'.$i++] = (strpos($field, '.') === false ? $this->alias.'.' : '').$field;
-				}
-				else
-				{
-					$this->select_filter[] = $field;
+					// an array of field definitions is passed
+					if (is_array($value))
+					{
+						$select = array_merge($select, $normalize($value, $that));
+					}
+
+					// a "field -> include" value pair is passed
+					elseif (is_bool($value))
+					{
+						if ($value)
+						{
+							// if include is true, add the field
+							$select[$that->alias.'_c'.$i++] = (strpos($index, '.') === false ? $that->alias.'.' : '').$index;
+						}
+						else
+						{
+							// if not, add it to the filter list
+							if ( ! in_array($index, $that->select_filter))
+							{
+								$that->select_filter[] = $index;
+							}
+						}
+					}
+
+					// attempted a "SELECT *"?
+					elseif ($value === '*')
+					{
+						$select = array_merge($select, $normalize(array_keys(call_user_func($that->model.'::properties')), $that));
+					}
+
+					// DB::expr() passed?
+					elseif ($value instanceOf \Fuel\Core\Database_Expression)
+					{
+						// no column name given for the result?
+						if (is_numeric($index))
+						{
+							$select[$that->alias.'_c'.$i++] = array($value);
+						}
+
+						// add the index as the column name
+						else
+						{
+							$select[$that->alias.'_c'.$i++] = array($value, $index);
+						}
+					}
+
+					// must be a regular field
+					else
+					{
+						$select[$that->alias.'_c'.$i++] = (strpos($value, '.') === false ? $that->alias.'.' : '').$value;
+					}
 				}
 			}
-		}
+
+			return $select;
+		};
+
+		// get the current select count
+		$i = count($this->select);
+
+		// parse the passed fields list
+		$this->select = array_merge($this->select, $normalize($fields, $this));
 
 		return $this;
 	}
@@ -738,7 +786,7 @@ class Query
 	public function build_query(\Fuel\Core\Database_Query_Builder_Where $query, $columns = array(), $type = 'select')
 	{
 		$read_query = in_array($type, array('select', 'count'));
-		
+
 		// Get the limit
 		if ( ! is_null($this->limit))
 		{
