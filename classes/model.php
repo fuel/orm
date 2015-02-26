@@ -1559,7 +1559,6 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 			$this->_is_new = true;
 			$this->_original = array();
 
-
 			$this->observe('after_delete');
 
 			$use_transaction and $db->commit_transaction();
@@ -1941,7 +1940,6 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		$instance and $form->populate($instance, true);
 	}
 
-
 	/**
 	 * Allow populating this object from an array, and any related objects
 	 *
@@ -2145,7 +2143,6 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 
 		return $array;
 	}
-
 
 	/**
 	 * Allow converting this object to a real object

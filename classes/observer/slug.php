@@ -126,7 +126,6 @@ class Observer_Slug extends Observer
 			$query->where($this->_property, $slug);
 		}
 
-
 		if($this->_unique === true)
 		{
 			// query to check for existence of this slug

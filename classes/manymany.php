@@ -91,7 +91,7 @@ class ManyMany extends Relation
 				'table'      => array($this->table_through, 't0_through'),
 				'join_type'  => null,
 				'join_on'    => array(),
-				'columns'    => $this->select_through('t0_through')
+				'columns'    => $this->select_through('t0_through'),
 		);
 
 		reset($this->key_from);
@@ -178,7 +178,7 @@ class ManyMany extends Relation
 				'join_on'      => array(),
 				'columns'      => $this->select_through($alias_to.'_through'),
 				'rel_name'     => $this->model_through,
-				'relation'     => $this
+				'relation'     => $this,
 			),
 			$rel_name => array(
 				'model'        => $this->model_to,
@@ -191,7 +191,7 @@ class ManyMany extends Relation
 				'rel_name'     => strpos($rel_name, '.') ? substr($rel_name, strrpos($rel_name, '.') + 1) : $rel_name,
 				'relation'     => $this,
 				'where'        => \Arr::get($conditions, 'where', array()),
-			)
+			),
 		);
 
 		reset($this->key_from);
@@ -232,7 +232,7 @@ class ManyMany extends Relation
 			}
 			else
 			{
-				$key = str_replace(array($alias_through[0],$alias_to_table[0]), array($alias_through[1],$alias_to_table[1]), $key);
+				$key = str_replace(array($alias_through[0], $alias_to_table[0]), array($alias_through[1], $alias_to_table[1]), $key);
 			}
 			$models[$rel_name]['order_by'][$key] = $direction;
 		}

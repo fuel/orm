@@ -58,7 +58,6 @@ class ValidationFailed extends \FuelException
  */
 class Observer_Validation extends Observer
 {
-
 	/**
 	 * Set a Model's properties as fields on a Fieldset, which will be created with the Model's
 	 * classname if none is provided.
