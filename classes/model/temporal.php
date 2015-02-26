@@ -22,7 +22,6 @@ namespace Orm;
  */
 class Model_Temporal extends Model
 {
-
 	/**
 	 * Compound primary key that includes the start and end times is required
 	 */
