@@ -133,14 +133,14 @@ class Model_Temporal extends Model
 	 *
 	 * @param type $id
 	 * @param int $timestamp Null to get the latest revision (Same as find($id))
-	 * @param array $relations Names of the relations to load.
+     * @param array $options Options to load.
 	 * @return Subclass of Orm\Model_Temporal
 	 */
-	public static function find_revision($id, $timestamp = null, $relations = array())
+	public static function find_revision($id, $timestamp = null, $options = array())
 	{
 		if ($timestamp == null)
 		{
-			return parent::find($id);
+			return parent::find($id, $options);
 		}
 
 		$timestamp_start_name = static::temporal_property('start_column');
@@ -150,19 +150,30 @@ class Model_Temporal extends Model
 		// to get the revision before.
 		self::disable_primary_key_check();
 
-		$query = static::query()
-			->where('id', $id)
+		$query = static::query($options);
+
+        $pk = static::getNonTimestampPks();
+        
+        if (count($pk) > 1)
+        {
+		    foreach($pk as $index => $key)
+		    {
+                $query->where($key, $id[$index]);
+		    }
+        }
+        else
+        {
+            $query->where('id', $id);
+        }
+        
+        $query
 			->where($timestamp_start_name, '<=', $timestamp)
 			->where($timestamp_end_name, '>', $timestamp);
+        
 		self::enable_primary_key_check();
 
 		//Make sure the temporal stuff is activated
 		$query->set_temporal_properties($timestamp, $timestamp_end_name, $timestamp_start_name);
-
-		foreach ($relations as $relation)
-		{
-			$query->related($relation);
-		}
 
 		$query_result = $query->get_one();
 
@@ -259,8 +270,9 @@ class Model_Temporal extends Model
 	 * @param int|string $id
 	 * @param timestamp $earliestTime
 	 * @param timestamp $latestTime
+     * @param array $options
 	 */
-	public static function find_revisions_between($id, $earliestTime = null, $latestTime = null)
+	public static function find_revisions_between($id, $earliestTime = null, $latestTime = null, $options = array())
 	{
 		$timestamp_start_name = static::temporal_property('start_column');
 		$max_timestamp = static::temporal_property('max_timestamp');
@@ -277,10 +289,26 @@ class Model_Temporal extends Model
 
 		static::disable_primary_key_check();
 		//Select all revisions within the given range.
-		$query = static::query()
-			->where('id', $id)
+		$query = static::query($options);
+
+        $pk = static::getNonTimestampPks();
+        
+        if (count($pk) > 1)
+        {
+		    foreach($pk as $index => $key)
+		    {
+                $query->where($key, $id[$index]);
+		    }
+        }
+        else
+        {
+            $query->where('id', $id);
+        }
+        
+        $query
 			->where($timestamp_start_name, '>=', $earliestTime)
 			->where($timestamp_start_name, '<=', $latestTime);
+        
 		static::enable_primary_key_check();
 
 		$revisions = $query->get();
@@ -465,12 +493,23 @@ class Model_Temporal extends Model
 
 		// check to see if there is a currently active row, if so then don't
 		// restore anything.
-		$activeRow = static::find('first', array(
-				'where' => array(
-					array('id', $this->id),
-					array($timestamp_end_name, $max_timestamp),
-				),
-			));
+        
+        $id = array();
+        $pk = static::getNonTimestampPks();
+        
+        if (count($pk) > 1)
+        {
+		    foreach($pk as $key)
+		    {
+                $id[] = $this->{$key};
+		    }
+        }
+        else
+        {
+            $id[] = $this->id;
+        }
+        
+		$activeRow = static::find($id);
 
 		if(is_null($activeRow))
 		{
@@ -509,9 +548,13 @@ class Model_Temporal extends Model
 	{
 		// Get a clean query object so there's no temporal filtering
 		$query = parent::query();
+        
 		// Then select and delete
-		return $query->where('id', $this->id)
-			->delete();
+        foreach (static::getNonTimestampPks() as $pk) {
+            $query->where($pk, $this->{$pk});
+        }
+        
+		return $query->delete();
 	}
 
 	/**
@@ -536,11 +579,13 @@ class Model_Temporal extends Model
 		$timestamp_start_name = static::temporal_property('start_column');
 		$timestamp_end_name = static::temporal_property('end_column');
 
-		$primary_key = array(
-			'id',
-			$timestamp_start_name,
-			$timestamp_end_name,
-		);
+		$primary_key = \Arr::merge(
+            static::getNonTimestampPks(),
+            array(
+			    $timestamp_start_name,
+			    $timestamp_end_name,
+		    )
+        );
 
 		foreach ($primary_key as $pk)
 		{
