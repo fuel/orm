@@ -133,16 +133,29 @@ class Model_Temporal extends Model
 	 *
 	 * @param type $id
 	 * @param int $timestamp Null to get the latest revision (Same as find($id))
+     * @param array $relations Names of the relations to load.
      * @param array $options Options to load.
 	 * @return Subclass of Orm\Model_Temporal
 	 */
-	public static function find_revision($id, $timestamp = null, $options = array())
+	public static function find_revision($id, $timestamp = null, $relations = array(), $options = array())
 	{
 		if ($timestamp == null)
 		{
 			return parent::find($id, $options);
 		}
 
+        if (!empty($relations))
+        {
+            if (isset($options['related']))
+            {
+                $options['related'] = \Arr::merge($options['related'], $relations);
+            }
+            else
+            {
+                $options['related'] = $relations;
+            }
+        }
+        
 		$timestamp_start_name = static::temporal_property('start_column');
 		$timestamp_end_name = static::temporal_property('end_column');
 
@@ -152,18 +165,18 @@ class Model_Temporal extends Model
 
 		$query = static::query($options);
 
-        $pk = static::getNonTimestampPks();
+        $pks = static::getNonTimestampPks();
         
-        if (count($pk) > 1)
+        if (count($pks) > 1)
         {
-		    foreach($pk as $index => $key)
+		    foreach($pks as $index => $key)
 		    {
                 $query->where($key, $id[$index]);
 		    }
         }
         else
         {
-            $query->where('id', $id);
+            $query->where($pks[0], $id);
         }
         
         $query
@@ -291,18 +304,18 @@ class Model_Temporal extends Model
 		//Select all revisions within the given range.
 		$query = static::query($options);
 
-        $pk = static::getNonTimestampPks();
+        $pks = static::getNonTimestampPks();
         
-        if (count($pk) > 1)
+        if (count($pks) > 1)
         {
-		    foreach($pk as $index => $key)
+		    foreach($pks as $index => $key)
 		    {
                 $query->where($key, $id[$index]);
 		    }
         }
         else
         {
-            $query->where('id', $id);
+            $query->where($pks[0], $id);
         }
         
         $query
@@ -495,18 +508,18 @@ class Model_Temporal extends Model
 		// restore anything.
         
         $id = array();
-        $pk = static::getNonTimestampPks();
+        $pks = static::getNonTimestampPks();
         
-        if (count($pk) > 1)
+        if (count($pks) > 1)
         {
-		    foreach($pk as $key)
+		    foreach($pks as $key)
 		    {
                 $id[] = $this->{$key};
 		    }
         }
         else
         {
-            $id[] = $this->id;
+            $id[] = $this->{$pks[0]};
         }
         
 		$activeRow = static::find($id);
