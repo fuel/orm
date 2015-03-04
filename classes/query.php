@@ -279,15 +279,15 @@ class Query
 			return $out;
 		}
 
-		// normalize closure, pass $this as $that for PHP < 5.4
-		$normalize = function($fields, $that) use (&$normalize, &$i)
+		// normalize closure, pass $this as $self for PHP < 5.4
+		$normalize = function($fields) use (&$normalize, &$i, $self)
 		{
 			$select = array();
 
 			// for BC reasons, deal with the odd array(DB::expr, 'name') syntax first
 			if (($value = reset($fields)) instanceOf \Fuel\Core\Database_Expression and is_string($index = next($fields)))
 			{
-				$select[$that->alias.'_c'.$i++] = $fields;
+				$select[$self->alias.'_c'.$i++] = $fields;
 			}
 
 			// otherwise iterate
@@ -298,7 +298,7 @@ class Query
 					// an array of field definitions is passed
 					if (is_array($value))
 					{
-						$select = array_merge($select, $normalize($value, $that));
+						$select = array_merge($select, $normalize($value));
 					}
 
 					// a "field -> include" value pair is passed
@@ -307,14 +307,14 @@ class Query
 						if ($value)
 						{
 							// if include is true, add the field
-							$select[$that->alias.'_c'.$i++] = (strpos($index, '.') === false ? $that->alias.'.' : '').$index;
+							$select[$self->alias.'_c'.$i++] = (strpos($index, '.') === false ? $self->alias.'.' : '').$index;
 						}
 						else
 						{
 							// if not, add it to the filter list
-							if ( ! in_array($index, $that->select_filter))
+							if ( ! in_array($index, $self->select_filter))
 							{
-								$that->select_filter[] = $index;
+								$self->select_filter[] = $index;
 							}
 						}
 					}
@@ -322,7 +322,7 @@ class Query
 					// attempted a "SELECT *"?
 					elseif ($value === '*')
 					{
-						$select = array_merge($select, $normalize(array_keys(call_user_func($that->model.'::properties')), $that));
+						$select = array_merge($select, $normalize(array_keys(call_user_func($self->model.'::properties'))));
 					}
 
 					// DB::expr() passed?
@@ -331,20 +331,20 @@ class Query
 						// no column name given for the result?
 						if (is_numeric($index))
 						{
-							$select[$that->alias.'_c'.$i++] = array($value);
+							$select[$self->alias.'_c'.$i++] = array($value);
 						}
 
 						// add the index as the column name
 						else
 						{
-							$select[$that->alias.'_c'.$i++] = array($value, $index);
+							$select[$self->alias.'_c'.$i++] = array($value, $index);
 						}
 					}
 
 					// must be a regular field
 					else
 					{
-						$select[$that->alias.'_c'.$i++] = (strpos($value, '.') === false ? $that->alias.'.' : '').$value;
+						$select[$self->alias.'_c'.$i++] = (strpos($value, '.') === false ? $self->alias.'.' : '').$value;
 					}
 				}
 			}
@@ -355,8 +355,11 @@ class Query
 		// get the current select count
 		$i = count($this->select);
 
+		// PHP < 5.4 BC compatibility
+		$self = $this;
+
 		// parse the passed fields list
-		$this->select = array_merge($this->select, $normalize($fields, $this));
+		$this->select = array_merge($this->select, $normalize($fields));
 
 		return $this;
 	}
