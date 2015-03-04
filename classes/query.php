@@ -280,7 +280,7 @@ class Query
 		}
 
 		// normalize closure, pass $this as $self for PHP < 5.4
-		$normalize = function($fields) use (&$normalize, &$i, $self)
+		$normalize = function($fields) use (&$normalize, &$i, &$self)
 		{
 			$select = array();
 
