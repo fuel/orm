@@ -79,24 +79,30 @@ abstract class Relation
 	abstract public function get(Model $from);
 
 	/**
-	 * Should get the properties as associative array with alias => property, the table alias is
-	 * given to be included with the property
+	 * Should get the select columns
 	 *
 	 * @param   string
+	 * @param   array
 	 * @return  array
 	 */
-	public function select($table)
+	public function select($table, $columns = array())
 	{
-		$props = call_user_func(array($this->model_to, 'properties'));
+		if (empty($columns)) {
+			$columns = array_keys(call_user_func(array($this->model_to, 'properties')));
+		} else {
+			$primary_keys = call_user_func(array($this->model_to, 'primary_key'));
+			$columns = \Arr::unique(\Arr::merge($columns, $primary_keys));
+		}
+
 		$i = 0;
-		$properties = array();
-		foreach ($props as $pk => $pv)
+		$fields = array();
+		foreach ($columns as $v)
 		{
-			$properties[] = array($table.'.'.$pk, $table.'_c'.$i);
+			$fields[] = array($table.'.'.$v, $table.'_c'.$i);
 			$i++;
 		}
 
-		return $properties;
+		return $fields;
 	}
 
 	/**
