@@ -2133,7 +2133,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		}
 
 		// strip any excluded values from the array
-		foreach (static::$_to_array_exclude as $key)
+		foreach (static::get_to_array_exclude() as $key)
 		{
 			if (array_key_exists($key, $array))
 			{
@@ -2368,4 +2368,34 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		return key($this->_iterable) !== null;
 	}
 
+	/**
+	 * Returns a list of properties that will be excluded when to_array() is used.
+	 * @return array
+	 */
+	public static function get_to_array_exclude()
+	{
+		return static::$_to_array_exclude;
+	}
+
+	/**
+	 * Returns a list of properties and their information with _to_array_exclude
+	 * properties removed.
+	 *
+	 * @return array
+	 */
+	public static function get_filtered_properties()
+	{
+		$array = static::properties();
+
+		// strip any excluded values from the array
+		foreach (static::get_to_array_exclude() as $key)
+		{
+			if (array_key_exists($key, $array))
+			{
+				unset($array[$key]);
+			}
+		}
+
+		return $array;
+	}
 }
