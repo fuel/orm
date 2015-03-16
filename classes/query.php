@@ -523,7 +523,7 @@ class Query
 		{
 			$this->where[] = array($type, array($condition[0], '=', $condition[1]));
 		}
-		elseif (count($condition) == 3)
+		elseif (count($condition) == 3 or $condition[0] instanceof \Fuel\Core\Database_Expression)
 		{
 			$this->where[] = array($type, $condition);
 		}
