@@ -1246,7 +1246,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 			elseif (static::relations($property))
 			{
 				$this->is_fetched($property) or $this->_reset_relations[$property] = true;
-				if (($this->_data_relations[$property] instanceof self) and is_array($value))
+				if (isset($this->_data_relations[$property]) and ($this->_data_relations[$property] instanceof self) and is_array($value))
 				{
 					$this->_data_relations[$property]->set($value);
 				}
