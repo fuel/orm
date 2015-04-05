@@ -316,6 +316,10 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 				if (is_string($p))
 				{
 					unset($properties[$key]);
+					if (isset($properties[$p]) and ! empty($properties[$p]))
+					{
+						continue;
+					}
 					$properties[$p] = array();
 				}
 			}
