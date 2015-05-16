@@ -141,6 +141,11 @@ class ManyMany extends Relation
 				$query->order_by($field, $direction);
 			}
 		}
+		
+		if($limit = \Arr::get($conditions, 'limit'))
+		{
+			$query->limit($limit);
+		}
 
 		$query->_join($join);
 
