@@ -8,7 +8,7 @@
  * @version    1.7
  * @author     Fuel Development Team
  * @license    MIT License
- * @copyright  2010 - 2014 Fuel Development Team
+ * @copyright  2010 - 2015 Fuel Development Team
  * @link       http://fuelphp.com
  */
 
@@ -71,7 +71,7 @@ class Model_Nestedset extends Model
 			}
 
 			// array of read-only column names, the can not be set manually
-			foreach(array('left_field','right_field','tree_field') as $field)
+			foreach(array('left_field', 'right_field', 'tree_field') as $field)
 			{
 				$column = static::tree_config($field) and static::$_tree_cached[$class]['read-only'][] = $column;
 			}
@@ -395,7 +395,6 @@ class Model_Nestedset extends Model
 		// return the object for chaining
 		return $this;
 	}
-
 
 	// -------------------------------------------------------------------------
 	// node manipulation methods
@@ -835,11 +834,11 @@ class Model_Nestedset extends Model
 			{
 				if ($as_object)
 				{
-					$node->_custom_data[$path] = rtrim($tracker[$index][$path],'/').'/'.$node->{$title_field};
+					$node->_custom_data[$path] = rtrim($tracker[$index][$path], '/').'/'.$node->{$title_field};
 				}
 				else
 				{
-					$node[$path] = rtrim($tracker[$index][$path],'/').'/'.$node[$title_field];
+					$node[$path] = rtrim($tracker[$index][$path], '/').'/'.$node[$title_field];
 				}
 			}
 
@@ -915,7 +914,6 @@ class Model_Nestedset extends Model
 
 		return parent::set($property, $value);
 	}
-
 
 	// -------------------------------------------------------------------------
 

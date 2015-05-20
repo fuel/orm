@@ -8,7 +8,7 @@
  * @version    1.7
  * @author     Fuel Development Team
  * @license    MIT License
- * @copyright  2010 - 2014 Fuel Development Team
+ * @copyright  2010 - 2015 Fuel Development Team
  * @link       http://fuelphp.com
  */
 
@@ -16,7 +16,6 @@ namespace Orm;
 
 class RelationNotSoft extends \Exception
 {
-
 }
 
 /**
@@ -29,7 +28,6 @@ class RelationNotSoft extends \Exception
  */
 class Model_Soft extends Model
 {
-
 	/**
 	 * Default column name that contains the deleted timestamp
 	 * @var string
@@ -218,7 +216,7 @@ class Model_Soft extends Model
 		foreach ($this->relations() as $rel_name => $rel)
 		{
 			//get the cascade delete status
-			$rel_cascade = is_null($cascade_restore) ? $rel->cascade_delete : (bool)$cascade_restore;
+			$rel_cascade = is_null($cascade_restore) ? $rel->cascade_delete : (bool) $cascade_restore;
 
 			//Make sure that the other model is soft delete too
 			if ($rel_cascade)

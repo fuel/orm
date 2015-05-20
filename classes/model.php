@@ -8,7 +8,7 @@
  * @version    1.7
  * @author     Fuel Development Team
  * @license    MIT License
- * @copyright  2010 - 2014 Fuel Development Team
+ * @copyright  2010 - 2015 Fuel Development Team
  * @link       http://fuelphp.com
  */
 
@@ -110,6 +110,16 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	protected static $_cached_objects = array();
 
 	/**
+	 * @var string Name of DB connection to use
+	 */
+	protected static $_connection = null;
+
+	/**
+	 * @var string Name of the DB connection to use when writing
+	 */
+	protected static $_write_connection = null;
+
+	/**
 	 * @var  array  array of valid relation types
 	 */
 	protected static $_valid_relations = array(
@@ -142,12 +152,30 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	{
 		$class = get_called_class();
 
-		if ($writeable and property_exists($class, '_write_connection'))
+		if ($writeable and property_exists($class, '_write_connection') && static::$_write_connection !== null)
 		{
 			return static::$_write_connection;
 		}
 
 		return property_exists($class, '_connection') ? static::$_connection : null;
+	}
+
+	/**
+	 * Sets the write connection to use for this model.
+	 * @param string $connection
+	 */
+	public static function set_connection($connection)
+	{
+		static::$_connection = $connection;
+	}
+
+	/**
+	 * Sets the connection to use for this model.
+	 * @param string $connection
+	 */
+	public static function set_write_connection($connection)
+	{
+		static::$_write_connection = $connection;
 	}
 
 	/**
@@ -1218,7 +1246,14 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 			elseif (static::relations($property))
 			{
 				$this->is_fetched($property) or $this->_reset_relations[$property] = true;
-				$this->_data_relations[$property] = $value;
+				if (isset($this->_data_relations[$property]) and ($this->_data_relations[$property] instanceof self) and is_array($value))
+				{
+					$this->_data_relations[$property]->set($value);
+				}
+				else
+				{
+					$this->_data_relations[$property] = $value;
+				}
 			}
 			elseif ( ! $this->_set_eav($property, $value))
 			{
@@ -1530,7 +1565,6 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 
 			$this->_is_new = true;
 			$this->_original = array();
-
 
 			$this->observe('after_delete');
 
@@ -1913,7 +1947,6 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		$instance and $form->populate($instance, true);
 	}
 
-
 	/**
 	 * Allow populating this object from an array, and any related objects
 	 *
@@ -2045,10 +2078,14 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 				$array[$name] = array();
 				if ( ! empty($rel))
 				{
-					static::$to_array_references[] = get_class(reset($rel));
-					foreach ($rel as $id => $r)
+					if ( ! in_array(get_class(reset($rel)), static::$to_array_references))
 					{
-						$array[$name][$id] = $r->to_array($custom, true, $eav);
+						static::$to_array_references[] = get_class(reset($rel));
+						foreach ($rel as $id => $r)
+						{
+							$array[$name][$id] = $r->to_array($custom, true, $eav);
+							array_pop(static::$to_array_references);
+						}
 					}
 				}
 			}
@@ -2064,6 +2101,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 					{
 						static::$to_array_references[] = get_class($rel);
 						$array[$name] = $rel->to_array($custom, true, $eav);
+						array_pop(static::$to_array_references);
 					}
 				}
 			}
@@ -2102,7 +2140,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		}
 
 		// strip any excluded values from the array
-		foreach (static::$_to_array_exclude as $key)
+		foreach (static::get_to_array_exclude() as $key)
 		{
 			if (array_key_exists($key, $array))
 			{
@@ -2112,7 +2150,6 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 
 		return $array;
 	}
-
 
 	/**
 	 * Allow converting this object to a real object
@@ -2338,4 +2375,34 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		return key($this->_iterable) !== null;
 	}
 
+	/**
+	 * Returns a list of properties that will be excluded when to_array() is used.
+	 * @return array
+	 */
+	public static function get_to_array_exclude()
+	{
+		return static::$_to_array_exclude;
+	}
+
+	/**
+	 * Returns a list of properties and their information with _to_array_exclude
+	 * properties removed.
+	 *
+	 * @return array
+	 */
+	public static function get_filtered_properties()
+	{
+		$array = static::properties();
+
+		// strip any excluded values from the array
+		foreach (static::get_to_array_exclude() as $key)
+		{
+			if (array_key_exists($key, $array))
+			{
+				unset($array[$key]);
+			}
+		}
+
+		return $array;
+	}
 }

@@ -8,7 +8,7 @@
  * @version    1.7
  * @author     Fuel Development Team
  * @license    MIT License
- * @copyright  2010 - 2014 Fuel Development Team
+ * @copyright  2010 - 2015 Fuel Development Team
  * @link       http://fuelphp.com
  */
 
@@ -76,17 +76,17 @@ class BelongsTo extends Relation
 	{
 		$alias_to = 't'.$alias_to_nr;
 		$model = array(
-			'model'        => $this->model_to,
-			'connection'   => call_user_func(array($this->model_to, 'connection')),
-			'table'        => array(call_user_func(array($this->model_to, 'table')), $alias_to),
-			'primary_key'  => call_user_func(array($this->model_to, 'primary_key')),
-			'join_type'    => \Arr::get($conditions, 'join_type') ?: \Arr::get($this->conditions, 'join_type', 'left'),
-			'join_on'      => array(),
-			'columns'      => $this->select($alias_to),
-			'rel_name'     => strpos($rel_name, '.') ? substr($rel_name, strrpos($rel_name, '.') + 1) : $rel_name,
-			'relation'     => $this,
-			'where'        => \Arr::get($conditions, 'where', array()),
-			'order_by'     => \Arr::get($conditions, 'order_by') ?: \Arr::get($this->conditions, 'order_by', array()),
+			'model'       => $this->model_to,
+			'connection'  => call_user_func(array($this->model_to, 'connection')),
+			'table'       => array(call_user_func(array($this->model_to, 'table')), $alias_to),
+			'primary_key' => call_user_func(array($this->model_to, 'primary_key')),
+			'join_type'   => \Arr::get($conditions, 'join_type') ?: \Arr::get($this->conditions, 'join_type', 'left'),
+			'join_on'     => array(),
+			'columns'     => $this->select($alias_to),
+			'rel_name'    => strpos($rel_name, '.') ? substr($rel_name, strrpos($rel_name, '.') + 1) : $rel_name,
+			'relation'    => $this,
+			'where'       => \Arr::get($conditions, 'where', array()),
+			'order_by'    => \Arr::get($conditions, 'order_by') ?: \Arr::get($this->conditions, 'order_by', array()),
 		);
 
 		reset($this->key_to);

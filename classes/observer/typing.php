@@ -8,7 +8,7 @@
  * @version    1.7
  * @author     Fuel Development Team
  * @license    MIT License
- * @copyright  2010 - 2014 Fuel Development Team
+ * @copyright  2010 - 2015 Fuel Development Team
  * @link       http://fuelphp.com
  */
 
@@ -296,8 +296,8 @@ class Observer_Typing
 
 		// deal with locale issues
 		$locale_info = localeconv();
-		$var = str_replace($locale_info["mon_thousands_sep"] , "", $var);
-		$var = str_replace($locale_info["mon_decimal_point"] , ".", $var);
+		$var = str_replace($locale_info["mon_thousands_sep"], "", $var);
+		$var = str_replace($locale_info["mon_decimal_point"], ".", $var);
 
 		return floatval($var);
 	}
@@ -490,7 +490,7 @@ class Observer_Typing
 		$assoc = false;
 		if (array_key_exists('json_assoc', $settings))
 		{
-			$assoc = (bool)$settings['json_assoc'];
+			$assoc = (bool) $settings['json_assoc'];
 		}
 		return json_decode($var, $assoc);
 	}
@@ -548,5 +548,3 @@ class Observer_Typing
 		return \Date::forge($var);
 	}
 }
-
-
