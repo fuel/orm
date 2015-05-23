@@ -279,89 +279,93 @@ class Query
 			return $out;
 		}
 
-		// normalize closure, pass $this as $self for PHP < 5.4
-		$normalize = function($fields) use (&$normalize, &$i, &$self)
-		{
-			$select = array();
-
-			// for BC reasons, deal with the odd array(DB::expr, 'name') syntax first
-			if (($value = reset($fields)) instanceOf \Fuel\Core\Database_Expression and is_string($index = next($fields)))
-			{
-				$select[$self->alias.'_c'.$i++] = $fields;
-			}
-
-			// otherwise iterate
-			else
-			{
-				foreach ($fields as $index => $value)
-				{
-					// an array of field definitions is passed
-					if (is_array($value))
-					{
-						$select = array_merge($select, $normalize($value));
-					}
-
-					// a "field -> include" value pair is passed
-					elseif (is_bool($value))
-					{
-						if ($value)
-						{
-							// if include is true, add the field
-							$select[$self->alias.'_c'.$i++] = (strpos($index, '.') === false ? $self->alias.'.' : '').$index;
-						}
-						else
-						{
-							// if not, add it to the filter list
-							if ( ! in_array($index, $self->select_filter))
-							{
-								$self->select_filter[] = $index;
-							}
-						}
-					}
-
-					// attempted a "SELECT *"?
-					elseif ($value === '*')
-					{
-						$select = array_merge($select, $normalize(array_keys(call_user_func($self->model.'::properties'))));
-					}
-
-					// DB::expr() passed?
-					elseif ($value instanceOf \Fuel\Core\Database_Expression)
-					{
-						// no column name given for the result?
-						if (is_numeric($index))
-						{
-							$select[$self->alias.'_c'.$i++] = array($value);
-						}
-
-						// add the index as the column name
-						else
-						{
-							$select[$self->alias.'_c'.$i++] = array($value, $index);
-						}
-					}
-
-					// must be a regular field
-					else
-					{
-						$select[$self->alias.'_c'.$i++] = (strpos($value, '.') === false ? $self->alias.'.' : '').$value;
-					}
-				}
-			}
-
-			return $select;
-		};
-
 		// get the current select count
 		$i = count($this->select);
 
-		// PHP < 5.4 BC compatibility
-		$self = $this;
-
 		// parse the passed fields list
-		$this->select = array_merge($this->select, $normalize($fields));
+		$this->select = array_merge($this->select, $this->_normalize($fields, $i));
 
 		return $this;
+	}
+
+	/**
+	/* normalize the select fields passed
+	 *
+	 * @param  array  list of columns to select
+	 * @param  int    counter of the number of selected columnss
+	 */
+	protected function _normalize($fields, &$i)
+	{
+		$select = array();
+
+		// for BC reasons, deal with the odd array(DB::expr, 'name') syntax first
+		if (($value = reset($fields)) instanceOf \Fuel\Core\Database_Expression and is_string($index = next($fields)))
+		{
+			$select[$this->alias.'_c'.$i++] = $fields;
+		}
+
+		// otherwise iterate
+		else
+		{
+			foreach ($fields as $index => $value)
+			{
+				// an array of field definitions is passed
+				if (is_array($value))
+				{
+					// recurse and add them individually
+					$select = array_merge($select, $this->_normalize($value, $i));
+				}
+
+				// a "field -> include" value pair is passed
+				elseif (is_bool($value))
+				{
+					if ($value)
+					{
+						// if include is true, add the field
+						$select[$this->alias.'_c'.$i++] = (strpos($index, '.') === false ? $this->alias.'.' : '').$index;
+					}
+					else
+					{
+						// if not, add it to the filter list
+						if ( ! in_array($index, $this->select_filter))
+						{
+							$this->select_filter[] = $index;
+						}
+					}
+				}
+
+				// attempted a "SELECT *"?
+				elseif ($value === '*')
+				{
+					// recurse and add all model properties
+					$select = array_merge($select, $this->normalize(array_keys(call_user_func($this->model.'::properties')), $i));
+				}
+
+				// DB::expr() passed?
+				elseif ($value instanceOf \Fuel\Core\Database_Expression)
+				{
+					// no column name given for the result?
+					if (is_numeric($index))
+					{
+						$select[$this->alias.'_c'.$i++] = array($value);
+					}
+
+					// add the index as the column name
+					else
+					{
+						$select[$this->alias.'_c'.$i++] = array($value, $index);
+					}
+				}
+
+				// must be a regular field
+				else
+				{
+					$select[$this->alias.'_c'.$i++] = (strpos($value, '.') === false ? $this->alias.'.' : '').$value;
+				}
+			}
+		}
+
+		return $select;
 	}
 
 	/**
