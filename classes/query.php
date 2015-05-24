@@ -338,7 +338,7 @@ class Query
 				elseif ($value === '*')
 				{
 					// recurse and add all model properties
-					$select = array_merge($select, $this->normalize(array_keys(call_user_func($this->model.'::properties')), $i));
+					$select = array_merge($select, $this->_normalize(array_keys(call_user_func($this->model.'::properties')), $i));
 				}
 
 				// DB::expr() passed?
