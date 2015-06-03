@@ -623,7 +623,7 @@ class Query
 		$or and $this->or_where_open();
 		foreach ($val as $k_w => $v_w)
 		{
-			if (is_array($v_w) and ! empty($v_w[0]) and is_string($v_w[0]))
+			if (is_array($v_w) and ! empty($v_w[0]) and (is_string($v_w[0]) || $v_w[0] instanceof \Database_Expression))
 			{
 				! $v_w[0] instanceof \Database_Expression and strpos($v_w[0], '.') === false and $v_w[0] = $base.$v_w[0];
 				call_fuel_func_array(array($this, ($k_w === 'or' ? 'or_' : '').'where'), $v_w);
