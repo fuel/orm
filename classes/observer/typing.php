@@ -342,7 +342,7 @@ class Observer_Typing
 			throw new InvalidContentType('Value '.$var.' is not numeric and can not be converted to decimal.');
 		}
 
-		$dec = empty($matches[2][0]) ? 2 : $matches[2][0];
+		$dec = empty($matches[1][0]) ? 2 : $matches[1][0];
 		return sprintf("%.".$dec."f", static::type_float($var));
 	}
 
