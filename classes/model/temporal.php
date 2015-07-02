@@ -533,14 +533,7 @@ class Model_Temporal extends Model
 	 */
 	protected function add_primary_keys_to_where($query)
 	{
-		$timestamp_start_name = static::temporal_property('start_column');
-		$timestamp_end_name = static::temporal_property('end_column');
-
-		$primary_key = array(
-			'id',
-			$timestamp_start_name,
-			$timestamp_end_name,
-		);
+		$primary_key = static::$_primary_key;
 
 		foreach ($primary_key as $pk)
 		{
