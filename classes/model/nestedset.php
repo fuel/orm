@@ -766,9 +766,11 @@ class Model_Nestedset extends Model
 	 *
 	 * @param   bool    whether or not to return an array of objects
 	 * @param   string  property name to store the node's children
+	 * @param   string  property name to store the node's display path
+	 * @param   string  property name to store the node's uri path
 	 * @return	array
 	 */
-	public function dump_tree($as_object = false, $children = 'children', $path = 'path')
+	public function dump_tree($as_object = false, $children = 'children', $path = 'path', $pathuri = null)
 	{
 		// get the PK
 		$pk = reset(static::$_primary_key);
@@ -795,10 +797,12 @@ class Model_Nestedset extends Model
 			if ($as_object)
 			{
 				$this->_custom_data[$path] = '/';
+				$pathuri and $this->_custom_data['path_'.$pathuri] = '/';
 			}
 			else
 			{
 				$tree[$this->{$pk}][$path] = '/';
+				$pathuri and $tree[$this->{$pk}]['path_'.$pathuri] = '/';
 			}
 		}
 
@@ -835,10 +839,12 @@ class Model_Nestedset extends Model
 				if ($as_object)
 				{
 					$node->_custom_data[$path] = rtrim($tracker[$index][$path], '/').'/'.$node->{$title_field};
+					$pathuri and $node->_custom_data['path_'.$pathuri] = rtrim($tracker[$index]['path_'.$pathuri], '/').'/'.$node->{$pathuri};
 				}
 				else
 				{
 					$node[$path] = rtrim($tracker[$index][$path], '/').'/'.$node[$title_field];
+					$pathuri and $node['path_'.$pathuri] = rtrim($tracker[$index]['path_'.$pathuri], '/').'/'.$node[$pathuri];
 				}
 			}
 
