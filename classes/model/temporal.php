@@ -151,7 +151,7 @@ class Model_Temporal extends Model
 		self::disable_primary_key_check();
 
 		$query = static::query()
-			->where('id', $id)
+			->where(static::getIdColumn(), $id)
 			->where($timestamp_start_name, '<=', $timestamp)
 			->where($timestamp_end_name, '>', $timestamp);
 		self::enable_primary_key_check();
@@ -173,6 +173,14 @@ class Model_Temporal extends Model
 			$query_result->set_lazy_timestamp($timestamp);
 		}
 		return $query_result;
+	}
+	
+	private static function getIdColumn()
+	{
+		if(isset(static::$_primary_key[0]) && static::$_primary_key[0] != "") {
+			return static::$_primary_key[0];
+		}
+		return "id";
 	}
 
 	private function set_lazy_timestamp($timestamp)
@@ -278,7 +286,7 @@ class Model_Temporal extends Model
 		static::disable_primary_key_check();
 		//Select all revisions within the given range.
 		$query = static::query()
-			->where('id', $id)
+			->where(static::getIdColumn(), $id)
 			->where($timestamp_start_name, '>=', $earliestTime)
 			->where($timestamp_start_name, '<=', $latestTime);
 		static::enable_primary_key_check();
@@ -467,7 +475,7 @@ class Model_Temporal extends Model
 		// restore anything.
 		$activeRow = static::find('first', array(
 				'where' => array(
-					array('id', $this->id),
+					array(static::getIdColumn(), $this->id),
 					array($timestamp_end_name, $max_timestamp),
 				),
 			));
@@ -510,7 +518,7 @@ class Model_Temporal extends Model
 		// Get a clean query object so there's no temporal filtering
 		$query = parent::query();
 		// Then select and delete
-		return $query->where('id', $this->id)
+		return $query->where(static::getIdColumn(), $this->id)
 			->delete();
 	}
 
