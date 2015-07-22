@@ -161,7 +161,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	}
 
 	/**
-	 * Sets the write connection to use for this model.
+	 * Sets the connection to use for this model.
 	 * @param string $connection
 	 */
 	public static function set_connection($connection)
@@ -170,7 +170,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	}
 
 	/**
-	 * Sets the connection to use for this model.
+	 * Sets the write connection to use for this model.
 	 * @param string $connection
 	 */
 	public static function set_write_connection($connection)
