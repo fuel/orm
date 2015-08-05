@@ -66,8 +66,8 @@ class Observer_Typing
 			'after' => 'Orm\\Observer_Typing::type_integer',
 		),
 		'float' => array(
-			'before' => 'Orm\\Observer_Typing::type_float',
-			'after' => 'Orm\\Observer_Typing::type_float',
+			'before' => 'Orm\\Observer_Typing::type_float_before',
+			'after' => 'Orm\\Observer_Typing::type_float_after',
 		),
 		'text' => array(
 			'before' => 'Orm\\Observer_Typing::type_string',
@@ -106,6 +106,20 @@ class Observer_Typing
 			'after' => 'Orm\\Observer_Typing::type_decimal_after',
 		),
 	);
+
+	/**
+	 */
+	public static $use_locale = true;
+
+	/**
+	 * Make sure the orm config is loaded
+	 */
+	public static function _init()
+	{
+		\Config::load('orm', true);
+
+		static::$use_locale = \Config::get('orm.use_locale', static::$use_locale);
+	}
 
 	/**
 	 * Get notified of an event
@@ -279,6 +293,33 @@ class Observer_Typing
 	}
 
 	/**
+	 * Casts float to string when necessary
+	 *
+	 * @param   mixed  value to typecast
+	 *
+	 * @throws  InvalidContentType
+	 *
+	 * @return  float
+	 */
+	public static function type_float_before($var)
+	{
+		if (is_array($var) or is_object($var))
+		{
+			throw new InvalidContentType('Array or object could not be converted to float.');
+		}
+
+		// do we need to do locale conversion?
+		if (is_string($var) and static::$use_locale)
+		{
+			$locale_info = localeconv();
+			$var = str_replace($locale_info["mon_thousands_sep"], "", $var);
+			$var = str_replace($locale_info["mon_decimal_point"], ".", $var);
+		}
+
+		return sprintf('%F', (float) $var);
+	}
+
+	/**
 	 * Casts to float when necessary
 	 *
 	 * @param   mixed  value to typecast
@@ -287,17 +328,12 @@ class Observer_Typing
 	 *
 	 * @return  float
 	 */
-	public static function type_float($var)
+	public static function type_float_after($var)
 	{
 		if (is_array($var) or is_object($var))
 		{
 			throw new InvalidContentType('Array or object could not be converted to float.');
 		}
-
-		// deal with locale issues
-		$locale_info = localeconv();
-		$var = str_replace($locale_info["mon_thousands_sep"], "", $var);
-		$var = str_replace($locale_info["mon_decimal_point"], ".", $var);
 
 		return floatval($var);
 	}
@@ -318,7 +354,7 @@ class Observer_Typing
 			throw new InvalidContentType('Array or object could not be converted to decimal.');
 		}
 
-		return static::type_float($var);
+		return static::type_float_before($var);
 	}
 
 	/**
@@ -343,7 +379,14 @@ class Observer_Typing
 		}
 
 		$dec = empty($matches[1][0]) ? 2 : $matches[1][0];
-		return sprintf("%.".$dec."f", static::type_float($var));
+
+		// do we need to do locale aware conversion?
+		if (static::$use_locale)
+		{
+			return sprintf("%.".$dec."f", static::type_float_after($var));
+		}
+
+		return sprintf("%.".$dec."F", static::type_float_after($var));
 	}
 
 	/**
