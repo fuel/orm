@@ -1271,13 +1271,14 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	 */
 	public function get_pk_array()
 	{
-	    $array = array_flip(static::primary_key());
+		$array = array_flip(static::primary_key());
 
-		foreach($array as $key => &$value) {
+		foreach($array as $key => &$value)
+		{
 			$value = $this->get($key);
 		}
 
-        return $array;
+		return $array;
 	}
 
 	/**
