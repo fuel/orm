@@ -1269,7 +1269,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	 * 
 	 * @return array
 	 */
-	public function get_pk_array()
+	public function get_pk_assoc()
 	{
 		$array = array_flip(static::primary_key());
 
