@@ -1263,6 +1263,22 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 
 		return $this;
 	}
+	
+	/**
+	 * Provide the identifying details in the form of an array
+	 * 
+	 * @return array
+	 */
+	public function get_pk_array()
+	{
+	    $array = array_flip(static::primary_key());
+
+		foreach($array as $key => &$value) {
+			$value = $this->get($key);
+		}
+
+        return $array;
+	}
 
 	/**
 	 * Save the object and it's relations, create when necessary
