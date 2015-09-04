@@ -1278,6 +1278,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 
 		if ($result instanceof self) {
 			$this->from_array($result->to_array());
+			$this->_update_original();
 		}
     }
 
