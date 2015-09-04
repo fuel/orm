@@ -1264,6 +1264,19 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		return $this;
 	}
 
+    /**
+     * Refresh data from database for the current object
+     */
+    public function refresh() {
+		$query = Query::forge(get_called_class(), static::connection(true));
+		$this->add_primary_keys_to_where($query);
+		$result = $query->get();
+
+		if (!$this->_is_new && $result instanceof self) {
+			$this->from_array($result->to_array());
+		}
+    }
+
 	/**
 	 * Save the object and it's relations, create when necessary
 	 *
