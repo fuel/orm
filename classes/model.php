@@ -1265,7 +1265,12 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	}
 
     /**
-     * Refresh data from database for the current object
+     * Refresh data from database for the current object.
+     * Useful when your database is updated from third party systems.
+     * Or when you send objects around and they become outdated.
+     *
+     * Using the primary keys of this model we fetch data, update the
+     * data and then update the cached information.
      */
     public function refresh() {
 		if ($this->_is_new) {
