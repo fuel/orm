@@ -1284,6 +1284,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		if ($result instanceof self) {
 			$this->from_array($result->to_array());
 			$this->_update_original();
+			static::$_cached_objects[get_class($this)][static::implode_pk($this)] = $this;
 		}
     }
 
@@ -1479,6 +1480,9 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		{
 			return false;
 		}
+
+		$this->_update_original();
+		static::$_cached_objects[get_class($this)][static::implode_pk($this)] = $this;
 
 		// update the original property on success
 		$this->observe('after_update');
