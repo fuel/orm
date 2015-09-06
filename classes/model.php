@@ -1276,14 +1276,14 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		if ($this->_is_new) {
 			return;
 		}
-
 		$query = Query::forge(get_called_class(), static::connection(true));
 		$this->add_primary_keys_to_where($query);
-		$result = $query->get();
+		$result = $query->get_one();
 
 		if ($result instanceof self) {
-			$this->from_array($result->to_array());
-			$this->_update_original();
+			$result_array = $result->to_array();
+			$this->from_array($result_array);
+			$this->_update_original($result_array);
 			static::$_cached_objects[get_class($this)][static::implode_pk($this)] = $this;
 		}
     }
