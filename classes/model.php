@@ -1264,6 +1264,53 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		return $this;
 	}
 
+	/**
+	 * Used by refresh to read all values from the array and set them to a this object.
+	 * This function will set the primary keys aswell as the regular properties.
+	 * This makes it not usable when we just want to create new objects form a array of data.
+	 *
+	 * @param  array  assoc array with named values to store in the object
+	 *
+	 */
+	private function load_from_array(array $values)
+	{
+		foreach($values as $property => $value)
+		{
+			if (array_key_exists($property, static::properties()))
+			{
+				$this->_data[$property] = $value;
+			}
+			elseif (array_key_exists($property, static::relations()) and is_array($value))
+			{
+				$rel = static::relations($property);
+				if($rel->singular)
+				{
+					$this->_data_relations[$property] = call_user_func(static::relations($property)->model_to.'::forge');
+					$this->_data_relations[$property]->_is_new = false;
+					$this->_data_relations[$property]->load_from_array($value);
+				}
+				else
+				{
+					foreach($value as $id => $data)
+					{
+						$this->_data_relations[$property][$id] = call_user_func(static::relations($property)->model_to.'::forge');
+						$this->_data_relations[$property][$id]->_is_new = false;
+						$this->_data_relations[$property][$id]->load_from_array($data);
+					}
+				}
+			}
+			elseif (property_exists($this, '_eav') and ! empty(static::$_eav))
+			{
+				$this->_set_eav($property, $value);
+			}
+			else
+			{
+				$this->_custom_data[$property] = $value;
+			}
+		}
+		$this->_original = $this->_data;
+	}
+
     /**
      * Refresh data from database for the current object.
      * Useful when your database is updated from third party systems.
@@ -1285,8 +1332,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		if ($result instanceof self)
 		{
 			$result_array = $result->to_array();
-			$this->from_array($result_array);
-			$this->_update_original($result_array);
+			$this->load_from_array($result_array);
 			static::$_cached_objects[get_class($this)][static::implode_pk($this)] = $this;
 		}
 		return $this;
