@@ -1276,7 +1276,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
     {
 		if ($this->_is_new)
 		{
-			return;
+			return $this;
 		}
 		$query = Query::forge(get_called_class(), static::connection(true));
 		$this->add_primary_keys_to_where($query);
@@ -1289,6 +1289,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 			$this->_update_original($result_array);
 			static::$_cached_objects[get_class($this)][static::implode_pk($this)] = $this;
 		}
+		return $this;
     }
 
 	/**
