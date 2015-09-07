@@ -1485,7 +1485,6 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 			return false;
 		}
 
-		$this->_update_original();
 		static::$_cached_objects[get_class($this)][static::implode_pk($this)] = $this;
 
 		// update the original property on success
