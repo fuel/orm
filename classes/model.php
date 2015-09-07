@@ -1272,15 +1272,18 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
      * Using the primary keys of this model we fetch data, update the
      * data and then update the cached information.
      */
-    public function refresh() {
-		if ($this->_is_new) {
+    public function refresh()
+    {
+		if ($this->_is_new)
+		{
 			return;
 		}
 		$query = Query::forge(get_called_class(), static::connection(true));
 		$this->add_primary_keys_to_where($query);
 		$result = $query->get_one();
 
-		if ($result instanceof self) {
+		if ($result instanceof self)
+		{
 			$result_array = $result->to_array();
 			$this->from_array($result_array);
 			$this->_update_original($result_array);
