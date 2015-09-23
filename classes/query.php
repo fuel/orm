@@ -1116,16 +1116,16 @@ class Query
 	/**
 	 * Hydrate model instances with retrieved data
 	 *
-	 * @param   array   &$row   Row from the database
-	 * @param   array   $models Relations to be expected
-	 * @param   array   $result Current result array (by reference)
-	 * @param   string  $model  Optionally. Model classname to hydrate
-	 * @param   array   $select Optionally. Columns to use
-	 * @param   array   $primary_key    Optionally. Primary key(s) for this model
+	 * @param   array     &$row   Row from the database
+	 * @param   array     $models Relations to be expected
+	 * @param   \stdClass $result An object containing current result array
+	 * @param   string    $model  Optionally. Model classname to hydrate
+	 * @param   array     $select Optionally. Columns to use
+	 * @param   array     $primary_key    Optionally. Primary key(s) for this model
 	 *
 	 * @return  Model
 	 */
-	public function hydrate(&$row, $models, &$result, $model = null, $select = null, $primary_key = null)
+	public function hydrate(&$row, $models, \stdClass $result, $model = null, $select = null, $primary_key = null)
 	{
 		// First check the PKs, if null it's an empty row
 		foreach($select as $column)
@@ -1195,19 +1195,20 @@ class Query
 		}
 
 		// if the result to be generated is an array and the current object is not yet in there
-		if (is_array($result) and ! array_key_exists($pk, $result))
+		if (is_array($result->data) and ! array_key_exists($pk, $result->data))
 		{
-			$result[$pk] = $obj;
+			$result->data[$pk] = $obj;
 		}
 		// if the result to be generated is a single object and empty
-		elseif ( ! is_array($result) and empty($result))
+		elseif ( ! is_array($result->data) and empty($result->data))
 		{
-			$result = $obj;
+			$result->data = $obj;
 		}
 
 		// start fetching relationships
 		$rel_objs = $obj->_relate();
 		$relations_updated = array();
+		$relation_result_wrapper = new \stdClass;
 		foreach ($models as $m)
 		{
 			// when the expected model is empty, there's nothing to be done
@@ -1223,15 +1224,19 @@ class Query
 				$rel_objs[$m['rel_name']] = $m['relation']->singular ? null : array();
 			}
 
+			$relation_result_wrapper->data = $rel_objs[$m['rel_name']];
+
 			// when result is array or singular empty, try to fetch the new relation from the row
 			$this->hydrate(
 				$row,
 				! empty($m['models']) ? $m['models'] : array(),
-				$rel_objs[$m['rel_name']],
+				$relation_result_wrapper,
 				$m['model'],
 				$m['columns'],
 				$m['primary_key']
 			);
+
+			$rel_objs[$m['rel_name']] = $relation_result_wrapper->data;
 		}
 
 		// attach the retrieved relations to the object and update its original DB values
@@ -1291,7 +1296,12 @@ class Query
 		}
 
 		$rows = $query->execute($this->connection)->as_array();
-		$result = array();
+
+		// To workaround the PHP 5.x performance issue at pulling a large number of records,
+		// we shouldn't use passing array by reference directly here.
+		$result = new \stdClass;
+		$result->data = array();
+
 		$model = $this->model;
 		$select = $this->select();
 		$primary_key = $model::primary_key();
@@ -1302,7 +1312,7 @@ class Query
 		}
 
 		// It's all built, now lets execute and start hydration
-		return $result;
+		return $result->data;
 	}
 
 	/**
