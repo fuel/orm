@@ -1195,9 +1195,15 @@ class Query
 		}
 
 		// if the result to be generated is an array and the current object is not yet in there
-		if (is_array($result->data) and ! array_key_exists($pk, $result->data))
-		{
-			$result->data[$pk] = $obj;
+		if (is_array($result->data)) {
+			if (! array_key_exists($pk, $result->data))
+			{
+				$result->data[$pk] = $obj;
+			}
+			else
+			{
+				$obj = $result->data[$pk];
+			}
 		}
 		// if the result to be generated is a single object and empty
 		elseif ( ! is_array($result->data) and empty($result->data))
