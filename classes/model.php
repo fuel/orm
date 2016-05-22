@@ -885,8 +885,14 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	 */
 	public function _update_original($original = null)
 	{
-		$original = is_null($original) ? $this->_data : $original;
-		$this->_original = array_merge($this->_original, $original);
+		if (is_null($original))
+		{
+			$this->_original = $this->_data;
+		}
+		else
+		{
+			$this->_original = array_merge($this->_original, $original);
+		}
 
 		$this->_update_original_relations();
 	}
