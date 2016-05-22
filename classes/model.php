@@ -885,14 +885,8 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	 */
 	public function _update_original($original = null)
 	{
-		if (is_null($original))
-		{
-			$this->_original = $this->_data;
-		}
-		else
-		{
-			$this->_original = array_merge($this->_original, $original);
-		}
+		$original = is_null($original) ? $this->_data : $original;
+		$this->_original = array_merge($this->_original, $original);
 
 		$this->_update_original_relations();
 	}
@@ -1354,8 +1348,6 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 			}
 			$this->unfreeze();
 
-			$this->_update_original();
-
 			$this->observe('after_save');
 
 			$use_transaction and $db->commit_transaction();
@@ -1407,6 +1399,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 
 		// update the original properties on creation and cache object for future retrieval in this request
 		$this->_is_new = false;
+
 		$this->_original = $this->_data;
 		static::$_cached_objects[get_class($this)][static::implode_pk($this)] = $this;
 
@@ -1462,6 +1455,9 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		{
 			return false;
 		}
+
+		$this->_original = $this->_data;
+		static::$_cached_objects[get_class($this)][static::implode_pk($this)] = $this;
 
 		// update the original property on success
 		$this->observe('after_update');
