@@ -180,7 +180,7 @@ class Model_Soft extends Model
 	 */
 	public function purge($cascade = null, $use_transaction = false)
 	{
-    $this->observe('before_purge');
+		$this->observe('before_purge');
 
 		$this->_disable_soft_delete = true;
 		$result = parent::delete($cascade, $use_transaction);
