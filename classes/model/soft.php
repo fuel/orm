@@ -214,7 +214,7 @@ class Model_Soft extends Model
 		$deleted_column = static::soft_delete_property('deleted_field', static::$_default_field_name);
 		$this->{$deleted_column} = null;
 
-		//Loop through all relations and delete if we are cascading.
+		//Loop through all relations and restore if we are cascading.
 		$this->freeze();
 		foreach ($this->relations() as $rel_name => $rel)
 		{
@@ -236,9 +236,20 @@ class Model_Soft extends Model
 					$model_to::disable_filter();
 
 					//Loop through and call restore on all the models
-					foreach ($rel->get($this) as $model)
+					$models = $rel->get($this);
+
+					// for hasmany/manymany relations
+					if (is_array($models))
 					{
-						$model->restore($cascade_restore);
+						foreach ($models as $model)
+						{
+							$model->restore($cascade_restore);
+						}
+					}
+					// for hasone/belongsto relations
+					else
+					{
+						$models->restore($cascade_restore);
 					}
 
 					$model_to::enable_filter();
