@@ -1189,8 +1189,25 @@ class Query
 				{
 					if (strpos($ob[0], $this->alias.'.') === 0)
 					{
-						// order by on the current model
-						$read_query or $ob[0] = substr($ob[0], strlen($this->alias.'.'));
+						// get the field name
+						$fn = substr($ob[0], strlen($this->alias.'.'));
+
+						// if not a a model property?
+						if ( ! call_fuel_func_array(array($this->model, 'property'), array($fn)))
+						{
+							// and it's not an alias?
+							foreach ($this->select as $si => $sv)
+							{
+								if (is_array($sv) and $sv[1] == $fn)
+								{
+									$fn = $si;
+									break;
+								}
+							}
+						}
+
+						// order by
+						$ob[0] = $fn;
 					}
 					else
 					{
