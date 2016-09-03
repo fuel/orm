@@ -966,7 +966,8 @@ class Query
 	 */
 	public function build_query(\Fuel\Core\Database_Query_Builder_Where $query, $columns = array(), $type = 'select')
 	{
-		$read_query = in_array($type, array('select', 'count'));
+		// Are we generating a read or a write query?
+		$read_query = ! in_array($type, array('insert', 'update', 'delete'));
 
 		// Get the limit
 		if ( ! is_null($this->limit))
@@ -1007,9 +1008,9 @@ class Query
 
 				if (empty($conditional)
 					or strpos($conditional[0], $this->alias.'.') === 0
-					or (!$read_query and $conditional[0] instanceof \Fuel\Core\Database_Expression))
+					or ( ! $read_query and $conditional[0] instanceof \Fuel\Core\Database_Expression))
 				{
-					if (!$read_query and ! empty($conditional)
+					if ( ! $read_query and ! empty($conditional)
 						and ! $conditional[0] instanceof \Fuel\Core\Database_Expression)
 					{
 						$conditional[0] = substr($conditional[0], strlen($this->alias.'.'));
@@ -1027,9 +1028,9 @@ class Query
 
 					if (empty($conditional)
 						or strpos($conditional[0], $this->alias.'.') === 0
-						or (!$read_query and $conditional[0] instanceof \Fuel\Core\Database_Expression))
+						or ( ! $read_query and $conditional[0] instanceof \Fuel\Core\Database_Expression))
 					{
-						if (!$read_query and ! empty($conditional)
+						if ( ! $read_query and ! empty($conditional)
 							and ! $conditional[0] instanceof \Fuel\Core\Database_Expression)
 						{
 							$conditional[0] = substr($conditional[0], strlen($this->alias.'.'));
@@ -1041,13 +1042,16 @@ class Query
 			}
 		}
 
-		// If it's not a select or count, we're done
-		if (!$read_query)
+		// If it's a write query, we're done
+		if ( ! $read_query)
 		{
 			return array('query' => $query, 'models' => array());
 		}
 
+		// Alias number counter
 		$i = 1;
+
+		// Add defined relations
 		$models = array();
 		foreach ($this->relations as $name => $rel)
 		{
@@ -1096,7 +1100,6 @@ class Query
 					if (strpos($ob[0], $this->alias.'.') === 0)
 					{
 						// order by on the current model
-						$read_query or $ob[0] = substr($ob[0], strlen($this->alias.'.'));
 						$query->order_by($ob[0], $ob[1]);
 					}
 				}
@@ -1133,8 +1136,7 @@ class Query
 		}
 		foreach ($models as $m)
 		{
-			if (($read_query and $m['connection'] != $this->connection) or
-				(!$read_query and $m['connection'] != $this->write_connection))
+			if ($m['connection'] != $this->connection)
 			{
 				throw new \FuelException('Models cannot be related between different database connections.');
 			}
@@ -1196,18 +1198,17 @@ class Query
 						if ( ! call_fuel_func_array(array($this->model, 'property'), array($fn)))
 						{
 							// and it's not an alias?
-							foreach ($this->select as $si => $sv)
+							foreach ($this->select as $salias => $sdef)
 							{
-								if (is_array($sv) and $sv[1] == $fn)
+								// if the fieldname matches
+								if (is_array($sdef) and $sdef[1] == $fn)
 								{
-									$fn = $si;
+									// order on it's alias instead
+									$ob[0] = $salias;
 									break;
 								}
 							}
 						}
-
-						// order by
-						$ob[0] = $fn;
 					}
 					else
 					{
