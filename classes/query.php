@@ -1400,7 +1400,14 @@ class Query
 			// add fields not present in the already cached version
 			foreach ($select as $s)
 			{
-				$f = substr($s[0], strpos($s[0], '.') + 1);
+				if ($s[0] instanceOf \Fuel\Core\Database_Expression)
+				{
+					$f = isset($this->select[$s[1]][1]) ? $this->select[$s[1]][1] : $s[1];
+				}
+				else
+				{
+					$f = substr($s[0], strpos($s[0], '.') + 1);
+				}
 				if ( ! isset($obj->{$f}))
 				{
 					$obj->{$f} = $row[$s[1]];
