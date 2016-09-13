@@ -657,6 +657,9 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 
 	public static function __callStatic($method, $args)
 	{
+		// storage for the type of find query
+		$find_type = false;
+
 		// Start with count_by? Get counting!
 		if (strpos($method, 'count_by') === 0)
 		{
@@ -679,8 +682,8 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 			}
 		}
 
-		// God knows, complain
-		else
+		// bail out if an invalid find type is detected
+		if ( ! $find_type)
 		{
 			throw new \FuelException('Invalid method call.  Method '.$method.' does not exist.', 0);
 		}
