@@ -455,9 +455,22 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		{
 			if (property_exists($class, '_'.$rel_name))
 			{
-				if (isset(static::${'_'.$rel_name}[$relation]))
+				foreach (static::${'_'.$rel_name} as $key => $value)
 				{
-					return static::${'_'.$rel_name}[$relation]['model_to'];
+					if (is_string($value))
+					{
+						if ($value === $relation)
+						{
+							return \Inflector::classify('model_'.$value);
+						}
+					}
+					else
+					{
+						if ($key === $relation)
+						{
+							return static::${'_'.$rel_name}[$relation]['model_to'];
+						}
+					}
 				}
 			}
 		}
