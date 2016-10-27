@@ -68,7 +68,7 @@ class Query_Temporal extends Query
 		return $join_result;
 	}
 
-	public function hydrate(&$row, $models, &$result, $model = null, $select = null, $primary_key = null)
+	public function hydrate(&$row, $models, \stdClass $result, $model = null, $select = null, $primary_key = null)
 	{
 		if( is_subclass_of($model, '\Orm\Model_Temporal'))
 		{
