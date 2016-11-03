@@ -1446,18 +1446,30 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		// Create the query and limit to primary key(s)
 		$query       = Query::forge(get_called_class(), static::connection(true));
 		$primary_key = static::primary_key();
-		$properties  = array_keys(static::properties());
+		$properties  = static::properties();
+		$properties_keys  = array_keys($properties);
 		//Add the primary keys to the where
 		$this->add_primary_keys_to_where($query);
 
 		// Set all current values
-		foreach ($properties as $p)
+		foreach ($properties_keys as $p)
 		{
 			if ( ! in_array($p, $primary_key) )
 			{
 				if (array_key_exists($p, $this->_original))
 				{
-					$this->{$p} !== $this->_original[$p] and $query->set($p, isset($this->_data[$p]) ? $this->_data[$p] : null);
+					if ((array_key_exists('type', $properties[$p]) and $properties[$p]['type'] == 'int') or
+						(array_key_exists('data_type', $properties[$p]) and $properties[$p]['data_type'] == 'int'))
+					{
+						if ($this->{$p} != $this->_original[$p])
+						{
+							$query->set($p, isset($this->_data[$p]) ? $this->_data[$p] : null);
+						}
+					}
+					elseif ($this->{$p} !== $this->_original[$p])
+					{
+						$query->set($p, isset($this->_data[$p]) ? $this->_data[$p] : null);
+					}
 				}
 				else
 				{
