@@ -260,7 +260,13 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	}
 
 	/**
-	 * Implode the primary keys within the data into a string
+	 * Implode the primary keys within the data into a unique string for the runtime
+	 *
+	 * Note: as explained below, it is not possible to use the output to match an item after runtime
+	 *  - The format contains no reference to which value is destined for which key
+	 *  - The format does not encode the values
+	 *
+	 * @internal Designed for internal use only
 	 *
 	 * @param   array
 	 * @return  string
