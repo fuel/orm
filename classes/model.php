@@ -2178,7 +2178,8 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	{
 		$array = array_flip(static::primary_key());
 
-		foreach($array as $key => &$value) {
+		foreach ($array as $key => &$value)
+		{
 			$value = $this->get($key);
 		}
 
