@@ -1718,7 +1718,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		$properties = static::properties();
 		$relations = static::relations();
 		$property = (array) $property ?: array_merge(array_keys($properties), array_keys($relations));
-		$simple_data_types = ['int','bool'];
+		$simple_data_types = array('int','bool');
 
 		foreach ($property as $p)
 		{
