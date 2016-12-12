@@ -2190,6 +2190,23 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	}
 
 	/**
+	 * Provide the identifying details in the form of an array
+	 *
+	 * @return array
+	 */
+	public function get_pk_assoc()
+	{
+		$array = array_flip(static::primary_key());
+
+		foreach ($array as $key => &$value)
+		{
+			$value = $this->get($key);
+		}
+
+		return $array;
+	}
+
+	/**
 	 * Allow converting this object to a real object
 	 *
 	 * @return  object
