@@ -1370,6 +1370,9 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 			}
 			$this->unfreeze();
 
+			// update the original datastore and the related datastore
+			$this->_update_original();
+
 			$this->observe('after_save');
 
 			$use_transaction and $db->commit_transaction();
