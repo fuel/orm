@@ -94,21 +94,7 @@ class Query_Soft extends Query
 	{
 		if ($this->_col_name !== null)
 		{
-			// Capture any filtering that has already been added
-			$current_where = $this->where;
-
-			// If there is no filtering then we don't need to add any special organization
-			if ( ! empty($current_where))
-			{
-				$this->where = array();
-
-				// Make sure the existing filtering is wrapped safely
-				$this->and_where_open();
-				$this->where = array_merge($this->where, $current_where);
-				$this->and_where_close();
-			}
-
-			// Finally add the soft delete filtering
+			// Add the soft delete filtering
 			$this->where($this->_col_name, null);
 		}
 	}
