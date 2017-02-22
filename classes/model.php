@@ -834,8 +834,17 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	 * @param  array
 	 * @param  bool
 	 */
-	public function __construct(array $data = array(), $new = true, $view = null, $cache = true)
+	public function __construct($data = array(), $new = true, $view = null, $cache = true)
 	{
+		// Make sure we get the correct dataformat passed
+		if ( ! is_array($data) and ! $data instanceOf \ArrayAccess)
+		{
+			throw new \ErrorException(
+				'Argument 1 passed to '.__METHOD__.'() must be of the type array or implement ArrayAccess, '.gettype($data).' given',
+				0, E_ERROR, __FILE__, __LINE__-7 // adjust the line to point to the function prototype, not this line!
+			);
+		}
+
 		// This is to deal with PHP's native hydration that happens before constructor is called
 		// for some weird reason, for example using the DB's as_object() function
 		if( ! empty($this->_data) or  ! empty($this->_custom_data))
@@ -895,6 +904,12 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		}
 		else
 		{
+			// make sure the primary keys are reset
+			foreach (static::$_primary_key as $pk)
+			{
+				$this->_data[$pk] = null;
+			}
+
 			// new object, fire the after-create observers
 			$this->observe('after_create');
 		}
