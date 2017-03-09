@@ -87,6 +87,10 @@ class Observer_Typing
 			'before' => 'Orm\\Observer_Typing::type_serialize',
 			'after'  => 'Orm\\Observer_Typing::type_unserialize',
 		),
+		'encrypt' => array(
+			'before' => 'Orm\\Observer_Typing::type_encrypt',
+			'after'  => 'Orm\\Observer_Typing::type_decrypt',
+		),
 		'json' => array(
 			'before' => 'Orm\\Observer_Typing::type_json_encode',
 			'after'  => 'Orm\\Observer_Typing::type_json_decode',
@@ -476,7 +480,7 @@ class Observer_Typing
 			$length  = intval($settings['character_maximum_length']);
 			if ($length > 0 and strlen($var) > $length)
 			{
-				throw new InvalidContentType('Value could not be serialized, exceeds max string length for field.');
+				throw new InvalidContentType('Value could not be serialized, result exceeds max string length for field.');
 			}
 		}
 
@@ -493,6 +497,66 @@ class Observer_Typing
 	public static function type_unserialize($var)
 	{
 		return empty($var) ? array() : unserialize($var);
+	}
+
+	/**
+	 * Returns the encrypted input
+	 *
+	 * @param   mixed  value
+	 * @param   array  any options to be passed
+	 *
+	 * @throws  InvalidContentType
+	 *
+	 * @return  string
+	 */
+	public static function type_encrypt($var, array $settings)
+	{
+		// make the variable serialized, we need to be able to encrypt any variable type
+		$var = static::type_serialize($var, $settings);
+
+		// and encrypt it
+		if (array_key_exists('encryption_key', $settings))
+		{
+			$var = \Crypt::encode($var, $settings['encryption_key']);
+		}
+		else
+		{
+			$var = \Crypt::encode($var);
+		}
+
+		// do a length check if needed
+		if (array_key_exists('character_maximum_length', $settings))
+		{
+			$length  = intval($settings['character_maximum_length']);
+			if ($length > 0 and strlen($var) > $length)
+			{
+				throw new InvalidContentType('Value could not be encrypted, result exceeds max string length for field.');
+			}
+		}
+
+		return $var;
+	}
+
+	/**
+	 * decrypt the input
+	 *
+	 * @param   string  value
+	 *
+	 * @return  mixed
+	 */
+	public static function type_decrypt($var)
+	{
+		// decrypt it
+		if (array_key_exists('encryption_key', $settings))
+		{
+			$var = \Crypt::decode($var, $settings['encryption_key']);
+		}
+		else
+		{
+			$var = \Crypt::decode($var);
+		}
+
+		return $var;
 	}
 
 	/**
