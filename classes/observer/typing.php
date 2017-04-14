@@ -305,7 +305,7 @@ class Observer_Typing
 	 *
 	 * @return  float
 	 */
-	public static function type_float_before($var)
+	public static function type_float_before($var, $settings = null)
 	{
 		if (is_array($var) or is_object($var))
 		{
@@ -318,6 +318,17 @@ class Observer_Typing
 			$locale_info = localeconv();
 			$var = str_replace($locale_info["mon_thousands_sep"], "", $var);
 			$var = str_replace($locale_info["mon_decimal_point"], ".", $var);
+		}
+
+		// was a specific float format specified?
+		if (isset($settings['db_decimals']))
+		{
+			return sprintf('%.'.$settings['db_decimals'].'F', (float) $var);
+		}
+		if (isset($settings['data_type']) and strpos($settings['data_type'], 'decimal:') === 0)
+		{
+			$decimal = explode(':', $settings['data_type']);
+			return sprintf('%.'.$decimal[1].'F', (float) $var);
 		}
 
 		return sprintf('%F', (float) $var);
@@ -351,14 +362,14 @@ class Observer_Typing
 	 *
 	 * @return  float
 	 */
-	public static function type_decimal_before($var)
+	public static function type_decimal_before($var, $settings = null)
 	{
 		if (is_array($var) or is_object($var))
 		{
 			throw new InvalidContentType('Array or object could not be converted to decimal.');
 		}
 
-		return static::type_float_before($var);
+		return static::type_float_before($var, $settings);
 	}
 
 	/**
