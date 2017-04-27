@@ -2140,8 +2140,8 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 						foreach ($rel as $id => $r)
 						{
 							$array[$name][$id] = $r->to_array($custom, true, $eav);
-							array_pop(static::$to_array_references);
 						}
+						array_pop(static::$to_array_references);
 					}
 				}
 			}
