@@ -24,6 +24,19 @@ class Query
 	 */
 	protected static $caching = null;
 
+
+	/**
+	 * Load the ORM config file
+	 */
+	public static function _init()
+	{
+		// load the config
+		\Config::load('orm', true);
+
+		// update the caching flag if defined
+		static::$caching = \Config::get('orm.caching', null);
+	}
+
 	/**
 	 * Enables or disables the default state of the object cache
 	 *
