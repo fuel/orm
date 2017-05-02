@@ -20,6 +20,23 @@ namespace Orm;
 class Query
 {
 	/**
+	 * @var  bool  switch to globally enable/disable object caching
+	 */
+	protected static $caching = null;
+
+	/**
+	 * Enables or disables the default state of the object cache
+	 *
+	 * @param  bool  $cache    Whether or not to use the object cache by default
+	 *
+	 * @return  Query
+	 */
+	public static function caching($cache = true)
+	{
+		static::$caching = (bool) $cache;
+	}
+
+	/**
 	 * Create a new instance of the Query class.
 	 *
 	 * @param	string  $model      name of the model this instance has to operate on
@@ -138,6 +155,11 @@ class Query
 	 */
 	protected function __construct($model, $connection, $options, $table_alias = null)
 	{
+		if ( ! is_null(static::$caching))
+		{
+				$this->from_cache = (bool) static::$caching;
+		}
+
 		$this->model = $model;
 
 		if (is_array($connection))
