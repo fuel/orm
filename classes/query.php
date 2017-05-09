@@ -1433,6 +1433,7 @@ class Query
 		else
 		{
 			// add fields not present in the already cached version
+			$new = array();
 			foreach ($select as $s)
 			{
 				if ($s[0] instanceOf \Fuel\Core\Database_Expression)
@@ -1443,10 +1444,15 @@ class Query
 				{
 					$f = substr($s[0], strpos($s[0], '.') + 1);
 				}
+				$new[$f] = $row[$s[1]];
 				if ( ! isset($obj->{$f}))
 				{
-					$obj->{$f} = $row[$s[1]];
+					$obj->{$f} = $new[$f];
 				}
+			}
+			if ($new)
+			{
+				$obj->_update_original($new);
 			}
 		}
 

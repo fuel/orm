@@ -1038,7 +1038,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	 */
 	public function __isset($property)
 	{
-		if (array_key_exists($property, static::properties()))
+		if (array_key_exists($property, $this->_data))
 		{
 			return true;
 		}
