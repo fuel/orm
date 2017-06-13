@@ -242,11 +242,46 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	public static function cached_object($obj, $class = null)
 	{
 		$class = $class ?: get_called_class();
+
 		$id    = (is_int($obj) or is_string($obj)) ? (string) $obj : $class::implode_pk($obj);
 
 		$result = ( ! empty(static::$_cached_objects[$class][$id])) ? static::$_cached_objects[$class][$id] : false;
 
 		return $result;
+	}
+
+	/**
+	 * Flush the object cache
+	 *
+	 * @param   null|string|object  $class
+	 */
+	public static function flush_cache($class = null)
+	{
+		// determine what to flush
+		if (func_num_args() == 0)
+		{
+			$class = get_called_class();
+		}
+		elseif (is_object($class))
+		{
+			$class = get_class($class);
+		}
+		else
+		{
+			$class = ltrim($class, "\\");
+		}
+
+		// flush ...
+		if (is_null($class))
+		{
+			// the entire cache
+			static::$_cached_objects = array();
+		}
+		elseif (array_key_exists($class, static::$_cached_objects))
+		{
+			// the requested object cache
+			unset(static::$_cached_objects[$class]);
+		}
 	}
 
 	/**
