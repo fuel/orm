@@ -261,9 +261,9 @@ class Observer_Typing
 		if (array_key_exists('character_maximum_length', $settings))
 		{
 			$length  = intval($settings['character_maximum_length']);
-			if ($length > 0 and strlen($var) > $length)
+			if ($length > 0 and mb_strlen($var) > $length)
 			{
-				$var = substr($var, 0, $length);
+				$var = mb_substr($var, 0, $length);
 			}
 		}
 
