@@ -266,7 +266,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		{
 			$class = get_class($class);
 		}
-		else
+		elseif (is_string($class))
 		{
 			$class = ltrim($class, "\\");
 		}
