@@ -332,7 +332,7 @@ class Query
 	 * @param   string  $base
 	 * @param   bool    $or
 	 */
-	protected function _parse_where_array(array $val, $base = '', $or = false)
+	public function _parse_where_array(array $val, $base = '', $or = false)
 	{
 		$or and $this->or_where_open();
 		foreach ($val as $k_w => $v_w)

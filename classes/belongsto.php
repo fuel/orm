@@ -63,12 +63,8 @@ class BelongsTo extends Relation
 		}
 
 		$conditions = \Arr::merge($this->conditions, $conditions);
+		$query->_parse_where_array(\Arr::get($conditions, 'where', array()));
 
-		foreach (\Arr::get($conditions, 'where', array()) as $key => $condition)
-		{
-			is_array($condition) or $condition = array($key, '=', $condition);
-			$query->where($condition);
-		}
 		return $query->get_one();
 	}
 

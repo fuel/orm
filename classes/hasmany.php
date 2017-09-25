@@ -57,12 +57,7 @@ class HasMany extends Relation
 		}
 
 		$conditions = \Arr::merge($this->conditions, $conditions);
-
-		foreach (\Arr::get($conditions, 'where', array()) as $key => $condition)
-		{
-			is_array($condition) or $condition = array($key, '=', $condition);
-			$query->where($condition);
-		}
+		$query->_parse_where_array(\Arr::get($conditions, 'where', array()));
 
 		foreach (\Arr::get($conditions, 'order_by', array()) as $field => $direction)
 		{
