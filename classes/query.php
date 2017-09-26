@@ -1017,7 +1017,7 @@ class Query
 		}
 
 		$where_conditions = call_user_func($this->model.'::condition', 'where');
-		empty($where_conditions) or $this->where($where_conditions);
+		empty($where_conditions) or $this->_parse_where_array($where_conditions);
 
 		$where_backup = $this->where;
 		if ( ! empty($this->where))
