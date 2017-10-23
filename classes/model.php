@@ -1307,26 +1307,38 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 				throw new \InvalidArgumentException('You need to pass both a property name and a value to set().');
 			}
 
+			// is it a primary key we're updating?
 			if (in_array($property, static::primary_key()) and $this->{$property} !== null and $this->{$property} != $value)
 			{
 				throw new \FuelException('Primary key on model '.get_class($this).' cannot be changed.');
 			}
+
+			// is it a model property we're updating?
 			if (array_key_exists($property, static::properties()))
 			{
 				$this->_data[$property] = $value;
 			}
-			elseif (static::relations($property))
+
+			// or perhaps a related model?
+			elseif ($rel = static::relations($property))
 			{
 				$this->is_fetched($property) or $this->_reset_relations[$property] = true;
 				if (isset($this->_data_relations[$property]) and ($this->_data_relations[$property] instanceof self) and is_array($value))
 				{
 					$this->_data_relations[$property]->set($value);
 				}
+				elseif ($value === null or $value === array())
+				{
+					$this->_reset_relations[$property] = true;
+					$this->_data_relations[$property] = $rel->singular ? null : array();
+				}
 				else
 				{
 					$this->_data_relations[$property] = $value;
 				}
 			}
+
+			// none of the above, assume its custom data
 			elseif ( ! $this->_set_eav($property, $value))
 			{
 				$this->_custom_data[$property] = $value;
