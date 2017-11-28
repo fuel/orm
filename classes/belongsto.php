@@ -100,6 +100,10 @@ class BelongsTo extends Relation
 				{
 					$condition[0] = $alias_to.'.'.$condition[0];
 				}
+				if (count($condition) == 2) // From Query::_where()
+				{
+					$condition = array($condition[0], '=', $condition[1]);
+				}
 				is_string($condition[2]) and $condition[2] = \Db::quote($condition[2], $model['connection']);
 
 				$model['join_on'][] = $condition;

@@ -212,6 +212,10 @@ class ManyMany extends Relation
 				{
 					$condition[0] = $alias_to.'.'.$condition[0];
 				}
+				if (count($condition) == 2) // From Query::_where()
+				{
+					$condition = array($condition[0], '=', $condition[1]);
+				}
 				is_string($condition[2]) and $condition[2] = \Db::quote($condition[2], $models[$rel_name]['connection']);
 
 				$models[$rel_name]['join_on'][] = $condition;
