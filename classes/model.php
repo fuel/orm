@@ -1213,7 +1213,6 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		{
 			if ( ! array_key_exists($property, $this->_data_relations))
 			{
-				// relation not fetched yet, do a lazy load
 				$this->_data_relations[$property] = $rel->get($this, $conditions);
 				$this->_update_original_relations(array($property));
 			}
@@ -2077,7 +2076,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 				{
 					if (is_array($data))
 					{
-						if (array_key_exists($id, $this->_data_relations[$property]::properties()))
+						if (array_key_exists($id, $this->_data_relations[$property]))
 						{
 							foreach($data as $field => $contents)
 							{
