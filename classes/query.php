@@ -1406,6 +1406,11 @@ class Query
 		$pk  = count($primary_key) == 1 ? reset($obj) : '['.implode('][', $obj).']';
 		$obj = $this->from_cache ? Model::cached_object($pk, $model) : false;
 
+		// if the result already (partially) exists, use it
+		if (!is_array($result->data) and !empty($result->data)) {
+			$obj = $result->data;
+		}
+
 		// Create the object when it wasn't found
 		if ( ! $obj)
 		{
