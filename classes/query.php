@@ -5,10 +5,10 @@
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
  * @package    Fuel
- * @version    1.8
+ * @version    1.8.1
  * @author     Fuel Development Team
  * @license    MIT License
- * @copyright  2010 - 2016 Fuel Development Team
+ * @copyright  2010 - 2018 Fuel Development Team
  * @link       http://fuelphp.com
  */
 
@@ -19,6 +19,36 @@ namespace Orm;
  */
 class Query
 {
+	/**
+	 * @var  bool  switch to globally enable/disable object caching
+	 */
+	protected static $caching = null;
+
+
+	/**
+	 * Load the ORM config file
+	 */
+	public static function _init()
+	{
+		// load the config
+		\Config::load('orm', true);
+
+		// update the caching flag if defined
+		static::$caching = \Config::get('orm.caching', null);
+	}
+
+	/**
+	 * Enables or disables the default state of the object cache
+	 *
+	 * @param  bool  $cache    Whether or not to use the object cache by default
+	 *
+	 * @return  Query
+	 */
+	public static function caching($cache = true)
+	{
+		static::$caching = (bool) $cache;
+	}
+
 	/**
 	 * Create a new instance of the Query class.
 	 *
@@ -138,6 +168,11 @@ class Query
 	 */
 	protected function __construct($model, $connection, $options, $table_alias = null)
 	{
+		if ( ! is_null(static::$caching))
+		{
+				$this->from_cache = (bool) static::$caching;
+		}
+
 		$this->model = $model;
 
 		if (is_array($connection))
@@ -297,7 +332,7 @@ class Query
 	 * @param   string  $base
 	 * @param   bool    $or
 	 */
-	protected function _parse_where_array(array $val, $base = '', $or = false)
+	public function _parse_where_array(array $val, $base = '', $or = false)
 	{
 		$or and $this->or_where_open();
 		foreach ($val as $k_w => $v_w)
@@ -982,7 +1017,7 @@ class Query
 		}
 
 		$where_conditions = call_user_func($this->model.'::condition', 'where');
-		empty($where_conditions) or $this->where($where_conditions);
+		empty($where_conditions) or $this->_parse_where_array($where_conditions);
 
 		$where_backup = $this->where;
 		if ( ! empty($this->where))
@@ -1398,6 +1433,7 @@ class Query
 		else
 		{
 			// add fields not present in the already cached version
+			$new = array();
 			foreach ($select as $s)
 			{
 				if ($s[0] instanceOf \Fuel\Core\Database_Expression)
@@ -1408,10 +1444,15 @@ class Query
 				{
 					$f = substr($s[0], strpos($s[0], '.') + 1);
 				}
+				$new[$f] = $row[$s[1]];
 				if ( ! isset($obj->{$f}))
 				{
-					$obj->{$f} = $row[$s[1]];
+					$obj->{$f} = $new[$f];
 				}
+			}
+			if ($new)
+			{
+				$obj->_update_original($new);
 			}
 		}
 

@@ -5,10 +5,10 @@
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
  * @package    Fuel
- * @version    1.8
+ * @version    1.8.1
  * @author     Fuel Development Team
  * @license    MIT License
- * @copyright  2010 - 2016 Fuel Development Team
+ * @copyright  2010 - 2018 Fuel Development Team
  * @link       http://fuelphp.com
  */
 
@@ -242,11 +242,46 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	public static function cached_object($obj, $class = null)
 	{
 		$class = $class ?: get_called_class();
+
 		$id    = (is_int($obj) or is_string($obj)) ? (string) $obj : $class::implode_pk($obj);
 
 		$result = ( ! empty(static::$_cached_objects[$class][$id])) ? static::$_cached_objects[$class][$id] : false;
 
 		return $result;
+	}
+
+	/**
+	 * Flush the object cache
+	 *
+	 * @param   null|string|object  $class
+	 */
+	public static function flush_cache($class = null)
+	{
+		// determine what to flush
+		if (func_num_args() == 0)
+		{
+			$class = get_called_class();
+		}
+		elseif (is_object($class))
+		{
+			$class = get_class($class);
+		}
+		elseif (is_string($class))
+		{
+			$class = ltrim($class, "\\");
+		}
+
+		// flush ...
+		if (is_null($class))
+		{
+			// the entire cache
+			static::$_cached_objects = array();
+		}
+		elseif (array_key_exists($class, static::$_cached_objects))
+		{
+			// the requested object cache
+			unset(static::$_cached_objects[$class]);
+		}
 	}
 
 	/**
@@ -834,8 +869,17 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	 * @param  array
 	 * @param  bool
 	 */
-	public function __construct(array $data = array(), $new = true, $view = null, $cache = true)
+	public function __construct($data = array(), $new = true, $view = null, $cache = true)
 	{
+		// Make sure we get the correct dataformat passed
+		if ( ! is_array($data) and ! $data instanceOf \ArrayAccess)
+		{
+			throw new \ErrorException(
+				'Argument 1 passed to '.__METHOD__.'() must be of the type array or implement ArrayAccess, '.gettype($data).' given',
+				0, E_ERROR, __FILE__, __LINE__-7 // adjust the line to point to the function prototype, not this line!
+			);
+		}
+
 		// This is to deal with PHP's native hydration that happens before constructor is called
 		// for some weird reason, for example using the DB's as_object() function
 		if( ! empty($this->_data) or  ! empty($this->_custom_data))
@@ -895,6 +939,12 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		}
 		else
 		{
+			// make sure the primary keys are reset
+			foreach (static::$_primary_key as $pk)
+			{
+				$this->_data[$pk] = null;
+			}
+
 			// new object, fire the after-create observers
 			$this->observe('after_create');
 		}
@@ -1023,7 +1073,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	 */
 	public function __isset($property)
 	{
-		if (array_key_exists($property, static::properties()))
+		if (array_key_exists($property, $this->_data))
 		{
 			return true;
 		}
@@ -1257,26 +1307,38 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 				throw new \InvalidArgumentException('You need to pass both a property name and a value to set().');
 			}
 
+			// is it a primary key we're updating?
 			if (in_array($property, static::primary_key()) and $this->{$property} !== null and $this->{$property} != $value)
 			{
 				throw new \FuelException('Primary key on model '.get_class($this).' cannot be changed.');
 			}
+
+			// is it a model property we're updating?
 			if (array_key_exists($property, static::properties()))
 			{
 				$this->_data[$property] = $value;
 			}
-			elseif (static::relations($property))
+
+			// or perhaps a related model?
+			elseif ($rel = static::relations($property))
 			{
 				$this->is_fetched($property) or $this->_reset_relations[$property] = true;
 				if (isset($this->_data_relations[$property]) and ($this->_data_relations[$property] instanceof self) and is_array($value))
 				{
 					$this->_data_relations[$property]->set($value);
 				}
+				elseif ($value === null or $value === array())
+				{
+					$this->_reset_relations[$property] = true;
+					$this->_data_relations[$property] = $rel->singular ? null : array();
+				}
 				else
 				{
 					$this->_data_relations[$property] = $value;
 				}
 			}
+
+			// none of the above, assume its custom data
 			elseif ( ! $this->_set_eav($property, $value))
 			{
 				$this->_custom_data[$property] = $value;
@@ -2125,8 +2187,8 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 						foreach ($rel as $id => $r)
 						{
 							$array[$name][$id] = $r->to_array($custom, true, $eav);
-							array_pop(static::$to_array_references);
 						}
+						array_pop(static::$to_array_references);
 					}
 				}
 			}

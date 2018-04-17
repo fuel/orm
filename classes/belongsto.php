@@ -5,10 +5,10 @@
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
  * @package    Fuel
- * @version    1.8
+ * @version    1.8.1
  * @author     Fuel Development Team
  * @license    MIT License
- * @copyright  2010 - 2016 Fuel Development Team
+ * @copyright  2010 - 2018 Fuel Development Team
  * @link       http://fuelphp.com
  */
 
@@ -63,12 +63,8 @@ class BelongsTo extends Relation
 		}
 
 		$conditions = \Arr::merge($this->conditions, $conditions);
+		$query->_parse_where_array(\Arr::get($conditions, 'where', array()));
 
-		foreach (\Arr::get($conditions, 'where', array()) as $key => $condition)
-		{
-			is_array($condition) or $condition = array($key, '=', $condition);
-			$query->where($condition);
-		}
 		return $query->get_one();
 	}
 
@@ -103,6 +99,10 @@ class BelongsTo extends Relation
 				if ( ! $condition[0] instanceof \Fuel\Core\Database_Expression and strpos($condition[0], '.') === false)
 				{
 					$condition[0] = $alias_to.'.'.$condition[0];
+				}
+				if (count($condition) == 2) // From Query::_where()
+				{
+					$condition = array($condition[0], '=', $condition[1]);
 				}
 				is_string($condition[2]) and $condition[2] = \Db::quote($condition[2], $model['connection']);
 

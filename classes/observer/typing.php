@@ -5,10 +5,10 @@
  * Fuel is a fast, lightweight, community driven PHP5 framework.
  *
  * @package    Fuel
- * @version    1.8
+ * @version    1.8.1
  * @author     Fuel Development Team
  * @license    MIT License
- * @copyright  2010 - 2016 Fuel Development Team
+ * @copyright  2010 - 2018 Fuel Development Team
  * @link       http://fuelphp.com
  */
 
@@ -86,6 +86,10 @@ class Observer_Typing
 		'serialize' => array(
 			'before' => 'Orm\\Observer_Typing::type_serialize',
 			'after'  => 'Orm\\Observer_Typing::type_unserialize',
+		),
+		'encrypt' => array(
+			'before' => 'Orm\\Observer_Typing::type_encrypt',
+			'after'  => 'Orm\\Observer_Typing::type_decrypt',
 		),
 		'json' => array(
 			'before' => 'Orm\\Observer_Typing::type_json_encode',
@@ -301,7 +305,7 @@ class Observer_Typing
 	 *
 	 * @return  float
 	 */
-	public static function type_float_before($var)
+	public static function type_float_before($var, $settings = null)
 	{
 		if (is_array($var) or is_object($var))
 		{
@@ -314,6 +318,17 @@ class Observer_Typing
 			$locale_info = localeconv();
 			$var = str_replace($locale_info["mon_thousands_sep"], "", $var);
 			$var = str_replace($locale_info["mon_decimal_point"], ".", $var);
+		}
+
+		// was a specific float format specified?
+		if (isset($settings['db_decimals']))
+		{
+			return sprintf('%.'.$settings['db_decimals'].'F', (float) $var);
+		}
+		if (isset($settings['data_type']) and strpos($settings['data_type'], 'decimal:') === 0)
+		{
+			$decimal = explode(':', $settings['data_type']);
+			return sprintf('%.'.$decimal[1].'F', (float) $var);
 		}
 
 		return sprintf('%F', (float) $var);
@@ -347,14 +362,14 @@ class Observer_Typing
 	 *
 	 * @return  float
 	 */
-	public static function type_decimal_before($var)
+	public static function type_decimal_before($var, $settings = null)
 	{
 		if (is_array($var) or is_object($var))
 		{
 			throw new InvalidContentType('Array or object could not be converted to decimal.');
 		}
 
-		return static::type_float_before($var);
+		return static::type_float_before($var, $settings);
 	}
 
 	/**
@@ -476,7 +491,7 @@ class Observer_Typing
 			$length  = intval($settings['character_maximum_length']);
 			if ($length > 0 and strlen($var) > $length)
 			{
-				throw new InvalidContentType('Value could not be serialized, exceeds max string length for field.');
+				throw new InvalidContentType('Value could not be serialized, result exceeds max string length for field.');
 			}
 		}
 
@@ -493,6 +508,66 @@ class Observer_Typing
 	public static function type_unserialize($var)
 	{
 		return empty($var) ? array() : unserialize($var);
+	}
+
+	/**
+	 * Returns the encrypted input
+	 *
+	 * @param   mixed  value
+	 * @param   array  any options to be passed
+	 *
+	 * @throws  InvalidContentType
+	 *
+	 * @return  string
+	 */
+	public static function type_encrypt($var, array $settings)
+	{
+		// make the variable serialized, we need to be able to encrypt any variable type
+		$var = static::type_serialize($var, $settings);
+
+		// and encrypt it
+		if (array_key_exists('encryption_key', $settings))
+		{
+			$var = \Crypt::encode($var, $settings['encryption_key']);
+		}
+		else
+		{
+			$var = \Crypt::encode($var);
+		}
+
+		// do a length check if needed
+		if (array_key_exists('character_maximum_length', $settings))
+		{
+			$length  = intval($settings['character_maximum_length']);
+			if ($length > 0 and strlen($var) > $length)
+			{
+				throw new InvalidContentType('Value could not be encrypted, result exceeds max string length for field.');
+			}
+		}
+
+		return $var;
+	}
+
+	/**
+	 * decrypt the input
+	 *
+	 * @param   string  value
+	 *
+	 * @return  mixed
+	 */
+	public static function type_decrypt($var)
+	{
+		// decrypt it
+		if (array_key_exists('encryption_key', $settings))
+		{
+			$var = \Crypt::decode($var, $settings['encryption_key']);
+		}
+		else
+		{
+			$var = \Crypt::decode($var);
+		}
+
+		return $var;
 	}
 
 	/**
