@@ -2174,37 +2174,28 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		// convert relations
 		foreach ($this->_data_relations as $name => $rel)
 		{
-			if (is_array($rel))
+			if (is_null($rel))
+			{
+				$array[$name] = null;
+			}
+			elseif (is_array($rel))
 			{
 				$array[$name] = array();
-				if ( ! empty($rel))
+				if ( ! in_array(get_class(reset($rel)), static::$to_array_references))
 				{
-					if ( ! in_array(get_class(reset($rel)), static::$to_array_references))
+					static::$to_array_references[] = get_class(reset($rel));
+					foreach ($rel as $id => $r)
 					{
-						static::$to_array_references[] = get_class(reset($rel));
-						foreach ($rel as $id => $r)
-						{
-							$array[$name][$id] = $r->to_array($custom, true, $eav);
-						}
-						array_pop(static::$to_array_references);
+						$array[$name][$id] = $r->to_array($custom, true, $eav);
 					}
+					array_pop(static::$to_array_references);
 				}
 			}
-			else
+			elseif ( ! in_array(get_class($rel), static::$to_array_references))
 			{
-				if ( ! in_array(get_class($rel), static::$to_array_references))
-				{
-					if (is_null($rel))
-					{
-						$array[$name] = null;
-					}
-					else
-					{
-						static::$to_array_references[] = get_class($rel);
-						$array[$name] = $rel->to_array($custom, true, $eav);
-						array_pop(static::$to_array_references);
-					}
-				}
+				static::$to_array_references[] = get_class($rel);
+				$array[$name] = $rel->to_array($custom, true, $eav);
+				array_pop(static::$to_array_references);
 			}
 		}
 
