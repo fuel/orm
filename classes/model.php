@@ -2174,7 +2174,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		// convert relations
 		foreach ($this->_data_relations as $name => $rel)
 		{
-			if (is_null($rel))
+			if (empty($rel))
 			{
 				$array[$name] = null;
 			}
