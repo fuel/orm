@@ -2174,21 +2174,24 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		// convert relations
 		foreach ($this->_data_relations as $name => $rel)
 		{
-			if (empty($rel))
+			if (is_null($rel))
 			{
 				$array[$name] = null;
 			}
 			elseif (is_array($rel))
 			{
 				$array[$name] = array();
-				if ( ! in_array(get_class(reset($rel)), static::$to_array_references))
+				if ( ! empty($rel))
 				{
-					static::$to_array_references[] = get_class(reset($rel));
-					foreach ($rel as $id => $r)
+					if ( ! in_array(get_class(reset($rel)), static::$to_array_references))
 					{
-						$array[$name][$id] = $r->to_array($custom, true, $eav);
+						static::$to_array_references[] = get_class(reset($rel));
+						foreach ($rel as $id => $r)
+						{
+							$array[$name][$id] = $r->to_array($custom, true, $eav);
+						}
+						array_pop(static::$to_array_references);
 					}
-					array_pop(static::$to_array_references);
 				}
 			}
 			elseif ( ! in_array(get_class($rel), static::$to_array_references))
