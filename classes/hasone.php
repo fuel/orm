@@ -41,26 +41,43 @@ class HasOne extends Relation
 		$this->model_to = get_real_class($this->model_to);
 	}
 
-	public function get(Model $from, array $conditions = array())
-	{
-		$query = call_user_func(array($this->model_to, 'query'));
-		reset($this->key_to);
-		foreach ($this->key_from as $key)
-		{
-			// no point running a query when a key value is null
-			if ($from->{$key} === null)
-			{
-				return null;
-			}
-			$query->where(current($this->key_to), $from->{$key});
-			next($this->key_to);
-		}
+    public function get(Model $from, array $conditions = array())
+    {
+        $query = call_user_func(array($this->model_to, 'query'));
+        reset($this->key_to);
+        foreach ($this->key_from as $key)
+        {
+            // no point running a query when a key value is null
+            if ($from->{$key} === null)
+            {
+                return null;
+            }
+            $query->where(current($this->key_to), $from->{$key});
+            next($this->key_to);
+        }
 
-		$conditions = \Arr::merge($this->conditions, $conditions);
-		$query->_parse_where_array(\Arr::get($conditions, 'where', array()));
+        $conditions = \Arr::merge($this->conditions, $conditions);
 
-		return $query->get_one();
-	}
+        foreach (\Arr::get($conditions, 'where', array()) as $key => $condition)
+        {
+            is_array($condition) or $condition = array($key, '=', $condition);
+            $query->where($condition);
+        }
+
+        foreach (\Arr::get($conditions, 'order_by', array()) as $field => $direction)
+        {
+            if (is_numeric($field))
+            {
+                $query->order_by($direction);
+            }
+            else
+            {
+                $query->order_by($field, $direction);
+            }
+        }
+
+        return $query->get_one();
+    }
 
 	public function join($alias_from, $rel_name, $alias_to_nr, $conditions = array())
 	{
