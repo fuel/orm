@@ -614,7 +614,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		if (is_null($id))
 		{
 			// if no options are present, simply return null. a PK with a null value can exist
-			return func_num_args() === 2 ? static::query($options) : null;
+			return empty($options) ? null : static::query($options);
 		}
 
 		// Return all that match $options array
