@@ -608,22 +608,25 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
      *
      * @return  Model|Model[]
      */
-	public static function find($id = null, array $options = array())
+	public static function find($id = null, array $options = null)
 	{
 		// deal with null valued PK's
 		if (is_null($id))
 		{
-			// if no options are present, simply return null. a PK with a null value can exist
-			return func_num_args() === 2 ? static::query($options) : null;
+			// if no options are passed, simply return null. a PK with a null value can exist
+			return is_array($options) ? static::query($options) : null;
 		}
 
-		// Return all that match $options array
-		elseif ($id === 'all')
+		// make sure options is an array, before we continue
+		is_null($options) and $options = array();
+
+		// return all that match $options array
+		if ($id === 'all')
 		{
 			return static::query($options)->get();
 		}
 
-		// Return first or last row that matches $options array
+		// return first or last row that matches $options array
 		elseif ($id === 'first' or $id === 'last')
 		{
 			$query = static::query($options);
