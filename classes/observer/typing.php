@@ -314,8 +314,8 @@ class Observer_Typing
 		if (is_string($var) and static::$use_locale)
 		{
 			$locale_info = localeconv();
-			$var = str_replace($locale_info["mon_thousands_sep"], "", $var);
-			$var = str_replace($locale_info["mon_decimal_point"], ".", $var);
+			$var = str_replace($locale_info["thousands_sep"], "", $var);
+			$var = str_replace($locale_info["decimal_point"], ".", $var);
 		}
 
 		// was a specific float format specified?
@@ -329,7 +329,7 @@ class Observer_Typing
 			return sprintf('%.'.$decimal[1].'F', (float) $var);
 		}
 
-		return sprintf('%F', (float) $var);
+		return $var;
 	}
 
 	/**
