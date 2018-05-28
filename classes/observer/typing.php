@@ -668,14 +668,8 @@ class Observer_Typing
 	 */
 	public static function type_time_decode($var, array $settings)
 	{
-		// check first for an integer timestamp
-		if (is_int($var))
-		{
-			$var = \Date::forge($var);
-		}
-
 		// deal with a 'nulled' date, which according to some RDMBS is a valid enough to store?
-		elseif ($var == '0000-00-00 00:00:00')
+		if ($var == '0000-00-00 00:00:00')
 		{
 			if (array_key_exists('null', $settings) and $settings['null'] === false)
 			{
@@ -723,6 +717,7 @@ class Observer_Typing
 			}
 		}
 
+		// deal with a configured datetime value
 		elseif ($settings['data_type'] == 'time_mysql')
 		{
 			try
@@ -733,6 +728,12 @@ class Observer_Typing
 			{
 				throw new InvalidContentType('Value '.$var.' is not a valid mysql datetime and can not be converted to a Date object.');
 			}
+		}
+
+		// else assume it is a numeric timestamp
+		else
+		{
+			$var = \Date::forge($var);
 		}
 
 		return $var;
