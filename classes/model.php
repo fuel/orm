@@ -73,6 +73,11 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	protected static $_primary_key = array('id');
 
 	/**
+	 * @var  bool  whether to allow setting PK's via forge() or from_array()
+	 */
+	protected static $block_set_pks = true;
+
+	/**
 	 * @var  array  name or columns that need to be excluded from any to_array() result
 	 */
 	protected static $_to_array_exclude = array();
@@ -940,10 +945,14 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		}
 		else
 		{
-			// make sure the primary keys are reset
-			foreach (static::$_primary_key as $pk)
+			// wipe any PK values present in the input if not allowed
+			if (static::$block_set_pks)
 			{
-				$this->_data[$pk] = null;
+				// make sure the primary keys are reset
+				foreach (static::$_primary_key as $pk)
+				{
+					$this->_data[$pk] = null;
+				}
 			}
 
 			// new object, fire the after-create observers
@@ -2062,9 +2071,12 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	{
 		foreach($values as $property => $value)
 		{
-			if (array_key_exists($property, static::properties()) and ! in_array($property, static::primary_key()))
+			if (array_key_exists($property, static::properties()))
 			{
-				$this->_data[$property] = $value;
+				if ( ! in_array($property, static::primary_key()) or ! static::$block_set_pks)
+				{
+					$this->_data[$property] = $value;
+				}
 			}
 			elseif (array_key_exists($property, static::relations()) and is_array($value))
 			{
