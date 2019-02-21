@@ -1501,6 +1501,12 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 			return false;
 		}
 
+		// Objects created from a view can't be updated either
+		if ($this->view)
+		{
+			return false;
+		}
+
 		// Non changed objects don't have to be saved, but return true anyway (no reason to fail)
 		if ( ! $this->is_changed(array_keys(static::properties())))
 		{
