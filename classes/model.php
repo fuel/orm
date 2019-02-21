@@ -1236,21 +1236,6 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 			// nothing else to do here
 		}
 
-		// database view columns
-		elseif ($this->_view and in_array($property, static::$_views_cached[get_class($this)][$this->_view]['columns']))
-		{
-			if ($this->_sanitization_enabled)
-			{
-				// use a copy
-				$result = $this->_data[$property];
-			}
-			else
-			{
-				// use a reference
-				$result =& $this->_data[$property];
-			}
-		}
-
 		// stored custom data
 		elseif (array_key_exists($property, $this->_custom_data))
 		{
