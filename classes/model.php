@@ -1502,7 +1502,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		}
 
 		// Objects created from a view can't be updated either
-		if ($this->view)
+		if ($this->_view)
 		{
 			return false;
 		}
