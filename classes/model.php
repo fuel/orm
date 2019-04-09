@@ -1792,17 +1792,22 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	 * Compare current state with the retrieved state
 	 *
 	 * @param   string|array $property
+	 * @param   bool $observe
 	 *
 	 * @throws \OutOfBoundsException
 	 *
 	 * @return  bool
 	 */
-	public function is_changed($property = null)
+	public function is_changed($property = null, $observe = false)
 	{
 		$properties = static::properties();
 		$relations = static::relations();
 		$property = (array) $property ?: array_merge(array_keys($properties), array_keys($relations));
 		$simple_data_types = array('int','bool');
+
+		$changed = false;
+
+		$observe and $this->observe('before_save');
 
 		foreach ($property as $p)
 		{
@@ -1815,19 +1820,22 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 					{
 						if ($this->{$p} != $this->_original[$p])
 						{
-							return true;
+							$changed = true;
+							break;
 						}
 					}
 					elseif ($this->{$p} !== $this->_original[$p])
 					{
-						return true;
+						$changed = true;
+						break;
 					}
 				}
 				else
 				{
 					if (array_key_exists($p, $this->_data))
 					{
-						return true;
+						$changed = true;
+						break;
 					}
 				}
 			}
@@ -1839,7 +1847,8 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 						or ( ! empty($this->_original_relations[$p])
 							and $this->_original_relations[$p] !== $this->_data_relations[$p]->implode_pk($this->{$p})))
 					{
-						return true;
+						$changed = true;
+						break;
 					}
 				}
 				else
@@ -1848,7 +1857,8 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 					{
 						if ( ! empty($this->_data_relations[$p]))
 						{
-							return true;
+							$changed = true;
+							break;
 						}
 						continue;
 					}
@@ -1858,13 +1868,15 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 					{
 						if ( ! in_array($r->implode_pk($r), $orig_rels))
 						{
-							return true;
+							$changed = true;
+							break;
 						}
 						unset($orig_rels[array_search($rk, $orig_rels)]);
 					}
 					if ( ! empty($orig_rels))
 					{
-						return true;
+						$changed = true;
+						break;
 					}
 				}
 			}
@@ -1874,7 +1886,9 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 			}
 		}
 
-		return false;
+		$observe and $this->observe('after_load');
+
+		return $changed;
 	}
 
 	/**
