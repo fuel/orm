@@ -918,6 +918,12 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 			{
 				$this->_data[$prop] = $settings['default'];
 			}
+
+			// no default either, initialize with null
+			else
+			{
+				$this->_data[$prop] = null;
+			}
 		}
 
 		// store the remainder in the custom data store
