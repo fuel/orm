@@ -6,8 +6,8 @@
  * @version    1.9-dev
  * @author     Fuel Development Team
  * @license    MIT License
- * @copyright  2010 - 2018 Fuel Development Team
- * @link       http://fuelphp.com
+ * @copyright  2010 - 2019 Fuel Development Team
+ * @link       https://fuelphp.com
  */
 
 namespace Orm;
@@ -16,7 +16,7 @@ namespace Orm;
  * Implements NestedSets (http://en.wikipedia.org/wiki/Nested_set_model)
  *
  * Some design ideas borrowed from https://github.com/hubspace/fuel-nestedset
- * (see http://fuelphp.com/forums/discussion/12206/fuel-nested-sets)
+ * (see https://fuelphp.com/forums/discussion/12206/fuel-nested-sets)
  */
 class Model_Nestedset extends Model
 {
