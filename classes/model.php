@@ -73,6 +73,11 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	protected static $_primary_key = array('id');
 
 	/**
+	 * @var  bool  whether to allow setting PK's via forge() or from_array()
+	 */
+	protected static $block_set_pks = true;
+
+	/**
 	 * @var  array  name or columns that need to be excluded from any to_array() result
 	 */
 	protected static $_to_array_exclude = array();
@@ -608,22 +613,25 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
      *
      * @return  Model|Model[]
      */
-	public static function find($id = null, array $options = array())
+	public static function find($id = null, array $options = null)
 	{
 		// deal with null valued PK's
 		if (is_null($id))
 		{
-			// if no options are present, simply return null. a PK with a null value can exist
-			return func_num_args() === 2 ? static::query($options) : null;
+			// if no options are passed, simply return null. a PK with a null value can exist
+			return is_array($options) ? static::query($options) : null;
 		}
 
-		// Return all that match $options array
-		elseif ($id === 'all')
+		// make sure options is an array, before we continue
+		is_null($options) and $options = array();
+
+		// return all that match $options array
+		if ($id === 'all')
 		{
 			return static::query($options)->get();
 		}
 
-		// Return first or last row that matches $options array
+		// return first or last row that matches $options array
 		elseif ($id === 'first' or $id === 'last')
 		{
 			$query = static::query($options);
@@ -910,6 +918,12 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 			{
 				$this->_data[$prop] = $settings['default'];
 			}
+
+			// no default either, initialize with null
+			else
+			{
+				$this->_data[$prop] = null;
+			}
 		}
 
 		// store the remainder in the custom data store
@@ -937,10 +951,14 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		}
 		else
 		{
-			// make sure the primary keys are reset
-			foreach (static::$_primary_key as $pk)
+			// wipe any PK values present in the input if not allowed
+			if (static::$block_set_pks)
 			{
-				$this->_data[$pk] = null;
+				// make sure the primary keys are reset
+				foreach (static::$_primary_key as $pk)
+				{
+					$this->_data[$pk] = null;
+				}
 			}
 
 			// new object, fire the after-create observers
@@ -1224,21 +1242,6 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 			// nothing else to do here
 		}
 
-		// database view columns
-		elseif ($this->_view and in_array($property, static::$_views_cached[get_class($this)][$this->_view]['columns']))
-		{
-			if ($this->_sanitization_enabled)
-			{
-				// use a copy
-				$result = $this->_data[$property];
-			}
-			else
-			{
-				// use a reference
-				$result =& $this->_data[$property];
-			}
-		}
-
 		// stored custom data
 		elseif (array_key_exists($property, $this->_custom_data))
 		{
@@ -1500,6 +1503,12 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	{
 		// New objects can't be updated, neither can frozen
 		if ($this->is_new())
+		{
+			return false;
+		}
+
+		// Objects created from a view can't be updated either
+		if ($this->_view)
 		{
 			return false;
 		}
@@ -1789,17 +1798,22 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	 * Compare current state with the retrieved state
 	 *
 	 * @param   string|array $property
+	 * @param   bool $observe
 	 *
 	 * @throws \OutOfBoundsException
 	 *
 	 * @return  bool
 	 */
-	public function is_changed($property = null)
+	public function is_changed($property = null, $observe = false)
 	{
 		$properties = static::properties();
 		$relations = static::relations();
 		$property = (array) $property ?: array_merge(array_keys($properties), array_keys($relations));
 		$simple_data_types = array('int','bool');
+
+		$changed = false;
+
+		$observe and $this->observe('before_save');
 
 		foreach ($property as $p)
 		{
@@ -1812,19 +1826,22 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 					{
 						if ($this->{$p} != $this->_original[$p])
 						{
-							return true;
+							$changed = true;
+							break;
 						}
 					}
 					elseif ($this->{$p} !== $this->_original[$p])
 					{
-						return true;
+						$changed = true;
+						break;
 					}
 				}
 				else
 				{
 					if (array_key_exists($p, $this->_data))
 					{
-						return true;
+						$changed = true;
+						break;
 					}
 				}
 			}
@@ -1836,7 +1853,8 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 						or ( ! empty($this->_original_relations[$p])
 							and $this->_original_relations[$p] !== $this->_data_relations[$p]->implode_pk($this->{$p})))
 					{
-						return true;
+						$changed = true;
+						break;
 					}
 				}
 				else
@@ -1845,7 +1863,8 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 					{
 						if ( ! empty($this->_data_relations[$p]))
 						{
-							return true;
+							$changed = true;
+							break;
 						}
 						continue;
 					}
@@ -1855,13 +1874,15 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 					{
 						if ( ! in_array($r->implode_pk($r), $orig_rels))
 						{
-							return true;
+							$changed = true;
+							break;
 						}
 						unset($orig_rels[array_search($rk, $orig_rels)]);
 					}
 					if ( ! empty($orig_rels))
 					{
-						return true;
+						$changed = true;
+						break;
 					}
 				}
 			}
@@ -1871,7 +1892,9 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 			}
 		}
 
-		return false;
+		$observe and $this->observe('after_load');
+
+		return $changed;
 	}
 
 	/**
@@ -2059,9 +2082,12 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	{
 		foreach($values as $property => $value)
 		{
-			if (array_key_exists($property, static::properties()) and ! in_array($property, static::primary_key()))
+			if (array_key_exists($property, static::properties()))
 			{
-				$this->_data[$property] = $value;
+				if ( ! in_array($property, static::primary_key()) or ! static::$block_set_pks)
+				{
+					$this->_data[$property] = $value;
+				}
 			}
 			elseif (array_key_exists($property, static::relations()) and is_array($value))
 			{
