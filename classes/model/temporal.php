@@ -296,7 +296,7 @@ class Model_Temporal extends Model
 	 * @param array $options
 	 * @return type
 	 */
-	public static function find($id = null, array $options = array())
+	public static function find($id = null, array $options = null)
 	{
 		$timestamp_end_name = static::temporal_property('end_column');
 		$max_timestamp = static::temporal_property('max_timestamp');
