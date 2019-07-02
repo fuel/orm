@@ -308,6 +308,7 @@ class Model_Temporal extends Model
 			case 'last':
 				break;
 			default:
+				is_null($options) and $options = array();
 				$id = (array) $id;
 				$count = 0;
 				foreach(static::getNonTimestampPks() as $key)
