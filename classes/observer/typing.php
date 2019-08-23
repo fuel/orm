@@ -177,15 +177,22 @@ class Observer_Typing
 			{
 				if (array_key_exists('null', $settings) and $settings['null'] === false)
 				{
-					// if a default is defined, return that instead
+					// if a default is defined, use that instead
 					if (array_key_exists('default', $settings))
 					{
-						return $settings['default'];
+						$value = $settings['default'];
 					}
-
-					throw new InvalidContentType('The property "'.$column.'" cannot be NULL.');
+					else
+					{
+						throw new InvalidContentType('The property "'.$column.'" cannot be NULL.');
+					}
 				}
 			}
+		}
+
+		 // still null? then let the DB deal with it
+		if ($value === null)
+		{
 			return $value;
 		}
 
