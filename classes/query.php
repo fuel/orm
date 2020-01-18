@@ -1576,14 +1576,14 @@ class Query
 			$this->hydrate($row, $models, $result, $model, $select, $primary_key);
 			unset($rows[$id]);
 		}
-
-		// It's all built, now lets execute and start hydration
-		return $result->data;
 		
 		foreach ($result->data as $model) 
 		{
 			$model->trigger_after_load_recursive();
 		}
+
+		// It's all built, now lets execute and start hydration
+		return $result->data;
 	}
 
 	/**
