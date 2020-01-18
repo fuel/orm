@@ -1579,6 +1579,11 @@ class Query
 
 		// It's all built, now lets execute and start hydration
 		return $result->data;
+		
+		foreach ($result->data as $model) 
+		{
+			$model->trigger_after_load_recursive();
+		}
 	}
 
 	/**
