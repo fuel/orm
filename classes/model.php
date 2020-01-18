@@ -945,9 +945,6 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 
 			// mark the object as existing
 			$this->_is_new = false;
-
-			// and fire the after-load observers
-			$this->observe('after_load');
 		}
 		else
 		{
