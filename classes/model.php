@@ -962,6 +962,37 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 			$this->observe('after_create');
 		}
 	}
+	
+	/**
+	* This method trigger the after_load observer event for non-new instances.
+	*/
+	public function trigger_after_load_recursive()
+	{
+		if( $this->_is_new)
+		{
+			return;
+		}
+
+		$this->observe('after_load');
+
+		if( $this->_data_relations )
+		{
+			foreach ( $this->_data_relations as $relation ) 
+			{
+				if ( is_array ( $relation ) )
+				{
+					foreach ($relation as $model) 
+					{
+						$model->trigger_after_load_recursive();
+					}
+				}
+				else if ( $relation instanceof Model )
+				{
+					$relation->trigger_after_load_recursive();
+				}
+			}
+		}
+	}
 
 	/**
 	 * Update the original setting for this object
