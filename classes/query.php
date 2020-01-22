@@ -1361,165 +1361,42 @@ class Query
 	}
 
 	/**
-	 * Hydrate model instances with retrieved data
-	 *
-	 * @param   array     &$row   Row from the database
-	 * @param   array     $models Relations to be expected
-	 * @param   \stdClass $result An object containing current result array
-	 * @param   string    $model  Optionally. Model classname to hydrate
-	 * @param   array     $select Optionally. Columns to use
-	 * @param   array     $primary_key    Optionally. Primary key(s) for this model
-	 *
-	 * @return  Model
-	 */
-	public function hydrate(&$row, $models, \stdClass $result, $model = null, $select = null, $primary_key = null)
-	{
-		// First check the PKs, if null it's an empty row
-		foreach($select as $column)
-		{
-			if (is_string($column[0]))
-			{
-				$r1c1 = $column;
-				break;
-			}
-		}
-		$prefix  = substr($r1c1[0], 0, strpos($r1c1[0], '.') + 1);
-		$obj     = array();
-		foreach ($primary_key as $pk)
-		{
-			$pk_c = null;
-			foreach ($select as $s)
-			{
-				$s[0] === $prefix.$pk and $pk_c = $s[1];
-			}
-
-			if (is_null($row[$pk_c]))
-			{
-				return false;
-			}
-			$obj[$pk] = $row[$pk_c];
-		}
-
-		// Check for cached object
-		$pk  = count($primary_key) == 1 ? reset($obj) : '['.implode('][', $obj).']';
-		$obj = $this->from_cache ? Model::cached_object($pk, $model) : false;
-
-		// Create the object when it wasn't found
-		if ( ! $obj)
-		{
-			// Retrieve the object array from the row
-			$obj = array();
-			foreach ($select as $s)
-			{
-				if ($s[0] instanceOf \Fuel\Core\Database_Expression)
-				{
-					$f = isset($this->select[$s[1]][1]) ? $this->select[$s[1]][1] : $s[1];
-				}
-				else
-				{
-					$f = substr($s[0], strpos($s[0], '.') + 1);
-				}
-				$obj[$f] = $row[$s[1]];
-				if (in_array($f, $primary_key))
-				{
-					$obj[$f] = \Orm\Observer_Typing::typecast($f, $obj[$f], call_user_func($model.'::property', $f));
-				}
-				unset($row[$s[1]]);
-			}
-			$obj = $model::forge($obj, false, $this->view ? $this->view['_name'] : null, $this->from_cache);
-		}
-		else
-		{
-			// add fields not present in the already cached version
-			$new = array();
-			foreach ($select as $s)
-			{
-				if ($s[0] instanceOf \Fuel\Core\Database_Expression)
-				{
-					$f = isset($this->select[$s[1]][1]) ? $this->select[$s[1]][1] : $s[1];
-				}
-				else
-				{
-					$f = substr($s[0], strpos($s[0], '.') + 1);
-				}
-				$new[$f] = $row[$s[1]];
-				if ( ! isset($obj->{$f}))
-				{
-					$obj->{$f} = $new[$f];
-				}
-			}
-			if ($new)
-			{
-				$obj->_update_original($new);
-			}
-		}
-
-		// if the result to be generated is an array and the current object is not yet in there
-		if (is_array($result->data)) {
-			if (! array_key_exists($pk, $result->data))
-			{
-				$result->data[$pk] = $obj;
-			}
-			else
-			{
-				$obj = $result->data[$pk];
-			}
-		}
-		// if the result to be generated is a single object and empty
-		elseif ( ! is_array($result->data) and empty($result->data))
-		{
-			$result->data = $obj;
-		}
-
-		// start fetching relationships
-		$rel_objs = $obj->_relate();
-		$relations_updated = array();
-		$relation_result_wrapper = new \stdClass;
-		foreach ($models as $m)
-		{
-			// when the expected model is empty, there's nothing to be done
-			if (empty($m['model']))
-			{
-				continue;
-			}
-			$relations_updated[] = $m['rel_name'];
-
-			// when not yet set, create the relation result var with null or array
-			if ( ! array_key_exists($m['rel_name'], $rel_objs))
-			{
-				$rel_objs[$m['rel_name']] = $m['relation']->singular ? null : array();
-			}
-
-			$relation_result_wrapper->data = $rel_objs[$m['rel_name']];
-
-			// when result is array or singular empty, try to fetch the new relation from the row
-			$this->hydrate(
-				$row,
-				! empty($m['models']) ? $m['models'] : array(),
-				$relation_result_wrapper,
-				$m['model'],
-				$m['columns'],
-				$m['primary_key']
-			);
-
-			$rel_objs[$m['rel_name']] = $relation_result_wrapper->data;
-		}
-
-		// attach the retrieved relations to the object and update its original DB values
-		$obj->_relate($rel_objs);
-		$obj->_update_original_relations($relations_updated);
-
-		return $obj;
-	}
-
-	/**
 	 * Build the query and return hydrated results
 	 *
 	 * @return  array
 	 */
 	public function get()
 	{
-		// Get the columns
+		// closure to convert field name to column name
+		$field_to_column = function($fields, $alias) {
+			// storage for the result
+			$result = array();
+
+			// process the columns
+			foreach ($fields as $key => $value)
+			{
+				// check for db expressions
+				if (is_array($value))
+				{
+					if ($value[0] instanceOf \Fuel\Core\Database_Expression)
+					{
+						$result[$key] = $value[1];
+					}
+					else
+					{
+						$result[$value[1]] = substr($value[0], strlen($alias)+1);
+					}
+				}
+				else
+				{
+					$result[$key] = substr($value, strlen($alias)+1);
+				}
+			}
+
+			return $result;
+		};
+
+		// Get the columns in this query
 		$columns = $this->select();
 
 		// Start building the query
@@ -1543,42 +1420,209 @@ class Query
 		$query   = $tmp['query'];
 		$models  = $tmp['models'];
 
+		// list of models expected in the resulting rows
+		$qmodels = array($this->alias => array(
+			'model' => $this->model,
+			'pk' => $this->model::primary_key(),
+			'columns' => $field_to_column($this->select, $this->alias),
+			'relation' => null,
+		));
+
 		// Make models hierarchical
 		foreach ($models as $name => $values)
 		{
-			if (strpos($name, '.'))
+			// add the model to the list
+			if ($values['model'])
 			{
-				unset($models[$name]);
-				$rels = explode('.', $name);
-				$ref =& $models[array_shift($rels)];
-				foreach ($rels as $rel)
-				{
-					empty($ref['models']) and $ref['models'] = array();
-					empty($ref['models'][$rel]) and $ref['models'][$rel] = array();
-					$ref =& $ref['models'][$rel];
-				}
-				$ref = $values;
+				$qmodels[$values['table'][1]] = array(
+					'model' => $values['model'],
+					'pk' => $values['model']::primary_key(),
+					'columns' => $field_to_column($values['columns'], $values['table'][1]),
+					'relation' => $name,
+				);
 			}
 		}
 
+		// fetch the result
 		$rows = $query->execute($this->connection)->as_array();
 
-		// To workaround the PHP 5.x performance issue at pulling a large number of records,
-		// we shouldn't use passing array by reference directly here.
-		$result = new \stdClass;
-		$result->data = array();
+		// storage for the fimal result
+		$result = array();
 
-		$model = $this->model;
-		$select = $this->select();
-		$primary_key = $model::primary_key();
+		// process the result
 		foreach ($rows as $id => $row)
 		{
-			$this->hydrate($row, $models, $result, $model, $select, $primary_key);
-			unset($rows[$id]);
+			$this->process_row($row, $qmodels, $result);
 		}
 
-		// It's all built, now lets execute and start hydration
-		return $result->data;
+		// free up some memory
+		unset($rows);
+
+		// convert the result into objects
+		$objects = array();
+		foreach ($result as $key => $record)
+		{
+			if (is_array($record))
+			{
+				$objects[$key] = $this->model::forge($record, false, $this->view ? $this->view['_name'] : null, false);
+			}
+			else
+			{
+				$objects[$key] = $record;
+			}
+
+			// free up some memory
+			unset($result[$key]);
+		}
+
+		return $objects;
+	}
+
+	/**
+	 * Process the retrieved data, convert rows to a hierarchical data structure
+-	 *
+-	 * @param   array     $row     Row from the database
+-	 * @param   array     $models  Relations to be expected
+-	 * @param   array     &$result An object containing current result array
+-	 */
+	public function process_row($row, $models, &$result)
+	{
+		// storage for this rows pk's
+		$rowpks = array();
+
+		// process the models in the row
+		foreach ($models as $alias => $model)
+		{
+			$record = array();
+
+			// extract the record data
+			foreach ($row as $column => $value)
+			{
+				// does thid column belong to the current record?
+				if (array_key_exists($column, $model['columns']))
+				{
+					// get the true column name
+					$column = $model['columns'][$column];
+
+					// is it a primary key?
+					if (in_array($column, $model['pk']))
+					{
+						// typecast the pk value
+						$value = \Orm\Observer_Typing::typecast($column, $value, call_user_func($model['model'].'::property', $column));
+					}
+
+					// store the value
+					$record[$column] = $value;
+				}
+			}
+
+			// skip the rest if no results were found for this model
+			if (empty($record))
+			{
+				continue;
+			}
+
+			// construct the PK string representation for this record
+			if (count($model['pk']) == 1)
+			{
+				$pk = $record[$model['pk'][0]];
+				// skip empty results
+				if (is_null($pk))
+				{
+					continue;
+				}
+			}
+			else
+			{
+				$pks = array();
+				$isnull = true;
+				foreach ($model['pk'] as $pk)
+				{
+					$pks[] = $record[$pk];
+					$isnull = $isnull and is_null($record[$pk]);
+				}
+				// skip empty results
+				if ($isnull)
+				{
+					continue;
+				}
+				$pk = '['.implode('][', $pks).']';
+			}
+
+			// do we need to check for cached objects
+			if ($this->from_cache)
+			{
+				$obj = Model::cached_object($pk, $model['model']);
+
+				// replace the record with the cached object
+				if ($obj)
+				{
+					// update the object with fields missing from it
+					$new = array();
+					foreach ($record as $column => $value)
+					{
+						if ( ! isset($obj->{$column}))
+						{
+							$obj->{$column} = $value;
+							$new[$column] = $value;
+						}
+					}
+
+					// update the objects stored data
+					if ($new)
+					{
+						$obj->_update_original($new);
+					}
+
+					$record = $obj;
+				}
+			}
+
+			// store related results
+			if ($model['relation'])
+			{
+				// store this records' pk for tree traversal
+				$rowpks['__root__.'.$model['relation']] = $pk;
+
+				// determine the result location to insert this record into
+				$fullrel = '__root__';
+
+				// current root record is the initial target
+				$target =& $result[$rowpks[$fullrel]];
+
+				$parents = explode(".", $model['relation']);
+				$current = array_pop($parents);
+
+				foreach ($parents as $parent)
+				{
+					$fullrel .= '.'.$parent;
+					$target =& $target[$parent][$rowpks[$fullrel]];
+				}
+
+				// create the current node if not present
+				if ( ! isset($target[$current]))
+				{
+					$target[$current] = array();
+				}
+
+				// skip if already present
+				if ( ! isset($target[$current][$pk]))
+				{
+					$target[$current][$pk] = $record;
+				}
+			}
+			else
+			{
+				// store the current root record pk, for tree traversal
+				$rowpks['__root__'] = $pk;
+
+				// skip if already present
+				if ( ! isset($result[$pk]))
+				{
+					$result[$pk] = $record;
+				}
+			}
+		}
 	}
 
 	/**

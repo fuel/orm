@@ -901,33 +901,26 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 			$new = false;
 		}
 
-		// move the passed data to the correct container
+		// set default property values where needed
 		$properties = $this->properties();
 		foreach ($properties as $prop => $settings)
 		{
-			// do we have data for this this model property?
-			if (array_key_exists($prop, $data))
+			if ( ! array_key_exists($prop, $data))
 			{
-				// store it in the data container
-				$this->_data[$prop] = $data[$prop];
-				unset($data[$prop]);
-			}
-
-			// property not present, do we have a default value?
-			elseif ($new and array_key_exists('default', $settings))
-			{
-				$this->_data[$prop] = $settings['default'];
-			}
-
-			// no default either, initialize with null
-			else
-			{
-				$this->_data[$prop] = null;
+				if ($new and array_key_exists('default', $settings))
+				{
+					$data[$prop] = $settings['default'];
+				}
+				// preloaded, no default, initialize with null
+				else
+				{
+					$data[$prop] = null;
+				}
 			}
 		}
 
-		// store the remainder in the custom data store
-		$this->_custom_data = $data;
+		// populate the object
+		$this->from_array($data, $new);
 
 		// store the view, if one was passed
 		if ($view and array_key_exists($view, $this->views()))
@@ -2080,11 +2073,14 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	 */
 	public function from_array(array $values)
 	{
+		// determine the internal object state
+		$_newflag = func_num_args() == 2 ? func_get_arg(1) : null;
+
 		foreach($values as $property => $value)
 		{
 			if (array_key_exists($property, static::properties()))
 			{
-				if ( ! in_array($property, static::primary_key()) or ! static::$block_set_pks)
+				if ($this->_is_new or ! in_array($property, static::primary_key()) or ! static::$block_set_pks)
 				{
 					$this->_data[$property] = $value;
 				}
@@ -2100,7 +2096,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 				{
 					if (is_array($data))
 					{
-						if (array_key_exists($id, $this->_data_relations[$property]))
+						if (is_array($this->_data_relations[$property]) and array_key_exists($id, $this->_data_relations[$property]))
 						{
 							foreach($data as $field => $contents)
 							{
@@ -2118,17 +2114,17 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 						{
 							if ($rel->singular)
 							{
-								$this->_data_relations[$property] = call_user_func(static::relations($property)->model_to.'::forge', $data);
+								$this->_data_relations[$property] = call_user_func(static::relations($property)->model_to.'::forge', $data, is_null($_newflag) ? false : $_newflag);
 							}
 							else
 							{
-								$this->_data_relations[$property][] = call_user_func(static::relations($property)->model_to.'::forge', $data);
+								$this->_data_relations[$property][] = call_user_func(static::relations($property)->model_to.'::forge', $data, is_null($_newflag) ? false : $_newflag);
 							}
 						}
 					}
 				}
 			}
-			elseif (property_exists($this, '_eav') and ! empty(static::$_eav))
+			elseif (is_null($_newflag) and property_exists($this, '_eav') and ! empty(static::$_eav))
 			{
 				$this->_set_eav($property, $value);
 			}
@@ -2428,7 +2424,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 					}
 				}
 
-				// not found, we've got outselfs a new attribute, so add it
+				// not found, we've got ourselfs a new attribute, so add it
 				if ($rel = static::related_class($rel))
 				{
 					$this->{$relation->name}[] = $rel::forge(array(
