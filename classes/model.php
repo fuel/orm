@@ -2118,7 +2118,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 							}
 							else
 							{
-								$this->_data_relations[$property][] = call_user_func(static::relations($property)->model_to.'::forge', $data, is_null($_newflag) ? false : $_newflag);
+								$this->_data_relations[$property][$id] = call_user_func(static::relations($property)->model_to.'::forge', $data, is_null($_newflag) ? false : $_newflag);
 							}
 						}
 					}
