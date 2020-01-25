@@ -1464,7 +1464,7 @@ class Query
 		{
 			if (is_array($record))
 			{
-				$objects[$key] = $this->model::forge($record, false, $this->view ? $this->view['_name'] : null, false);
+				$objects[$key] = $this->model::forge($record, false, $this->view ? $this->view['_name'] : null, static::$caching);
 			}
 			else
 			{
