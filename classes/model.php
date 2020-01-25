@@ -2122,6 +2122,17 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 							}
 						}
 					}
+					elseif ($data instanceOf Model)
+					{
+						if ($rel->singular)
+						{
+							$this->_data_relations[$property] = $data;
+						}
+						else
+						{
+							$this->_data_relations[$property][$id] = $data;
+						}
+					}
 				}
 			}
 			elseif (is_null($_newflag) and property_exists($this, '_eav') and ! empty(static::$_eav))
