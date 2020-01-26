@@ -1424,7 +1424,7 @@ class Query
 		$qmodels = array($this->alias => array(
 			'model' => $this->model,
 			'pk' => $this->model::primary_key(),
-			'columns' => $field_to_column($this->select, $this->alias),
+			'columns' => $field_to_column($columns, $this->alias),
 			'relation' => null,
 		));
 
