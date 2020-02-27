@@ -1426,6 +1426,7 @@ class Query
 			'pk' => $this->model::primary_key(),
 			'columns' => $field_to_column($columns, $this->alias),
 			'relation' => null,
+			'singular' => true,
 		));
 
 		// Make models hierarchical
@@ -1439,6 +1440,7 @@ class Query
 					'pk' => $values['model']::primary_key(),
 					'columns' => $field_to_column($values['columns'], $values['table'][1]),
 					'relation' => $name,
+					'singular' => $values['relation']->is_singular(),
 				);
 			}
 		}
@@ -1599,16 +1601,27 @@ class Query
 					$target =& $target[$parent][$rowpks[$fullrel]];
 				}
 
-				// create the current node if not present
-				if ( ! isset($target[$current]))
+				// create the new node
+				if ($model['singular'])
 				{
-					$target[$current] = array();
+					if ( ! isset($target[$current]))
+					{
+						$target[$current] = $record;
+					}
 				}
-
-				// skip if already present
-				if ( ! isset($target[$current][$pk]))
+				else
 				{
-					$target[$current][$pk] = $record;
+					// create the current node if not present
+					if ( ! isset($target[$current]))
+					{
+						$target[$current] = array();
+					}
+
+					// skip if already present
+					if ( ! isset($target[$current][$pk]))
+					{
+						$target[$current][$pk] = $record;
+					}
 				}
 			}
 			else

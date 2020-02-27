@@ -161,4 +161,14 @@ abstract class Relation
 	{
 		return $this->singular;
 	}
+
+	/**
+	 * Returns the model class this relation points to
+	 *
+	 * @return bool
+	 */
+	public function model()
+	{
+		return $this->model_to;
+	}
 }

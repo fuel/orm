@@ -2092,45 +2092,37 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 				{
 					$this->_data_relations[$property] = $rel->singular ? null : array();
 				}
-				foreach($value as $id => $data)
+
+				if ($rel->singular)
 				{
-					if (is_array($data))
+					if (is_array($value))
 					{
-						if (is_array($this->_data_relations[$property]) and array_key_exists($id, $this->_data_relations[$property]))
-						{
-							foreach($data as $field => $contents)
-							{
-								if ($rel->singular)
-								{
-									$this->_data_relations[$property]->{$field} = $contents;
-								}
-								else
-								{
-									$this->_data_relations[$property][$id]->{$field} = $contents;
-								}
-							}
-						}
-						else
-						{
-							if ($rel->singular)
-							{
-								$this->_data_relations[$property] = call_user_func(static::relations($property)->model_to.'::forge', $data, is_null($_newflag) ? false : $_newflag);
-							}
-							else
-							{
-								$this->_data_relations[$property][$id] = call_user_func(static::relations($property)->model_to.'::forge', $data, is_null($_newflag) ? false : $_newflag);
-							}
-						}
+						$this->_data_relations[$property] = call_user_func(static::relations($property)->model_to.'::forge', $value, is_null($_newflag) ? false : $_newflag);
 					}
-					elseif ($data instanceOf Model)
+					elseif ($relmodel = $rel->model() and $value instanceOf $relmodel)
 					{
-						if ($rel->singular)
+						$this->_data_relations[$property] = $value;
+					}
+					else
+					{
+						throw new \FuelException('Data passed to Model::form_array() has an incorrect format');
+					}
+				}
+				else
+				{
+					foreach($value as $id => $data)
+					{
+						if (is_array($data))
 						{
-							$this->_data_relations[$property] = $data;
+							$this->_data_relations[$property][$id] = call_user_func(static::relations($property)->model_to.'::forge', $data, is_null($_newflag) ? false : $_newflag);
 						}
-						else
+						elseif ($relmodel = $rel->model() and $data instanceOf $relmodel)
 						{
 							$this->_data_relations[$property][$id] = $data;
+						}
+						else
+						{
+							throw new \FuelException('Data passed to Model::form_array() has an incorrect format');
 						}
 					}
 				}
