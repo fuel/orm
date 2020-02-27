@@ -1597,8 +1597,15 @@ class Query
 
 				foreach ($parents as $parent)
 				{
-					$fullrel .= '.'.$parent;
-					$target =& $target[$parent][$rowpks[$fullrel]];
+					if ($target[$parent] instanceOf Model)
+					{
+						$target =& $target[$parent];
+					}
+					else
+					{
+						$fullrel .= '.'.$parent;
+						$target =& $target[$parent][$rowpks[$fullrel]];
+					}
 				}
 
 				// create the new node
