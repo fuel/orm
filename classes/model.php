@@ -1529,15 +1529,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 			{
 				if (array_key_exists($p, $this->_original))
 				{
-					if ((array_key_exists('type', $properties[$p]) and $properties[$p]['type'] == 'int') or
-						(array_key_exists('data_type', $properties[$p]) and $properties[$p]['data_type'] == 'int'))
-					{
-						if ($this->{$p} != $this->_original[$p])
-						{
-							$query->set($p, isset($this->_data[$p]) ? $this->_data[$p] : null);
-						}
-					}
-					elseif ($this->{$p} !== $this->_original[$p])
+					if ($this->{$p} !== $this->_original[$p])
 					{
 						$query->set($p, isset($this->_data[$p]) ? $this->_data[$p] : null);
 					}
@@ -1814,8 +1806,8 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 			{
 				if (array_key_exists($p, $this->_original))
 				{
-					if ((array_key_exists('type', $properties[$p]) and in_array($properties[$p]['type'], $simple_data_types)) or
-						(array_key_exists('data_type', $properties[$p]) and in_array($properties[$p]['data_type'], $simple_data_types)))
+					if ( ! $observe and ((array_key_exists('type', $properties[$p]) and in_array($properties[$p]['type'], $simple_data_types)) or
+						(array_key_exists('data_type', $properties[$p]) and in_array($properties[$p]['data_type'], $simple_data_types))))
 					{
 						if ($this->{$p} != $this->_original[$p])
 						{
