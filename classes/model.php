@@ -2106,7 +2106,17 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 					{
 						if (is_array($data))
 						{
-							$this->_data_relations[$property][$id] = call_user_func(static::relations($property)->model_to.'::forge', $data, is_null($_newflag) ? false : $_newflag);
+							if (isset($this->_data_relations[$property][$id]))
+							{
+								foreach ($data as $key => $value)
+								{
+									$this->_data_relations[$property][$id][$key] = $value;
+								}
+							}
+							else
+							{
+								$this->_data_relations[$property][$id] = call_user_func(static::relations($property)->model_to.'::forge', $data, is_null($_newflag) ? false : $_newflag);
+							}
 						}
 						elseif ($relmodel = $rel->model() and $data instanceOf $relmodel)
 						{
