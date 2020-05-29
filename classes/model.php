@@ -920,7 +920,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		}
 
 		// populate the object
-		$this->from_array($data, $new);
+		$this->from_array($data);
 
 		// store the view, if one was passed
 		if ($view and array_key_exists($view, $this->views()))
@@ -2065,9 +2065,6 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	 */
 	public function from_array(array $values)
 	{
-		// determine the internal object state
-		$_newflag = func_num_args() == 2 ? func_get_arg(1) : null;
-
 		foreach($values as $property => $value)
 		{
 			if (array_key_exists($property, static::properties()))
@@ -2089,7 +2086,17 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 				{
 					if (is_array($value))
 					{
-						$this->_data_relations[$property] = call_user_func(static::relations($property)->model_to.'::forge', $value, is_null($_newflag) ? false : $_newflag);
+						// check if we have all primary keys
+						$_newflag = false;
+						foreach (call_user_func(static::relations($property)->model_to.'::primary_key') as $pk)
+						{
+							if ( ! isset($value[$pk]) or is_null($value[$pk]))
+							{
+								$_newflag = true;
+								break;
+							}
+						}
+						$this->_data_relations[$property] = call_user_func(static::relations($property)->model_to.'::forge', $value, $_newflag);
 					}
 					elseif ($relmodel = $rel->model() and $value instanceOf $relmodel)
 					{
@@ -2115,7 +2122,17 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 							}
 							else
 							{
-								$this->_data_relations[$property][$id] = call_user_func(static::relations($property)->model_to.'::forge', $data, is_null($_newflag) ? false : $_newflag);
+								// check if we have all primary keys
+								$_newflag = false;
+								foreach (call_user_func(static::relations($property)->model_to.'::primary_key') as $pk)
+								{
+									if ( ! isset($data[$pk]) or is_null($data[$pk]))
+									{
+										$_newflag = true;
+										break;
+									}
+								}
+								$this->_data_relations[$property][$id] = call_user_func(static::relations($property)->model_to.'::forge', $data, $_newflag);
 							}
 						}
 						elseif ($relmodel = $rel->model() and $data instanceOf $relmodel)
@@ -2129,7 +2146,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 					}
 				}
 			}
-			elseif (is_null($_newflag) and property_exists($this, '_eav') and ! empty(static::$_eav))
+			elseif (property_exists($this, '_eav') and ! empty(static::$_eav))
 			{
 				$this->_set_eav($property, $value);
 			}
