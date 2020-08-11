@@ -1537,11 +1537,11 @@ class Query
 			else
 			{
 				$pks = array();
-				$isnull = true;
+				$isnull = false;
 				foreach ($model['pk'] as $pk)
 				{
 					$pks[] = $record[$pk];
-					$isnull = $isnull and is_null($record[$pk]);
+					$isnull = ($isnull or is_null($record[$pk]));
 				}
 				// skip empty results
 				if ($isnull)
