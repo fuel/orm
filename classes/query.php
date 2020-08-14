@@ -527,7 +527,7 @@ class Query
 			$out = array();
 			foreach($this->select as $k => $v)
 			{
-				$out[] = is_array($v) ? array($v[0], $k) : array($v, $k);
+				$out[] = is_array($v) ? array($v[1], $k) : array($v, $k);
 			}
 
 			// set select back to before the PKs were added
