@@ -1524,6 +1524,9 @@ class Query
 				continue;
 			}
 
+			// If the current model is an empty relation, still need to initialize it empty later
+			$relation_has_records = true;
+
 			// construct the PK string representation for this record
 			if (count($model['pk']) == 1)
 			{
@@ -1531,7 +1534,12 @@ class Query
 				// skip empty results
 				if (is_null($pk))
 				{
-					continue;
+					if( ! $model['relation']) 
+					{
+						continue;
+					}
+
+					$relation_has_records = false;
 				}
 			}
 			else
@@ -1546,37 +1554,49 @@ class Query
 				// skip empty results
 				if ($isnull)
 				{
-					continue;
+					if( ! $model['relation']) 
+					{
+						continue;
+					}
+
+					$relation_has_records = false;
 				}
-				$pk = '['.implode('][', $pks).']';
+				else
+				{
+					$pk = '['.implode('][', $pks).']';
+				}
 			}
 
-			// do we need to check for cached objects
-			if ($this->from_cache)
+			// This part of code shouldn't run if it's a relation without records
+			if( $relation_has_records )
 			{
-				$obj = Model::cached_object($pk, $model['model']);
-
-				// replace the record with the cached object
-				if ($obj)
+				// do we need to check for cached objects
+				if ($this->from_cache)
 				{
-					// update the object with fields missing from it
-					$new = array();
-					foreach ($record as $column => $value)
+					$obj = Model::cached_object($pk, $model['model']);
+
+					// replace the record with the cached object
+					if ($obj)
 					{
-						if (empty($obj->{$column}))
+						// update the object with fields missing from it
+						$new = array();
+						foreach ($record as $column => $value)
 						{
-							$obj->{$column} = $value;
-							$new[$column] = $value;
+							if (isset($obj->{$column}))
+							{
+								$obj->{$column} = $value;
+								$new[$column] = $value;
+							}
 						}
-					}
 
-					// update the objects stored data
-					if ($new)
-					{
-						$obj->_update_original($new);
-					}
+						// update the objects stored data
+						if ($new)
+						{
+							$obj->_update_original($new);
+						}
 
-					$record = $obj;
+						$record = $obj;
+					}
 				}
 			}
 
@@ -1606,6 +1626,15 @@ class Query
 						$fullrel .= '.'.$parent;
 						$target =& $target[$parent][$rowpks[$fullrel]];
 					}
+				}
+
+				// If this is a relation without records, set it to an empty array and continue
+				// Also check for empty array because a previous loop iteration may have already set it up
+				if (! $relation_has_records and (! isset($target[$current]) or $target[$current] === array()))
+				{
+					$target[$current] = array();
+
+					continue;
 				}
 
 				// create the new node

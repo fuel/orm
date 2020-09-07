@@ -2077,9 +2077,17 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 			elseif (array_key_exists($property, static::relations()) and is_array($value))
 			{
 				$rel = static::relations($property);
+
+				// Make sure the property is set in the relation array
 				if ( ! isset($this->_data_relations[$property]))
 				{
 					$this->_data_relations[$property] = $rel->singular ? null : array();
+
+					// If value is an empty array, this mean it was a relation without record. Continue, then.
+					if ( ! $value)
+					{
+						continue;
+					}
 				}
 
 				if ($rel->singular)
