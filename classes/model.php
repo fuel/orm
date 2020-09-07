@@ -2083,7 +2083,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 				{
 					$this->_data_relations[$property] = $rel->singular ? null : array();
 
-					// If value is null or [], this mean it was a relation without record. Continue, then.
+					// If value is an empty array, this mean it was a relation without record. Continue, then.
 					if ( ! $value)
 					{
 						continue;

@@ -1525,7 +1525,7 @@ class Query
 			}
 
 			// If the current model is an empty relation, still need to initialize it empty later
-			$is_relation_without_records = false;
+			$relation_has_records = true;
 
 			// construct the PK string representation for this record
 			if (count($model['pk']) == 1)
@@ -1539,7 +1539,7 @@ class Query
 						continue;
 					}
 
-					$is_relation_without_records = true;
+					$relation_has_records = false;
 				}
 			}
 			else
@@ -1559,7 +1559,7 @@ class Query
 						continue;
 					}
 
-					$is_relation_without_records = true;
+					$relation_has_records = false;
 				}
 				else
 				{
@@ -1567,8 +1567,8 @@ class Query
 				}
 			}
 
-			// This part of code shouldn't run if the current model is a relation with no record(s)
-			if( ! $is_relation_without_records )
+			// This part of code shouldn't run if it's a relation without records
+			if( $relation_has_records )
 			{
 				// do we need to check for cached objects
 				if ($this->from_cache)
@@ -1582,7 +1582,7 @@ class Query
 						$new = array();
 						foreach ($record as $column => $value)
 						{
-							if (empty($obj->{$column}))
+							if (isset($obj->{$column}))
 							{
 								$obj->{$column} = $value;
 								$new[$column] = $value;
@@ -1629,10 +1629,10 @@ class Query
 				}
 
 				// If this is a relation without records, set it to an empty array and continue
-				// Also check for [] because a previous loop iteration may have already set it up
-				if ($is_relation_without_records and (! isset($target[$current]) or $target[$current] === []) )
+				// Also check for empty array because a previous loop iteration may have already set it up
+				if (! $relation_has_records and (! isset($target[$current]) or $target[$current] === array()))
 				{
-					$target[$current] = [];
+					$target[$current] = array();
 
 					continue;
 				}
