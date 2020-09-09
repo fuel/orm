@@ -1448,36 +1448,28 @@ class Query
 		// fetch the result
 		$rows = $query->execute($this->connection)->as_array();
 
-		// storage for the fimal result
+		// storage for the final result
 		$result = array();
+
+		// models for calling _update_origin_relations
+		$relations = array();
 
 		// process the result
 		foreach ($rows as $id => $row)
 		{
-			$this->process_row($row, $qmodels, $result);
+			$this->process_row($row, $qmodels, $result, $relations);
 		}
 
 		// free up some memory
 		unset($rows);
 
-		// convert the result into objects
-		$objects = array();
-		foreach ($result as $key => $record)
+		// call _update_original_relations
+		foreach ($relations as list($record, $rel))
 		{
-			if (is_array($record))
-			{
-				$objects[$key] = $this->model::forge($record, false, $this->view ? $this->view['_name'] : null, static::$caching);
-			}
-			else
-			{
-				$objects[$key] = $record;
-			}
-
-			// free up some memory
-			unset($result[$key]);
+			$record->_update_original_relations(array($rel));
 		}
 
-		return $objects;
+        return $result;
 	}
 
 	/**
@@ -1486,8 +1478,9 @@ class Query
 -	 * @param   array     $row     Row from the database
 -	 * @param   array     $models  Relations to be expected
 -	 * @param   array     &$result An object containing current result array
+-	 * @param   array     &$relations records, needed to call _update_original_relations
 -	 */
-	public function process_row($row, $models, &$result)
+	public function process_row($row, $models, &$result, &$relations)
 	{
 		// storage for this rows pk's
 		$rowpks = array();
@@ -1551,34 +1544,46 @@ class Query
 				$pk = '['.implode('][', $pks).']';
 			}
 
-			// do we need to check for cached objects
-			if ($this->from_cache)
+			// forge model if needed
+			$forge = function($root = false) use($record, $model, $pk)
 			{
-				$obj = Model::cached_object($pk, $model['model']);
-
-				// replace the record with the cached object
-				if ($obj)
+				// do we need to check for cached objects
+				if ($this->from_cache)
 				{
-					// update the object with fields missing from it
-					$new = array();
-					foreach ($record as $column => $value)
+					$obj = Model::cached_object($pk, $model['model']);
+
+					// replace the record with the cached object
+					if ($obj)
 					{
-						if (empty($obj->{$column}))
+						// update the object with fields missing from it
+						$new = array();
+						foreach ($record as $column => $value)
 						{
-							$obj->{$column} = $value;
-							$new[$column] = $value;
+							if (empty($obj->{$column}))
+							{
+								$obj->{$column} = $value;
+								$new[$column] = $value;
+							}
 						}
-					}
 
-					// update the objects stored data
-					if ($new)
-					{
-						$obj->_update_original($new);
+						// update the objects stored data
+						if ($new)
+						{
+							$obj->_update_original($new);
+						}
+						return $obj;
 					}
-
-					$record = $obj;
 				}
-			}
+				if (is_array($record))
+				{
+					if ($root)
+					{
+						return $model['model']::forge($record, false, $this->view ? $this->view['_name'] : null, static::$caching);
+					}
+					return $model['model']::forge($record, false);
+				}
+				return $record;
+			};
 
 			// store related results
 			if ($model['relation'])
@@ -1590,44 +1595,51 @@ class Query
 				$fullrel = '__root__';
 
 				// current root record is the initial target
-				$target =& $result[$rowpks[$fullrel]];
+				$target = $result[$rowpks[$fullrel]];
 
 				$parents = explode(".", $model['relation']);
 				$current = array_pop($parents);
 
 				foreach ($parents as $parent)
 				{
-					if ($target[$parent] instanceOf Model)
+					if ($target->$parent instanceOf Model)
 					{
-						$target =& $target[$parent];
+						$target = $target->$parent;
 					}
 					else
 					{
 						$fullrel .= '.'.$parent;
-						$target =& $target[$parent][$rowpks[$fullrel]];
+						$target = $target->$parent[$rowpks[$fullrel]];
 					}
 				}
+
+				$relation = $target->_relate();
 
 				// create the new node
 				if ($model['singular'])
 				{
-					if ( ! isset($target[$current]))
+                    if ( ! isset($relation[$current]))
 					{
-						$target[$current] = $record;
+						$relation[$current] = $forge();
+						$target->_relate($relation);
+						$target->_update_original_relations(array($current));
 					}
 				}
 				else
 				{
 					// create the current node if not present
-					if ( ! isset($target[$current]))
+                    if ( ! isset($relation[$current]))
 					{
-						$target[$current] = array();
+						$relation[$current] = array($pk => $forge());
+						$target->_relate($relation);
+						$relations[] = array($target, $current);
 					}
 
 					// skip if already present
-					if ( ! isset($target[$current][$pk]))
+					else if ( ! isset($relation[$current][$pk]))
 					{
-						$target[$current][$pk] = $record;
+						$relation[$current][$pk] = $forge();
+						$target->_relate($relation);
 					}
 				}
 			}
@@ -1639,7 +1651,7 @@ class Query
 				// skip if already present
 				if ( ! isset($result[$pk]))
 				{
-					$result[$pk] = $record;
+					$result[$pk] = $forge(true);
 				}
 			}
 		}
