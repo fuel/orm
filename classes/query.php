@@ -1582,7 +1582,7 @@ class Query
 						$new = array();
 						foreach ($record as $column => $value)
 						{
-							if (isset($obj->{$column}))
+							if ( ! isset($obj->{$column}))
 							{
 								$obj->{$column} = $value;
 								$new[$column] = $value;
