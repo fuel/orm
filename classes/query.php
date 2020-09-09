@@ -1621,7 +1621,7 @@ class Query
 					{
 						$target =& $target[$parent];
 					}
-					else
+					elseif ($target)
 					{
 						$fullrel .= '.'.$parent;
 						$target =& $target[$parent][$rowpks[$fullrel]];
