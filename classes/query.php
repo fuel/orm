@@ -1492,6 +1492,9 @@ class Query
 		// storage for this rows pk's
 		$rowpks = array();
 
+		// keep singular or not
+		$is_singular = array();
+
 		// process the models in the row
 		foreach ($models as $alias => $model)
 		{
@@ -1606,6 +1609,9 @@ class Query
 				// store this records' pk for tree traversal
 				$rowpks['__root__.'.$model['relation']] = $pk;
 
+				// keep singular
+				$is_singular['__root__.'.$model['relation']] = $model['singular'];
+
 				// determine the result location to insert this record into
 				$fullrel = '__root__';
 
@@ -1617,14 +1623,18 @@ class Query
 
 				foreach ($parents as $parent)
 				{
-					if ($target[$parent] instanceOf Model)
-					{
-						$target =& $target[$parent];
-					}
-					elseif ($target)
+					// do we need this check?
+					if ($target)
 					{
 						$fullrel .= '.'.$parent;
-						$target =& $target[$parent][$rowpks[$fullrel]];
+						if ($is_singular[$fullrel])
+						{
+						    $target =& $target[$parent];
+						}
+						else
+						{
+						    $target =& $target[$parent][$rowpks[$fullrel]];
+						}
 					}
 				}
 
