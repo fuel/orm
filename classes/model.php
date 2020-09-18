@@ -2074,7 +2074,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 					$this->_data[$property] = $value;
 				}
 			}
-			elseif (array_key_exists($property, static::relations()) and is_array($value))
+			elseif (array_key_exists($property, static::relations()) and (is_array($value) or $value instanceof Model))
 			{
 				$rel = static::relations($property);
 
