@@ -1534,7 +1534,7 @@ class Query
 				// skip empty results
 				if (is_null($pk))
 				{
-					if( ! $model['relation']) 
+					if( ! $model['relation'])
 					{
 						continue;
 					}
@@ -1554,7 +1554,7 @@ class Query
 				// skip empty results
 				if ($isnull)
 				{
-					if( ! $model['relation']) 
+					if( ! $model['relation'])
 					{
 						continue;
 					}
