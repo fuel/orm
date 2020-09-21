@@ -1637,7 +1637,7 @@ class Query
 				// Also check for empty array because a previous loop iteration may have already set it up
 				if ( ! $relation_has_records and $target and ( ! isset($target[$current]) or $target[$current] === array()))
 				{
-					$target[$current] = array();
+					$target[$current] = $model['singular'] ? null : array();
 
 					continue;
 				}
