@@ -1617,6 +1617,11 @@ class Query
 
 				foreach ($parents as $parent)
 				{
+					if ( ! isset($target[$parent]))
+					{
+						continue;
+					}
+
 					if ($target[$parent] instanceOf Model)
 					{
 						$target =& $target[$parent];
@@ -1630,7 +1635,7 @@ class Query
 
 				// If this is a relation without records, set it to an empty array and continue
 				// Also check for empty array because a previous loop iteration may have already set it up
-				if (! $relation_has_records and (! isset($target[$current]) or $target[$current] === array()))
+				if ( ! $relation_has_records and $target and ( ! isset($target[$current]) or $target[$current] === array()))
 				{
 					$target[$current] = array();
 
