@@ -1466,7 +1466,7 @@ class Query
 		{
 			if (is_array($record))
 			{
-				$objects[$key] = $this->model::forge($record, false, $this->view ? $this->view['_name'] : null, static::$caching);
+				$objects[$key] = $this->model::forge($record, false, $this->view ? $this->view['_name'] : null, $this->from_cache);
 			}
 			else
 			{
@@ -1489,28 +1489,29 @@ class Query
 -	 */
 	public function process_row($row, $models, &$result)
 	{
-		// storage for this rows pk's
-		$rowpks = array();
+		// to keep track of all PKs
+		$pks = array();
 
 		// process the models in the row
 		foreach ($models as $alias => $model)
 		{
+			// storage for the current record
 			$record = array();
 
-			// extract the record data
+			// get this models data from the row
 			foreach ($row as $column => $value)
 			{
-				// does thid column belong to the current record?
+				// check if this coulumn belongs to this model
 				if (array_key_exists($column, $model['columns']))
 				{
 					// get the true column name
 					$column = $model['columns'][$column];
 
-					// is it a primary key?
+					// is it a (part of a) primary key?
 					if (in_array($column, $model['pk']))
 					{
 						// typecast the pk value
-						$value = \Orm\Observer_Typing::typecast($column, $value, call_user_func($model['model'].'::property', $column));
+						$value = Observer_Typing::typecast($column, $value, call_user_func($model['model'].'::property', $column));
 					}
 
 					// store the value
@@ -1524,157 +1525,64 @@ class Query
 				continue;
 			}
 
-			// If the current model is an empty relation, still need to initialize it empty later
-			$relation_has_records = true;
+			// initial pk index
+			$pkindex = '__main__';
 
-			// construct the PK string representation for this record
-			if (count($model['pk']) == 1)
-			{
-				$pk = $record[$model['pk'][0]];
-				// skip empty results
-				if (is_null($pk))
-				{
-					if( ! $model['relation'])
-					{
-						continue;
-					}
-
-					$relation_has_records = false;
-				}
-			}
-			else
-			{
-				$pks = array();
-				$isnull = false;
-				foreach ($model['pk'] as $pk)
-				{
-					$pks[] = $record[$pk];
-					$isnull = ($isnull or is_null($record[$pk]));
-				}
-				// skip empty results
-				if ($isnull)
-				{
-					if( ! $model['relation'])
-					{
-						continue;
-					}
-
-					$relation_has_records = false;
-				}
-				else
-				{
-					$pk = '['.implode('][', $pks).']';
-				}
-			}
-
-			// This part of code shouldn't run if it's a relation without records
-			if( $relation_has_records )
-			{
-				// do we need to check for cached objects
-				if ($this->from_cache)
-				{
-					$obj = Model::cached_object($pk, $model['model']);
-
-					// replace the record with the cached object
-					if ($obj)
-					{
-						// update the object with fields missing from it
-						$new = array();
-						foreach ($record as $column => $value)
-						{
-							if ( ! isset($obj->{$column}))
-							{
-								$obj->{$column} = $value;
-								$new[$column] = $value;
-							}
-						}
-
-						// update the objects stored data
-						if ($new)
-						{
-							$obj->_update_original($new);
-						}
-
-						$record = $obj;
-					}
-				}
-			}
-
-			// store related results
+			// find where to insert this result
 			if ($model['relation'])
 			{
-				// store this records' pk for tree traversal
-				$rowpks['__root__.'.$model['relation']] = $pk;
+				// initial target is the current main record
+				$target =& $result[$pks[$pkindex]];
 
-				// determine the result location to insert this record into
-				$fullrel = '__root__';
-
-				// current root record is the initial target
-				$target =& $result[$rowpks[$fullrel]];
-
-				$parents = explode(".", $model['relation']);
-				$current = array_pop($parents);
-
-				foreach ($parents as $parent)
+				// find the parent for this relation
+				foreach (explode(".", $model['relation']) as $parent)
 				{
+					// does this related record already exist?
 					if ( ! isset($target[$parent]))
 					{
-						continue;
+						// create an empty entry for it
+						$target[$parent] = $model['singular'] ? null : array();
 					}
 
-					if ($target[$parent] instanceOf Model)
-					{
-						$target =& $target[$parent];
-					}
-					elseif ($target)
-					{
-						$fullrel .= '.'.$parent;
-						$target =& $target[$parent][$rowpks[$fullrel]];
-					}
-				}
+					// make it the new target
+					$target =& $target[$parent];
 
-				// If this is a relation without records, set it to an empty array and continue
-				// Also check for empty array because a previous loop iteration may have already set it up
-				if ( ! $relation_has_records and $target and ( ! isset($target[$current]) or $target[$current] === array()))
-				{
-					$target[$current] = $model['singular'] ? null : array();
+					// and update the index
+					$pkindex .= ".".$parent;
 
-					continue;
-				}
-
-				// create the new node
-				if ($model['singular'])
-				{
-					if ( ! isset($target[$current]))
+					// check if it is empty
+					if (empty($target[$parent]))
 					{
-						$target[$current] = $record;
-					}
-				}
-				else
-				{
-					// create the current node if not present
-					if ( ! isset($target[$current]))
-					{
-						$target[$current] = array();
-					}
-
-					// skip if already present
-					if ( ! isset($target[$current][$pk]))
-					{
-						$target[$current][$pk] = $record;
+						// first record of this related table, no need to check deeper
+						break;
 					}
 				}
 			}
+
+			// main table record, insert at the root
 			else
 			{
-				// store the current root record pk, for tree traversal
-				$rowpks['__root__'] = $pk;
+				$target =& $result;
+			}
 
-				// skip if already present
-				if ( ! isset($result[$pk]))
+			// determine the PK for this record
+			$pk = $model['model']::implode_pk($record);
+
+			// store the extracted record
+			if ($pk)
+			{
+				// singular is only relevant for related records
+				if ($model['relation'] and $model['singular'])
 				{
-					$result[$pk] = $record;
+					is_null($target) and $target = $record;
 				}
+				else
+				{
+					isset($target[$pk]) or $target[$pk] = $record;
+				}
+
+				// store the current record pk
+				$pks[$pkindex] = $pk;
 			}
 		}
 	}

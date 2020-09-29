@@ -142,6 +142,31 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	 */
 	public static function forge($data = array(), $new = true, $view = null, $cache = true)
 	{
+		// do we want to use the cache
+		if ( ! $new and $cache)
+		{
+			// can we construct a PK and find a cached object
+			if ($pk = static::implode_pk($data) and $obj = static::cached_object($pk))
+			{
+				// exatract relations from the data
+				$data = array_filter($data, function($v) { return is_array($v); });
+
+				// any relations found?
+				if ( ! empty($data))
+				{
+					// load them
+					$obj->from_array($data);
+
+					// and update the relations
+					$obj->_update_original_relations();
+				}
+
+				// return the cached object
+				return $obj;
+			}
+		}
+
+		// create a new model object
 		return new static($data, $new, $view, $cache);
 	}
 
@@ -656,13 +681,6 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 				next($id);
 			}
 
-			if (array_key_exists(get_called_class(), static::$_cached_objects)
-			    and array_key_exists(static::implode_pk($cache_pk), static::$_cached_objects[get_called_class()])
-			    and (! isset($options['from_cache']) or $options['from_cache'] == true))
-			{
-				return static::$_cached_objects[get_called_class()][static::implode_pk($cache_pk)];
-			}
-
 			array_key_exists('where', $options) and $where = array_merge($options['where'], $where);
 			$options['where'] = $where;
 			return static::query($options)->get_one();
@@ -888,7 +906,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 
 		// This is to deal with PHP's native hydration that happens before constructor is called
 		// for some weird reason, for example using the DB's as_object() function
-		if( ! empty($this->_data) or  ! empty($this->_custom_data))
+		if ( ! empty($this->_data) or ! empty($this->_custom_data))
 		{
 			// merge the injected data with the passed data
 			$data = array_merge($this->_custom_data, $this->_data, $data);
@@ -920,7 +938,10 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		}
 
 		// populate the object
-		$this->from_array($data);
+		if ( ! empty($data))
+		{
+			$this->from_array($data, $cache);
+		}
 
 		// store the view, if one was passed
 		if ($view and array_key_exists($view, $this->views()))
@@ -2060,10 +2081,11 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	 * Allow populating this object from an array, and any related objects
 	 *
 	 * @param  array  assoc array with named values to store in the object
+	 * @param  bool   wether or not records should be pulled from cache
 	 *
 	 * @return  Model  this instance as a new object without primary key(s)
 	 */
-	public function from_array(array $values)
+	public function from_array(array $values, $from_cache = false)
 	{
 		foreach($values as $property => $value)
 		{
@@ -2104,7 +2126,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 								break;
 							}
 						}
-						$this->_data_relations[$property] = call_user_func(static::relations($property)->model_to.'::forge', $value, $_newflag);
+						$this->_data_relations[$property] = call_user_func(static::relations($property)->model_to.'::forge', $value, $_newflag, null, $from_cache);
 					}
 					elseif ($relmodel = $rel->model() and $value instanceOf $relmodel)
 					{
@@ -2140,7 +2162,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 										break;
 									}
 								}
-								$this->_data_relations[$property][$id] = call_user_func(static::relations($property)->model_to.'::forge', $data, $_newflag);
+								$this->_data_relations[$property][$id] = call_user_func(static::relations($property)->model_to.'::forge', $data, $_newflag, null, $from_cache);
 							}
 						}
 						elseif ($relmodel = $rel->model() and $data instanceOf $relmodel)
