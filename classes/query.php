@@ -1549,13 +1549,6 @@ class Query
 
 					// and update the index
 					$pkindex .= ".".$parent;
-
-					// check if it is empty
-					if (empty($target[$parent]))
-					{
-						// first record of this related table, no need to check deeper
-						break;
-					}
 				}
 			}
 
