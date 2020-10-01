@@ -1528,7 +1528,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		}
 
 		// Non changed objects don't have to be saved, but return true anyway (no reason to fail)
-		if ( ! $this->is_changed())
+		if ( ! $this->is_changed(array_keys(static::properties())))
 		{
 			return true;
 		}
