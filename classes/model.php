@@ -155,7 +155,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 				if ( ! empty($data))
 				{
 					// load them
-					$obj->from_array($data);
+					$obj->from_array($data, $cache);
 
 					// and update the relations
 					$obj->_update_original_relations();
@@ -2126,6 +2126,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 								break;
 							}
 						}
+
 						$this->_data_relations[$property] = call_user_func(static::relations($property)->model_to.'::forge', $value, $_newflag, null, $from_cache);
 					}
 					elseif ($relmodel = $rel->model() and $value instanceOf $relmodel)
