@@ -1489,8 +1489,8 @@ class Query
 -	 */
 	public function process_row($row, $models, &$result)
 	{
-		// to keep track of all PKs
-		$pks = array();
+		// record tree index
+		$tree = array();
 
 		// process the models in the row
 		foreach ($models as $alias => $model)
@@ -1525,57 +1525,69 @@ class Query
 				continue;
 			}
 
-			// initial pk index
-			$pkindex = '__main__';
-
-			// find where to insert this result
-			if ($model['relation'])
-			{
-				// initial target is the current main record
-				$target =& $result[$pks[$pkindex]];
-
-				// find the parent for this relation
-				foreach (explode(".", $model['relation']) as $parent)
-				{
-					// does this related record already exist?
-					if ( ! isset($target[$parent]))
-					{
-						// create an empty entry for it
-						$target[$parent] = $model['singular'] ? null : array();
-					}
-
-					// make it the new target
-					$target =& $target[$parent];
-
-					// and update the index
-					$pkindex .= ".".$parent;
-				}
-			}
-
-			// main table record, insert at the root
-			else
-			{
-				$target =& $result;
-			}
-
 			// determine the PK for this record
 			$pk = $model['model']::implode_pk($record);
 
-			// store the extracted record
-			if ($pk)
+			// is this a related record
+			if ($model['relation'])
 			{
-				// singular is only relevant for related records
-				if ($model['relation'] and $model['singular'])
+				// tree index
+				$index = '__root__';
+
+				// get the current index from the tree
+				$target =& $tree[$index];
+
+				// determine the location for record insertion
+				foreach(explode('.', $model['relation']) as $relation)
 				{
-					is_null($target) and $target = $record;
-				}
-				else
-				{
-					isset($target[$pk]) or $target[$pk] = $record;
+					// advance the index
+					$index .= '.'.$relation;
+
+					// do we have this index?
+					if ( ! array_key_exists($index, $tree))
+					{
+						// iniitalize it
+						$target[$relation] = $model['singular'] ? null : array();
+
+						// and add it to the index
+						$tree[$index] =& $target[$relation];
+					}
+
+					// get the current index from the tree
+					$target =& $tree[$index];
 				}
 
-				// store the current record pk
-				$pks[$pkindex] = $pk;
+				// if we have a valid reccord
+				if ($pk)
+				{
+					if ($model['singular'])
+					{
+						// store the extracted record
+						$target = $record;
+					}
+					else
+					{
+						// store the extracted record
+						$target[$pk] = $record;
+
+						// and update the tree index
+						$tree[$index] =& $target[$pk];
+					}
+				}
+			}
+
+			// nope, primary reocrd
+			else
+			{
+				// if we have a valid reccord
+				if ($pk)
+				{
+					// store the extracted record
+					$result[$pk] = $record;
+
+					// and start a new tree
+					$tree = array('__root__' => &$result[$pk]);
+				}
 			}
 		}
 	}
