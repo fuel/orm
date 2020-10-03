@@ -1451,10 +1451,13 @@ class Query
 		// storage for the fimal result
 		$result = array();
 
+		// storage for the tracker tree
+		$tree = array();
+
 		// process the result
 		foreach ($rows as $id => $row)
 		{
-			$this->process_row($row, $qmodels, $result);
+			$this->process_row($row, $qmodels, $tree, $result);
 		}
 
 		// free up some memory
@@ -1485,13 +1488,11 @@ class Query
 -	 *
 -	 * @param   array     $row     Row from the database
 -	 * @param   array     $models  Relations to be expected
--	 * @param   array     &$result An object containing current result array
+-	 * @param   array     &$tree   array to track tree insertion locations  in
+-	 * @param   array     &$result array to accumulate the processed results in
 -	 */
-	public function process_row($row, $models, &$result)
+	public function process_row($row, $models, &$tree, &$result)
 	{
-		// record tree index
-		$tree = array();
-
 		// process the models in the row
 		foreach ($models as $alias => $model)
 		{
@@ -1534,12 +1535,18 @@ class Query
 				// tree index
 				$index = '__root__';
 
+				// prarent tree index
+				$parent = null;
+
 				// get the current index from the tree
 				$target =& $tree[$index];
 
 				// determine the location for record insertion
 				foreach(explode('.', $model['relation']) as $relation)
 				{
+					// store the previous index as parent
+					$parent = $index;
+
 					// advance the index
 					$index .= '.'.$relation;
 
@@ -1555,6 +1562,28 @@ class Query
 
 					// get the current index from the tree
 					$target =& $tree[$index];
+				}
+
+				// if the current model is not singular
+				if ( ! $model['singular'])
+				{
+					// target must point to the array, not to the object
+					if ( ! empty($tree[$index]))
+					{
+						$tree[$index] =& $tree[$parent][$relation];
+
+						// get the current index from the tree
+						$target =& $tree[$index];
+
+						// remove underlying models from the index
+						foreach (array_keys($tree) as $key)
+						{
+							if (strpos($key, $index) === 0 and $key != $index)
+							{
+								unset($tree[$key]);
+							}
+						}
+					}
 				}
 
 				// if we have a valid reccord
@@ -1580,7 +1609,7 @@ class Query
 			else
 			{
 				// if we have a valid reccord
-				if ($pk)
+				if ($pk and ! array_key_exists($pk, $result))
 				{
 					// store the extracted record
 					$result[$pk] = $record;
