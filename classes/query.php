@@ -1553,11 +1553,15 @@ class Query
 					// do we have this index?
 					if ( ! array_key_exists($index, $tree))
 					{
-						// iniitalize it
-						$target[$relation] = $model['singular'] ? null : array();
+						// do not bubble down non-existent objects
+						if ( ! is_null($target))
+						{
+							// iniitalize it
+							$target[$relation] = $model['singular'] ? null : array();
 
-						// and add it to the index
-						$tree[$index] =& $target[$relation];
+							// and add it to the index
+							$tree[$index] =& $target[$relation];
+						}
 					}
 
 					// get the current index from the tree
