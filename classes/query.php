@@ -1520,14 +1520,14 @@ class Query
 				}
 			}
 
-			// skip the rest if no results were found for this model
-			if (empty($record))
+			// determine the PK for this record
+			$pk = $model['model']::implode_pk($record);
+
+			// skip the rest if pk is empty (= no result)
+			if (empty($pk))
 			{
 				continue;
 			}
-
-			// determine the PK for this record
-			$pk = $model['model']::implode_pk($record);
 
 			// is this a related record
 			if ($model['relation'])
@@ -1553,15 +1553,11 @@ class Query
 					// do we have this index?
 					if ( ! array_key_exists($index, $tree))
 					{
-						// do not bubble down non-existent objects
-						if ( ! is_null($target))
-						{
-							// iniitalize it
-							$target[$relation] = $model['singular'] ? null : array();
+						// iniitalize it
+						$target[$relation] = $model['singular'] ? null : array();
 
-							// and add it to the index
-							$tree[$index] =& $target[$relation];
-						}
+						// and add it to the index
+						$tree[$index] =& $target[$relation];
 					}
 
 					// get the current index from the tree
