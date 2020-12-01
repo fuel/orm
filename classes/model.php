@@ -1105,19 +1105,19 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	{
 		if (array_key_exists($property, $this->_data))
 		{
-			return true;
+			return ! is_null($this->_data[$property]);
 		}
 		elseif (static::relations($property))
 		{
 			return true;
 		}
-		elseif ($this->_get_eav($property, true))
+		elseif (is_bool($val = $this->_get_eav($property, true)))
 		{
-			return true;
+			return $val;
 		}
 		elseif (array_key_exists($property, $this->_custom_data))
 		{
-			return true;
+			return ! is_null($this->_custom_data[$property]);
 		}
 
 		return false;
@@ -2412,7 +2412,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 							else
 							{
 								// else return its existence or its value
-								return $isset ? true : $record->{$val};
+								return $isset ? ! is_null($record->{$val}) : $record->{$val};
 							}
 						}
 					}
