@@ -1111,7 +1111,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		{
 			return true;
 		}
-		elseif (is_bool($val = $this->_get_eav($property, true)))
+		elseif (property_exists(get_called_class(), '_eav') and is_bool($val = $this->_get_eav($property, true)))
 		{
 			return $val;
 		}
@@ -1139,7 +1139,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 			$this->_reset_relations[$property] = true;
 			$this->_data_relations[$property] = $rel->singular ? null : array();
 		}
-		elseif ($this->_get_eav($property, true, true))
+		elseif (property_exists(get_called_class(), '_eav') and $this->_get_eav($property, true, true) !== false)
 		{
 			// no additional work needed here
 		}
@@ -1219,6 +1219,9 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	 */
 	public function & get($property, array $conditions = array())
 	{
+		// get the current class name
+		$class = get_called_class();
+
 		// database columns
 		if (array_key_exists($property, static::properties()))
 		{
@@ -1251,7 +1254,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		}
 
 		// EAV properties
-		elseif (($result = $this->_get_eav($property)) !== false)
+		elseif (property_exists($class, '_eav') and ($result = $this->_get_eav($property)) !== false)
 		{
 			// nothing else to do here
 		}
@@ -1354,7 +1357,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 			}
 
 			// none of the above, assume its custom data
-			elseif ( ! $this->_set_eav($property, $value))
+			elseif ($this->_set_eav($property, $value) === false)
 			{
 				$this->_custom_data[$property] = $value;
 			}
@@ -2177,7 +2180,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 					}
 				}
 			}
-			elseif (property_exists($this, '_eav') and ! empty(static::$_eav))
+			elseif (property_exists(get_called_class(), '_eav') and ! empty(static::$_eav))
 			{
 				$this->_set_eav($property, $value);
 			}
