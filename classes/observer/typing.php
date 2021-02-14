@@ -330,12 +330,12 @@ class Observer_Typing
 		// was a specific float format specified?
 		if (isset($settings['db_decimals']))
 		{
-			return sprintf('%.'.$settings['db_decimals'].'F', (float) $var);
+			return sprintf('%.'.$settings['db_decimals'].'F', round((float) $var, $settings['db_decimals']));
 		}
 		if (isset($settings['data_type']) and strpos($settings['data_type'], 'decimal:') === 0)
 		{
 			$decimal = explode(':', $settings['data_type']);
-			return sprintf('%.'.$decimal[1].'F', (float) $var);
+			return sprintf('%.'.$decimal[1].'F', round((float) $var, $decimal[1]));
 		}
 
 		return $var;
@@ -405,10 +405,10 @@ class Observer_Typing
 		// do we need to do locale aware conversion?
 		if (static::$use_locale)
 		{
-			return sprintf("%.".$dec."f", static::type_float_after($var));
+			return sprintf("%.".$dec."f", round(static::type_float_after($var), $dec));
 		}
 
-		return sprintf("%.".$dec."F", static::type_float_after($var));
+		return sprintf("%.".$dec."F", round(static::type_float_after($var), $dec));
 	}
 
 	/**
