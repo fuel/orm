@@ -944,6 +944,9 @@ class Query
 			unset($conditions['related']);
 		}
 
+		// avoid UnexpectedValue exceptions due to incorrect order
+		ksort($this->relations);
+
 		return $this;
 	}
 
@@ -1086,6 +1089,7 @@ class Query
 
 		// Add defined relations
 		$models = array();
+
 		foreach ($this->relations as $name => $rel)
 		{
 			// when there's a dot it must be a nested relation
@@ -1451,15 +1455,11 @@ class Query
 		// storage for the fimal result
 		$result = array();
 
-		// storage for the tracker tree
-		$tree = array();
-
 		// process the result
 		foreach ($rows as $id => $row)
 		{
-			$this->process_row($row, $qmodels, $tree, $result);
+			$this->process_row($row, $qmodels, $result);
 		}
-
 		// free up some memory
 		unset($rows);
 
@@ -1488,15 +1488,17 @@ class Query
 -	 *
 -	 * @param   array     $row     Row from the database
 -	 * @param   array     $models  Relations to be expected
--	 * @param   array     &$tree   array to track tree insertion locations  in
 -	 * @param   array     &$result array to accumulate the processed results in
 -	 */
-	public function process_row($row, $models, &$tree, &$result)
+	public function process_row($row, $models, &$result)
 	{
-		// process the models in the row
+		// PK trackers
+		$pointers = array();
+
+		// process the models in the result row
 		foreach ($models as $alias => $model)
 		{
-			// storage for the current record
+			// storage for extracting current record
 			$record = array();
 
 			// get this models data from the row
@@ -1529,94 +1531,45 @@ class Query
 				continue;
 			}
 
-			// is this a related record
-			if ($model['relation'])
+			// determine the current relation name and parent record pointer
+			$parent = explode('.', strrev($model['relation']), 2);
+			$current = strrev($parent[0]);
+			$parent = isset($parent[1]) ? strrev($parent[1]) : null;
+
+			// is the current record a root record in this query?
+			if (empty($current))
 			{
-				// tree index
-				$index = '__root__';
+				isset($result[$pk]) or $result[$pk] = $record;
+				$pointers[null] =& $result[$pk];
+			}
 
-				// prarent tree index
-				$parent = null;
-
-				// get the current index from the tree
-				$target =& $tree[$index];
-
-				// determine the location for record insertion
-				foreach(explode('.', $model['relation']) as $relation)
+			// nope, it is a related record
+			else
+			{
+				// store it, but do not overwrite an existing result!
+				if ($model['singular'] === true)
 				{
-					// store the previous index as parent
-					$parent = $index;
-
-					// advance the index
-					$index .= '.'.$relation;
-
-					// do we have this index?
-					if ( ! array_key_exists($index, $tree))
+					if ( ! array_key_exists($current, $pointers[$parent]))
 					{
-						// iniitalize it
-						$target[$relation] = $model['singular'] ? null : array();
-
-						// and add it to the index
-						$tree[$index] =& $target[$relation];
-					}
-
-					// get the current index from the tree
-					$target =& $tree[$index];
-				}
-
-				// if the current model is not singular
-				if ( ! $model['singular'])
-				{
-					// target must point to the array, not to the object
-					if ( ! empty($tree[$index]))
-					{
-						$tree[$index] =& $tree[$parent][$relation];
-
-						// get the current index from the tree
-						$target =& $tree[$index];
-
-						// remove underlying models from the index
-						foreach (array_keys($tree) as $key)
-						{
-							if (strpos($key, $index) === 0 and $key != $index)
-							{
-								unset($tree[$key]);
-							}
-						}
-					}
-				}
-
-				// if we have a valid reccord
-				if ($pk)
-				{
-					if ($model['singular'])
-					{
-						// store the extracted record
-						$target = $record;
+						$pointers[$parent][$current] = $record;
 					}
 					else
 					{
-						// store the extracted record
-						$target[$pk] = $record;
-
-						// and update the tree index
-						$tree[$index] =& $target[$pk];
+						// do not overwrite the existing entry
 					}
 				}
-			}
-
-			// nope, primary reocrd
-			else
-			{
-				// if we have a valid reccord
-				if ($pk and ! array_key_exists($pk, $result))
+				else
 				{
-					// store the extracted record
-					$result[$pk] = $record;
-
-					// and start a new tree
-					$tree = array('__root__' => &$result[$pk]);
+					if ( ! array_key_exists($current, $pointers[$parent]))
+					{
+						$pointers[$parent][$current] = array($pk => $record);
+					}
+					else
+					{
+						// do not overwrite the existing entry
+					}
 				}
+				$pointers[$model['relation']] = $pointers[$parent][$current];
 			}
 		}
 	}
