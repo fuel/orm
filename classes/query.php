@@ -1566,7 +1566,7 @@ class Query
 					}
 					else
 					{
-						// do not overwrite the existing entry
+						isset($pointers[$parent][$current][$pk]) or $pointers[$parent][$current][$pk] = $record;
 					}
 				}
 				$pointers[$model['relation']] = $pointers[$parent][$current];
