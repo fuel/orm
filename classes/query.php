@@ -1525,8 +1525,8 @@ class Query
 			// determine the PK for this record
 			$pk = $model['model']::implode_pk($record);
 
-			// skip the rest if pk is empty (= no result)
-			if (empty($pk))
+			// skip the rest if we don't have a pk (= no result)
+			if (is_null($pk))
 			{
 				continue;
 			}
