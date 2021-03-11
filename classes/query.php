@@ -1549,7 +1549,7 @@ class Query
 				// store it, but do not overwrite an existing result!
 				if ($model['singular'] === true)
 				{
-					if ( ! array_key_exists($current, $pointers[$parent]))
+					if (!isset($pointers[$parent]) || ! array_key_exists($current, $pointers[$parent]))
 					{
 						$pointers[$parent][$current] = $record;
 					}
@@ -1560,7 +1560,7 @@ class Query
 				}
 				else
 				{
-					if ( ! array_key_exists($current, $pointers[$parent]))
+					if (!isset($pointers[$parent]) || !array_key_exists($current, $pointers[$parent]))
 					{
 						$pointers[$parent][$current] = array($pk => $record);
 					}
