@@ -527,7 +527,14 @@ class Query
 			$out = array();
 			foreach($this->select as $k => $v)
 			{
-				$out[] = is_array($v) ? array($v[1], $k) : array($v, $k);
+				if (is_array($v))
+				{
+					$out[$v[1]] = array($v[0], $k);
+				}
+				else
+				{
+					$out[] = array($v, $k);
+				}
 			}
 
 			// set select back to before the PKs were added
@@ -1384,7 +1391,7 @@ class Query
 				{
 					if ($value[0] instanceOf \Fuel\Core\Database_Expression)
 					{
-						$result[$key] = $value[1];
+						$result[$value[1]] = $key;
 					}
 					else
 					{
@@ -1414,7 +1421,7 @@ class Query
 			}
 		}
 
-		$query = call_fuel_func_array('DB::select', $select);
+		$query = call_fuel_func_array('DB::select', array_values($select));
 
 		// Set from view/table
 		$query->from(array($this->_table(), $this->alias));
