@@ -1601,7 +1601,7 @@ class Query
 				$select[] = $c[0];
 			}
 		}
-		$query = call_fuel_func_array('DB::select', $select);
+		$query = call_fuel_func_array('DB::select', array_values($select));
 
 		// Set the defined connection on the query
 		$query->set_connection($this->connection);
