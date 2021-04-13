@@ -1150,7 +1150,7 @@ class Query
 			}
 
 			// make current query subquery of ultimate query
-			$new_query = call_fuel_func_array('DB::select', $columns);
+			$new_query = call_fuel_func_array('DB::select', array_values($columns));
 			$query = $new_query->from(array($query, $this->alias));
 		}
 		else
