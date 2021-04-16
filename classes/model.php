@@ -2412,10 +2412,26 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 								$record->delete();
 								return true;
 							}
+							elseif ($isset)
+							{
+								return ! is_null($record->{$val});
+							}
 							else
 							{
-								// else return its existence or its value
-								return $isset ? ! is_null($record->{$val}) : $record->{$val};
+								// unserialize arrays and objects
+								if (substr($record->{$val}, -1) === '}' and in_array(substr($record->{$val}, 0, 2), array('a:', 'O:')))
+								{
+									try
+									{
+										return unserialize($record->{$val});
+									}
+									catch (\Exception $e)
+									{
+										// fall through
+									}
+								}
+
+								return $record->{$val};
 							}
 						}
 					}
@@ -2469,6 +2485,12 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 				// determine attribute and value column names
 				$attr = isset($settings['attribute']) ? $settings['attribute'] : 'attribute';
 				$val = isset($settings['value']) ? $settings['value'] : 'value';
+
+				// serialize array or object values so they can be stored
+				if (is_array($value) or is_object($value))
+				{
+					$value = serialize($value);
+				}
 
 				// loop over the resultset
 				foreach ($this->{$relation->name} as $key => $record)
