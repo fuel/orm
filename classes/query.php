@@ -529,7 +529,14 @@ class Query
 			{
 				if (is_array($v))
 				{
-					$out[$v[1]] = array($v[0], $k);
+					if (count($v) === 1)
+					{
+						$out[] = array($v[0], $k);
+					}
+					else
+					{
+						$out[$v[1]] = array($v[0], $k);
+					}
 				}
 				else
 				{
