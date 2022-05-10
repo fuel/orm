@@ -1546,12 +1546,13 @@ class Query
 			}
 
 			// determine the current relation name and parent record pointer
-			$parent = explode('.', strrev($model['relation']), 2);
-			$current = strrev($parent[0]);
-			$parent = isset($parent[1]) ? strrev($parent[1]) : null;
+			$relpart = is_string($model['relation']) ? explode('.', strrev($model['relation']), 2) : null;
+
+			$current = (is_array($relpart) and array_key_exists(0, $relpart)) ? strrev($relpart[0]) : null;
+			$parent = (is_array($relpart) and array_key_exists(1, $relpart)) ? strrev($relpart[1]) : null;
 
 			// is the current record a root record in this query?
-			if (empty($current))
+			if (is_null($current))
 			{
 				isset($result[$pk]) or $result[$pk] = $record;
 				$pointers[null] =& $result[$pk];
