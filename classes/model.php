@@ -2416,7 +2416,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 							{
 								return ! is_null($record->{$val});
 							}
-							else
+							elseif (is_string($record->{$val}))
 							{
 								// unserialize arrays and objects
 								if (substr($record->{$val}, -1) === '}' and in_array(substr($record->{$val}, 0, 2), array('a:', 'O:')))
@@ -2431,6 +2431,10 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 									}
 								}
 
+								return $record->{$val};
+							}
+							else
+							{
 								return $record->{$val};
 							}
 						}
