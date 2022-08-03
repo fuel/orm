@@ -2119,18 +2119,33 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 				{
 					if (is_array($value))
 					{
-						// check if we have all primary keys
-						$_newflag = false;
-						foreach (call_user_func(static::relations($property)->model_to.'::primary_key') as $pk)
+						// do we already have this related object?
+						if ($from_cache and isset($this->_data_relations[$property]))
 						{
-							if ( ! isset($value[$pk]) or is_null($value[$pk]))
+							// add missing fields
+							foreach ($value as $key => $data)
 							{
-								$_newflag = true;
-								break;
+								if ( ! isset($this->_data_relations[$property][$key]))
+								{
+									$this->_data_relations[$property][$key] = $data;
+								}
 							}
 						}
+						else
+						{
+							// check if we have all primary keys
+							$_newflag = false;
+							foreach (call_user_func(static::relations($property)->model_to.'::primary_key') as $pk)
+							{
+								if ( ! isset($value[$pk]) or is_null($value[$pk]))
+								{
+									$_newflag = true;
+									break;
+								}
+							}
 
-						$this->_data_relations[$property] = call_user_func(static::relations($property)->model_to.'::forge', $value, $_newflag, null, $from_cache);
+							$this->_data_relations[$property] = call_user_func(static::relations($property)->model_to.'::forge', $value, $_newflag, null, $from_cache);
+						}
 					}
 					elseif ($relmodel = $rel->model() and $value instanceOf $relmodel)
 					{
@@ -2147,11 +2162,16 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 					{
 						if (is_array($data))
 						{
-							if (isset($this->_data_relations[$property][$id]))
+							// do we already have this related object?
+							if ($from_cache and isset($this->_data_relations[$property][$id]))
 							{
+								// add missing fields
 								foreach ($data as $key => $value)
 								{
-									$this->_data_relations[$property][$id][$key] = $value;
+									if ( ! isset($this->_data_relations[$property][$id][$key]))
+									{
+										$this->_data_relations[$property][$id][$key] = $value;
+									}
 								}
 							}
 							else
