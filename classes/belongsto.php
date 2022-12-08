@@ -203,24 +203,34 @@ class BelongsTo extends Relation
 		}
 	}
 
-	public function delete($model_from, $model_to, $parent_deleted, $cascade)
+	public function delete($model_from, $parent_deleted, $cascade)
 	{
 		if ( ! $parent_deleted)
 		{
 			return;
 		}
 
-		// break current relations
+		// break current relations, may be incomplete
 		$model_from->unfreeze();
+
 		$rels = $model_from->_relate();
-		$rels[$this->name] = null;
+		unset($rels[$this->name]);
 		$model_from->_relate($rels);
+
 		$model_from->freeze();
 
 		$cascade = is_null($cascade) ? $this->cascade_delete : (bool) $cascade;
-		if ($cascade and ! empty($model_to))
+
+		if ($cascade)
 		{
-			$model_to->delete();
+			// fetch all related records
+			$model_from->get($this->name);
+
+			if ( ! empty($model_from->{$this->name}))
+			{
+				// yes, delete the reclated records
+				$model_from->{$this->name}->delete();
+			}
 		}
 	}
 }

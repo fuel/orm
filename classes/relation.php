@@ -129,11 +129,10 @@ abstract class Relation
 	 * Takes the current relations and attempts to delete them when cascading is allowed or forced
 	 *
 	 * @param  Model        $model_from      instance of model_from
-	 * @param  array|Model  $model_to        single or multiple model instances to delete
 	 * @param  bool         $parent_deleted  whether the model_from has been saved already
 	 * @param  null|bool    $cascade         either uses default setting (null) or forces when true or prevents when false
 	 */
-	abstract public function delete($model_from, $model_to, $parent_deleted, $cascade);
+	abstract public function delete($model_from, $parent_deleted, $cascade);
 
 	/**
 	 * Allow outside access to protected properties

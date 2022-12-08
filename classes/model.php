@@ -1637,7 +1637,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 					$should_cascade = false;
 				}
 
-				$rel->delete($this, $this->{$rel_name}, false, $should_cascade);
+				$rel->delete($this, false, $should_cascade);
 			}
 			$this->unfreeze();
 
@@ -1659,7 +1659,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 					$should_cascade = false;
 				}
 
-				$rel->delete($this, $this->{$rel_name}, true, $should_cascade);
+				$rel->delete($this, true, $should_cascade);
 			}
 			$this->unfreeze();
 

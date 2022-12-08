@@ -342,27 +342,34 @@ class ManyMany extends Relation
 		}
 	}
 
-	public function delete($model_from, $models_to, $parent_deleted, $cascade)
+	public function delete($model_from, $parent_deleted, $cascade)
 	{
 		if ( ! $parent_deleted)
 		{
 			return;
 		}
 
-		// Remove relations
+		// break current relations, may be incomplete
 		$model_from->unfreeze();
+
 		$rels = $model_from->_relate();
-		$rels[$this->name] = array();
+		unset($rels[$this->name]);
 		$model_from->_relate($rels);
+
 		$model_from->freeze();
 
 		// Delete all relationship entries for the model_from
 		$this->delete_related($model_from);
 
 		$cascade = is_null($cascade) ? $this->cascade_delete : (bool) $cascade;
-		if ($cascade and ! empty($models_to))
+
+		if ($cascade)
 		{
-			foreach ($models_to as $m)
+			// fetch all related records
+			$model_from->get($this->name);
+
+			// yes, delete the reclated records
+			foreach ($model_from->{$this->name} as $m)
 			{
 				$m->delete();
 			}

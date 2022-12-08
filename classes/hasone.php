@@ -203,35 +203,44 @@ class HasOne extends Relation
 		}
 	}
 
-	public function delete($model_from, $model_to, $parent_deleted, $cascade)
+	public function delete($model_from, $parent_deleted, $cascade)
 	{
 		if ( ! $parent_deleted)
 		{
 			return;
 		}
 
-		// break current relations
+		// break current relations, may be incomplete
 		$model_from->unfreeze();
+
 		$rels = $model_from->_relate();
-		$rels[$this->name] = null;
+		unset($rels[$this->name]);
 		$model_from->_relate($rels);
+
 		$model_from->freeze();
 
-		if ( ! empty($model_to))
+		// fetch all related records
+		$model_from->get($this->name);
+
+		if ( ! empty($model_from->{$this->name}))
 		{
 			$cascade = is_null($cascade) ? $this->cascade_delete : (bool) $cascade;
 
 			if ($cascade)
 			{
-				$model_to->delete();
+				// yes, delete the reclated records
+				{
+					$model_from->{$this->name}->delete();
+				}
 			}
-			elseif ( ! $model_to->frozen())
+			elseif ( ! $model_from->{$this->name}->frozen())
 			{
+				// no, reset the foreign key and decouple
 				foreach ($this->key_to as $fk)
 				{
-					$model_to->{$fk} = null;
+					$model_from->{$this->name}->{$fk} = null;
 				}
-				$model_to->is_changed() and $model_to->save();
+				$model_from->{$this->name}->is_changed() and $model_from->{$this->name}->save();
 			}
 		}
 	}

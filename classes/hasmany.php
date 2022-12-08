@@ -232,31 +232,42 @@ class HasMany extends Relation
 		}
 	}
 
-	public function delete($model_from, $models_to, $parent_deleted, $cascade)
+	public function delete($model_from, $parent_deleted, $cascade)
 	{
 		if ( ! $parent_deleted)
 		{
 			return;
 		}
 
-		// break current relations
+		// break current relations, may be incomplete
 		$model_from->unfreeze();
+
 		$rels = $model_from->_relate();
-		$rels[$this->name] = array();
+		unset($rels[$this->name]);
 		$model_from->_relate($rels);
+
 		$model_from->freeze();
 
-		if ( ! empty($models_to))
-		{
-			$cascade = is_null($cascade) ? $this->cascade_delete : (bool) $cascade;
+		// fetch all related records
+		$model_from->get($this->name);
 
-			foreach ($models_to as $m)
+		// check if we need to cascate the delete
+		$cascade = is_null($cascade) ? $this->cascade_delete : (bool) $cascade;
+
+		if ($cascade)
+		{
+			// delete the reclated records
+			foreach ($model_from->{$this->name} as $m)
 			{
-				if ($cascade)
-				{
-					$m->delete();
-				}
-				elseif ( ! $m->frozen())
+				$m->delete();
+			}
+		}
+		else
+		{
+			// no, reset the foreign key and decouple
+			foreach ($model_from->{$this->name} as $m)
+			{
+				if ( ! $m->frozen())
 				{
 					foreach ($this->key_to as $fk)
 					{
