@@ -1506,12 +1506,20 @@ class Query
 -	 */
 	public function process_row($row, $models, &$result)
 	{
-		// PK trackers
+		// relation pointers
 		$pointers = array();
+
+		// relation types
+		$reltypes = array();
 
 		// process the models in the result row
 		foreach ($models as $alias => $model)
 		{
+			// fetch the relation
+			$relation = $model['relation'];
+
+			isset($reltypes[$relation]) or $reltypes[$relation] = $model['singular'];
+
 			// storage for extracting current record
 			$record = array();
 
@@ -1545,46 +1553,50 @@ class Query
 				continue;
 			}
 
-			// determine the current relation name and parent record pointer
-			$relpart = is_string($model['relation']) ? explode('.', strrev($model['relation']), 2) : null;
-
-			$current = (is_array($relpart) and array_key_exists(0, $relpart)) ? strrev($relpart[0]) : null;
-			$parent = (is_array($relpart) and array_key_exists(1, $relpart)) ? strrev($relpart[1]) : null;
-
-			// is the current record a root record in this query?
-			if (is_null($current))
+			// root record?
+			if (is_null($model['relation']))
 			{
+				// store the record if not already present
 				isset($result[$pk]) or $result[$pk] = $record;
-				$pointers[null] =& $result[$pk];
+
+				// and add a pointer to it
+				$pointers[""] =& $result[$pk];
 			}
 
-			// nope, it is a related record
+			// related record
 			else
 			{
-				// store it, but do not overwrite an existing result!
-				if ($model['singular'] === true)
+				$parent = explode('.', $relation);
+				$current = array_pop($parent);
+				$parent = implode('.', $parent);
+
+				if ( ! array_key_exists($parent, $pointers))
 				{
-					if ( ! array_key_exists($current, $pointers[$parent]))
+					throw new \FuelException("Record hydration exception: parent record \"$parent\" can not be located. This should not happen!");
+				}
+
+				if ($reltypes[$relation])
+				{
+					// singular relation
+					if ( ! isset($pointers[$parent][$current]))
 					{
 						$pointers[$parent][$current] = $record;
 					}
-					else
-					{
-						// do not overwrite the existing entry
-					}
+					$pointers[$relation] =& $pointers[$parent][$current];
 				}
 				else
 				{
-					if ( ! array_key_exists($current, $pointers[$parent]))
+					// non-singular relation
+					if ( ! isset($pointers[$parent][$current]))
 					{
 						$pointers[$parent][$current] = array($pk => $record);
 					}
-					else
+					elseif ( ! isset($pointers[$parent][$current][$pk]))
 					{
-						isset($pointers[$parent][$current][$pk]) or $pointers[$parent][$current][$pk] = $record;
+						$pointers[$parent][$current][$pk] = $record;
 					}
+					$pointers[$relation] =& $pointers[$parent][$current][$pk];
 				}
-				$pointers[$model['relation']] = $pointers[$parent][$current];
 			}
 		}
 	}
