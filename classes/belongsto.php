@@ -22,6 +22,11 @@ class BelongsTo extends Relation
 
 	public function __construct($from, $name, array $config)
 	{
+		if (call_user_func_array(array($from, 'property'), array($name)))
+		{
+			throw new \FuelException(sprintf('"%s" is defined as both a property and a belongsto relation in model %s', $name, $from));
+		}
+
 		$this->name        = $name;
 		$this->model_from  = $from;
 		$this->model_to    = array_key_exists('model_to', $config)
