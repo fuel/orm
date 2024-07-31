@@ -1222,8 +1222,21 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		// get the current class name
 		$class = get_called_class();
 
+		// chained get?
+		if (strpos($property, '->') !== false)
+		{
+			foreach (explode('->', $property) as $element)
+			{
+				$result = isset($result) ? $result->$element : $this->get($element);
+				if ( ! is_object($result))
+				{
+					break;
+				}
+			}
+		}
+
 		// database columns
-		if (array_key_exists($property, static::properties()))
+		elseif (array_key_exists($property, static::properties()))
 		{
 			if ( ! array_key_exists($property, $this->_data))
 			{
