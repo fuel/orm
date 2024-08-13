@@ -296,8 +296,14 @@ class Model_Temporal extends Model
 	 * @param array $options
 	 * @return type
 	 */
-	public static function find($id = null, array $options = null)
+	public static function find($id = null, $options = null)
 	{
+		// options must be a nullable array
+		if ( ! is_null($options) and ! is_array($options))
+		{
+			throw new \FuelException(__FUNCTION__ . ': Argument #2 ($options) must be of type array, ' . gettype($options) . ' given');
+		}
+
 		$timestamp_end_name = static::temporal_property('end_column');
 		$max_timestamp = static::temporal_property('max_timestamp');
 

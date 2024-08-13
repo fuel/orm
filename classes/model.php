@@ -638,7 +638,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
      *
      * @return  Model|Model[]
      */
-	public static function find($id = null, array $options = null)
+	public static function find($id = null, $options = null)
 	{
 		// deal with null valued PK's
 		if (is_null($id))
@@ -649,6 +649,12 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 
 		// make sure options is an array, before we continue
 		is_null($options) and $options = array();
+
+		// from here, options must be an array
+		if ( ! is_array($options))
+		{
+			throw new \FuelException(__FUNCTION__ . ': Argument #2 ($options) must be of type array, '. gettype($options) .' given');
+		}
 
 		// return all that match $options array
 		if ($id === 'all')

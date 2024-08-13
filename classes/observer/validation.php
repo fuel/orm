@@ -30,8 +30,20 @@ class ValidationFailed extends \FuelException
 	 * @param  \Exception any previous exception
 	 * @param  \Fieldset  the fieldset on which this exception was triggered
 	 */
-	public function __construct($message = null, $code = 0, \Exception $previous = null, \Fieldset $fieldset = null)
+	public function __construct($message = null, $code = 0, $previous = null, $fieldset = null)
 	{
+		// previous must be a nullable instance of \Exception
+		if ( ! is_null($previous) and ! $previous instanceOf \Exception)
+		{
+			throw new \FuelException(__FUNCTION__ . ': Argument #3 ($previous) must be an instance of \Exception, ' . gettype($previous) . ' given');
+		}
+
+		// fieldset must be a nullable instance of \Exception
+		if ( ! is_null($fieldset) and ! $fieldset instanceOf \Fieldset)
+		{
+			throw new \FuelException(__FUNCTION__ . ': Argument #4 ($fieldset) must be an instance of \Fieldset, ' . gettype($fieldset) . ' given');
+		}
+
 		parent::__construct($message, $code, $previous);
 
 		$this->fieldset = $fieldset;
