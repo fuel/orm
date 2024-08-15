@@ -1157,7 +1157,7 @@ class Query
 			}
 
 			// make current query subquery of ultimate query
-			$new_query = call_fuel_func_array('DB::select', array_values($columns));
+			$new_query = \Database_Connection::instance($this->connection)->select(array_values($columns));
 			$query = $new_query->from(array($query, $this->alias));
 		}
 		else
@@ -1428,7 +1428,7 @@ class Query
 			}
 		}
 
-		$query = call_fuel_func_array('DB::select', array_values($select));
+		$query = \Database_Connection::instance($this->connection)->select(array_values($select));
 
 		// Set from view/table
 		$query->from(array($this->_table(), $this->alias));
@@ -1621,7 +1621,7 @@ class Query
 				$select[] = $c[0];
 			}
 		}
-		$query = call_fuel_func_array('DB::select', array_values($select));
+		$query = \Database_Connection::instance($this->connection)->select(array_values($select));
 
 		// Set the defined connection on the query
 		$query->set_connection($this->connection);
@@ -1686,7 +1686,7 @@ class Query
 			') AS count_result');
 
 		// Remove the current select and
-		$query = \DB::select($columns);
+		$query = \Database_Connection::instance($this->connection)->select($columns);
 
 		// Set from view or table
 		$query->from(array($this->_table(), $this->alias));
@@ -1720,7 +1720,7 @@ class Query
 			') AS max_result');
 
 		// Remove the current select and
-		$query = \DB::select($columns);
+		$query = \Database_Connection::instance($this->connection)->select($columns);
 
 		// Set from table
 		$query->from(array($this->_table(), $this->alias));
@@ -1755,7 +1755,7 @@ class Query
 			') AS min_result');
 
 		// Remove the current select and
-		$query = \DB::select($columns);
+		$query = \Database_Connection::instance($this->connection)->select($columns);
 
 		// Set from table
 		$query->from(array($this->_table(), $this->alias));
