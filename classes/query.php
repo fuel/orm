@@ -1686,7 +1686,7 @@ class Query
 			') AS count_result');
 
 		// Remove the current select and
-		$query = \Database_Connection::instance($this->connection)->select($columns);
+		$query = \Database_Connection::instance($this->connection)->select(array($columns));
 
 		// Set from view or table
 		$query->from(array($this->_table(), $this->alias));
@@ -1720,7 +1720,7 @@ class Query
 			') AS max_result');
 
 		// Remove the current select and
-		$query = \Database_Connection::instance($this->connection)->select($columns);
+		$query = \Database_Connection::instance($this->connection)->select(array($columns));
 
 		// Set from table
 		$query->from(array($this->_table(), $this->alias));
@@ -1755,7 +1755,7 @@ class Query
 			') AS min_result');
 
 		// Remove the current select and
-		$query = \Database_Connection::instance($this->connection)->select($columns);
+		$query = \Database_Connection::instance($this->connection)->select(array($columns));
 
 		// Set from table
 		$query->from(array($this->_table(), $this->alias));
