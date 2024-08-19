@@ -49,6 +49,11 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	// protected static $_properties;
 
 	/**
+	 * @var array    model property mapping
+	 */
+	// protected static $_property_map = array();
+
+	/**
 	 * @var  array  array of views with additional properties
 	 */
 	// protected static $_views;
@@ -1125,6 +1130,10 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		{
 			return ! is_null($this->_custom_data[$property]);
 		}
+		elseif ($key = array_search($property, static::$_property_map))
+		{
+			return $this->__isset($key);
+		}
 
 		return false;
 	}
@@ -1152,6 +1161,10 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		elseif (array_key_exists($property, $this->_custom_data))
 		{
 			unset($this->_custom_data[$property]);
+		}
+		elseif ($key = array_search($property, static::$_property_map))
+		{
+			return $this->__unsset($key);
 		}
 	}
 
@@ -1278,6 +1291,12 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 			// nothing else to do here
 		}
 
+		// mapped column names
+		elseif ($key = array_search($property, static::$_property_map))
+		{
+			return $this->get($key);
+		}
+
 		// stored custom data
 		elseif (array_key_exists($property, $this->_custom_data))
 		{
@@ -1292,6 +1311,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 				$result =& $this->_custom_data[$property];
 			}
 		}
+
 		else
 		{
 			throw new \OutOfBoundsException('Property "'.$property.'" not found for '.get_class($this).'.');
@@ -1373,6 +1393,12 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 				{
 					$this->_data_relations[$property] = $value;
 				}
+			}
+
+			// mapped column names
+			elseif ($key = array_search($property, static::$_property_map))
+			{
+				return $this->set($key, $value);
 			}
 
 			// none of the above, assume its custom data
