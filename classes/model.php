@@ -51,7 +51,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	/**
 	 * @var array    model property mapping
 	 */
-	// protected static $_property_map = array();
+	protected static $_property_map = array();
 
 	/**
 	 * @var  array  array of views with additional properties
