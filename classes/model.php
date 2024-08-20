@@ -2030,6 +2030,70 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		return false;
 	}
 
+	/**
+	 * Checks if the current model record is a parent in any relation
+	 *
+	 * @param  bool  $all  if true, return an array of relations it is a parent off, if false, return true on the first hit
+	 *
+	 * @return  bool|array
+	 */
+	public function is_parent($all = false)
+	{
+		$result = array();
+
+		if ( ! $this->_is_new)
+		{
+			// check the defined relations
+			foreach (static::relations() as $name => $rel)
+			{
+				if ($rel instanceOf HasOne or $rel instanceOf HasMany)
+				{
+					$query = Query::forge($rel->model_to, static::connection(true));
+					foreach ($rel->key_from as $i => $n)
+					{
+						$query->where($rel->key_to[$i], '=', $this->$n);
+					}
+					if ($query->get_one())
+					{
+						if ($all)
+						{
+							$result[] = $name;
+						}
+						else
+						{
+							$result = true;
+							break;
+						}
+					}
+				}
+				elseif ($rel instanceOf ManyMany)
+				{
+					$result = \DB::instance(static::connection(true))->select()->from($rel->table_through);
+					foreach ($rel->key_through_from as $i => $n)
+					{
+						$query->where($rel->key_through_from[$i], '=', $this->{$rel->key_from[$i]});
+					}
+					if ($query->get_one())
+					{
+						if ($all)
+						{
+							$result[] = $name;
+						}
+						else
+						{
+							$result = true;
+							break;
+						}
+					}
+				}
+			}
+		}
+
+		// return the result
+		return $result;
+	}
+
+
 	/***
 	 * Returns whether this is a saved or a new object
 	 *
