@@ -1088,7 +1088,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	 * @param   string
 	 * @return  mixed
 	 */
-	public function __get($property)
+	public function & __get($property)
 	{
 		return $this->get($property);
 	}
@@ -1236,7 +1236,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	 * @param   array   $conditions
 	 * @return  mixed
 	 */
-	public function get($property, array $conditions = array())
+	public function & get($property, array $conditions = array())
 	{
 		// get the current class name
 		$class = get_called_class();
