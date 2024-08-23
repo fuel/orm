@@ -1780,7 +1780,8 @@ class Query
 	 */
 	public function insert()
 	{
-		$res = \DB::insert(call_user_func($this->model.'::table'), array_keys($this->values))
+		$res = \Database_Connection::instance($this->connection)
+			->insert(call_user_func($this->model.'::table'), array_keys($this->values))
 			->values(array_values($this->values))
 			->execute($this->write_connection);
 
@@ -1805,7 +1806,9 @@ class Query
 		$this->relations = array();
 
 		// Build query and execute update
-		$query = \DB::update(call_user_func($this->model.'::table'));
+		$query = \Database_Connection::instance($this->connection)
+			->update(call_user_func($this->model.'::table'));
+
 		$tmp   = $this->build_query($query, array(), 'update');
 		$query = $tmp['query'];
 		$res = $query->set($this->values)->execute($this->write_connection);
@@ -1829,7 +1832,9 @@ class Query
 		$this->relations = array();
 
 		// Build query and execute update
-		$query = \DB::delete(call_user_func($this->model.'::table'));
+		$query = \Database_Connection::instance($this->connection)
+			->delete(call_user_func($this->model.'::table'));
+
 		$tmp   = $this->build_query($query, array(), 'delete');
 		$query = $tmp['query'];
 		$res = $query->execute($this->write_connection);
