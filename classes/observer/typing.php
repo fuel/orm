@@ -50,6 +50,7 @@ class Observer_Typing
 		'boolean' => 'bool',
 		'time_unix' => 'time',
 		'time_mysql' => 'time',
+		'timestamp' => 'time',
 		'datetime' => 'time',
 		'date' => 'time',
 	);
