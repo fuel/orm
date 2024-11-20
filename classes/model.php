@@ -1120,7 +1120,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		}
 		elseif (static::relations($property))
 		{
-			return true;
+			return array_key_exists($property, $this->_data_relations);
 		}
 		elseif (property_exists(get_called_class(), '_eav') and is_bool($val = $this->_get_eav($property, true)))
 		{
