@@ -2229,12 +2229,12 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 					if (is_array($value))
 					{
 						// do we already have this related object?
-						if ($from_cache and isset($this->_data_relations[$property]))
+						if (isset($this->_data_relations[$property]))
 						{
 							// add missing fields
 							foreach ($value as $key => $data)
 							{
-								if ( ! isset($this->_data_relations[$property][$key]))
+								if ( ! $from_cache or ! isset($this->_data_relations[$property][$key]))
 								{
 									$this->_data_relations[$property][$key] = $data;
 								}
@@ -2272,12 +2272,12 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 						if (is_array($data))
 						{
 							// do we already have this related object?
-							if ($from_cache and isset($this->_data_relations[$property][$id]))
+							if (isset($this->_data_relations[$property][$id]))
 							{
 								// add missing fields
 								foreach ($data as $key => $value)
 								{
-									if ( ! isset($this->_data_relations[$property][$id][$key]))
+									if ( ! $from_cache or ! isset($this->_data_relations[$property][$id][$key]))
 									{
 										$this->_data_relations[$property][$id][$key] = $value;
 									}
