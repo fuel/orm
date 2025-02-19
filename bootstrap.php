@@ -43,5 +43,5 @@
 	'Orm\\RelationNotSoft'     => __DIR__.'/classes/model/soft.php',
 ));
 
-// Ensure the orm's config is loaded for Temporal
+// Ensure the orm's config is loaded
 \Config::load('orm', true);

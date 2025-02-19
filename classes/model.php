@@ -143,6 +143,23 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	protected static $to_array_references = array();
 
 	/**
+	 * @var bool Enables/Disables lazy load of relations
+	 */
+	protected static $_relation_lazy_load = false;
+
+	/**
+	 * Load the ORM config file
+	 */
+	public static function _init()
+	{
+		// load the config
+		\Config::load('orm', true);
+
+		// update the lazy load of relations switch
+		static::$_relation_lazy_load = \Config::get('orm.relation_lazy_load', false);
+	}
+
+	/**
 	 * Create a new model instance
 	 */
 	public static function forge($data = array(), $new = true, $view = null, $cache = true)
@@ -1120,7 +1137,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		}
 		elseif (static::relations($property))
 		{
-			return array_key_exists($property, $this->_data_relations);
+			return static::$_relation_lazy_load ? true : array_key_exists($property, $this->_data_relations);
 		}
 		elseif (property_exists(get_called_class(), '_eav') and is_bool($val = $this->_get_eav($property, true)))
 		{
