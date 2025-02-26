@@ -145,19 +145,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	/**
 	 * @var bool Enables/Disables lazy load of relations
 	 */
-	protected static $_relation_lazy_load = false;
-
-	/**
-	 * Load the ORM config file
-	 */
-	public static function _init()
-	{
-		// load the config
-		\Config::load('orm', true);
-
-		// update the lazy load of relations switch
-		static::$_relation_lazy_load = \Config::get('orm.relation_lazy_load', false);
-	}
+	protected static $_relation_lazy_load = null;
 
 	/**
 	 * Create a new model instance
@@ -923,6 +911,15 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	 */
 	public function __construct($data = array(), $new = true, $view = null, $cache = true)
 	{
+		// update the lazy load of relations switch
+		if (is_null(static::$_relation_lazy_load))
+		{
+			// load the config
+			\Config::load('orm', true);
+
+			static::$_relation_lazy_load = \Config::get('orm.relation_lazy_load', false);
+		}
+
 		// Make sure we get the correct dataformat passed
 		if ( ! is_array($data) and ! $data instanceOf \ArrayAccess)
 		{
