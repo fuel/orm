@@ -72,10 +72,29 @@ class ManyMany extends Relation
 		$this->key_through_to = ! empty($config['key_through_to'])
 			? (array) $config['key_through_to'] : (array) \Inflector::foreign_key($this->model_to);
 
-		$this->cascade_save    = array_key_exists('cascade_save', $config)
-			? $config['cascade_save'] : $this->cascade_save;
+		// DEPRECATED SINCE 1.9
 		$this->cascade_delete  = array_key_exists('cascade_delete', $config)
 			? $config['cascade_delete'] : $this->cascade_delete;
+
+		if (array_key_exists('constraint', $config) and in_array($config['constraint'], $this->valid_constraints))
+		{
+			switch($config['constraint'])
+			{
+				case static::CONSTRAINT_RESTRICT:
+					$this->cascade_check = true;
+					break;
+				case static::CONSTRAINT_CASCADE:
+					$this->cascade_delete = true;
+					break;
+				case static::CONSTRAINT_SETDEFAULT:
+					$this->cascade_delete = false;
+					break;
+				default:
+			}
+		}
+
+		$this->cascade_save    = array_key_exists('cascade_save', $config)
+			? $config['cascade_save'] : $this->cascade_save;
 
 		if ( ! class_exists($this->model_to))
 		{
@@ -349,8 +368,16 @@ class ManyMany extends Relation
 
 	public function delete($model_from, $parent_deleted, $cascade)
 	{
+		// fetch all related records
+		$model_from->get($this->name);
+
 		if ( ! $parent_deleted)
 		{
+			if ($this->cascade_check and ! empty($model_from->{$this->name}))
+			{
+				throw new \Orm\DeleteConstraintViolation($this->name);
+			}
+
 			return;
 		}
 
@@ -370,9 +397,6 @@ class ManyMany extends Relation
 
 		if ($cascade)
 		{
-			// fetch all related records
-			$model_from->get($this->name);
-
 			// yes, delete the reclated records
 			foreach ($model_from->{$this->name} as $m)
 			{
