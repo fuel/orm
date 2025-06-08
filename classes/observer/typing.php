@@ -188,13 +188,13 @@ class Observer_Typing
 						throw new InvalidContentType('The property "'.$column.'" cannot be NULL.');
 					}
 				}
-			}
-		}
 
-		 // still null? then let the DB deal with it
-		if ($value === null)
-		{
-			return $value;
+				 // still null? then let the DB deal with it
+				if ($value === null)
+				{
+					return $value;
+				}
+			}
 		}
 
 		// no datatype given
