@@ -1351,11 +1351,17 @@ class Model_Nestedset extends Model
 	 * @returns  mixed
 	 * @throws  BadMethodCallException if called without a parameter and without a node to fetch
 	 */
-	public function get_one(Query $query = null)
+	public function get_one($query = null)
 	{
 		// do we have a query object passed?
 		if (func_num_args())
 		{
+			// validate the type
+			if ( ! $query instanceOf Query)
+			{
+				throw new \OutOfBoundsException('Model object passed to get_one() is not an instance of \Orm\Query.');
+			}
+
 			// return the query result
 			return $query->get_one();
 		}
