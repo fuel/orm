@@ -1417,7 +1417,16 @@ class Model_Nestedset extends Model
 		foreach ($relation as $name => $conditions)
 		{
 			// store the relation to include
-			$this->_node_operation['related'][$name] = $conditions;
+			if (is_int($name))
+			{
+				// indexed entry with only name
+				$this->_node_operation['related'][$conditions] = array();
+			}
+			else
+			{
+				// assoc entry with name and conditions
+				$this->_node_operation['related'][$name] = $conditions;
+			}
 		}
 
 		return $this;
