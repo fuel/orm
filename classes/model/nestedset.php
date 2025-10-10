@@ -809,8 +809,11 @@ class Model_Nestedset extends Model
 		$index = 0;
 		$tracker[$index] =& $tree[$this->{$pk}];
 
+		// preserve any defined relations
+		$relations = isset($this->_node_operation['related']) ? $this->_node_operation['related'] : array();
+
 		// loop over the descendants
-		foreach ($this->descendants()->get() as $treenode)
+		foreach ($this->descendants()->related($relations)->get() as $treenode)
 		{
 			// get the data for this node and make sure we have a place to store child information
 			if ($as_object)
@@ -1385,8 +1388,8 @@ class Model_Nestedset extends Model
 	/**
 	 * Set a relation to include
 	 *
-	 * @param   string  $relation
-	 * @param   array   $conditions    Optionally
+	 * @param   string|array  $relation
+	 * @param   array         $conditions    Optionally
 	 *
 	 * @return  $this
 	 */
@@ -1404,8 +1407,18 @@ class Model_Nestedset extends Model
 			);
 		}
 
-		// store the relation to include
-		$this->_node_operation['related'][$relation] = $conditions;
+		// unify the arguments
+		if ( ! is_array($relation))
+		{
+			$relation = array($relation => $conditions);
+		}
+
+		// add them
+		foreach ($relation as $name => $conditions)
+		{
+			// store the relation to include
+			$this->_node_operation['related'][$name] = $conditions;
+		}
 
 		return $this;
 	}
