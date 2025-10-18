@@ -701,6 +701,32 @@ class Model_Nestedset extends Model
 	}
 
 	// -------------------------------------------------------------------------
+
+	/**
+	 * Check if the object has any siblings
+	 *
+	 * @return  bool
+	 */
+	public function has_siblings()
+	{
+		// the tree root never has siblings
+		if ( ! $this->is_root())
+		{
+			// get our parent
+			$our_parent = $this->parent()->get_one();
+
+			// check if we're the only sibling
+			if ($our_parent and $our_parent->{static::tree_config('right_field')} - $our_parent->{static::tree_config('left_field')} != 3)
+			{
+				// parent has only one child
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	// -------------------------------------------------------------------------
 	// integer tree methods
 	// -------------------------------------------------------------------------
 
