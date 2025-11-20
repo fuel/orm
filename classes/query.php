@@ -1518,7 +1518,7 @@ class Query
 			// fetch the relation
 			$relation = $model['relation'];
 
-			isset($reltypes[$relation]) or $reltypes[$relation] = $model['singular'];
+			is_null($relation) or isset($reltypes[$relation]) or $reltypes[$relation] = $model['singular'];
 
 			// storage for extracting current record
 			$record = array();
