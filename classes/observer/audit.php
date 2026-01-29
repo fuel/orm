@@ -71,7 +71,8 @@ class Observer_Audit extends Observer
 	 */
 	public function before_delete(Model $obj)
 	{
-		$this->make_diff($obj);
+		// store the entire record as a diff
+		$this->diff = $obj->to_array();
 	}
 
 	/**
