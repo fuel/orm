@@ -148,6 +148,15 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	protected static $_relation_lazy_load = null;
 
 	/**
+	 * class static constructor
+	 */
+	public static function _init()
+	{
+		// Ensure the orm's config is loaded
+		\Config::load('orm', true);
+	}
+
+	/**
 	 * Create a new model instance
 	 */
 	public static function forge($data = array(), $new = true, $view = null, $cache = true)
