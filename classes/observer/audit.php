@@ -146,7 +146,7 @@ class Observer_Audit extends Observer
 			else
 			{
 				// insert a new audit record
-				list($id, $rows) = \DB::insert($this->table)->set(array('key' => $key, 'user' => $user_id, 'first' => time(), 'last' => time()))->execute();
+				list($id, $rows) = \DB::insert($this->table)->set(array('key' => $key, 'user' => $user_id, 'ip' => \Input::real_ip(), 'first' => time(), 'last' => time()))->execute();
 			}
 
 			// add the audit diff record
