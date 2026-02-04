@@ -744,6 +744,12 @@ class Observer_Typing
 			$var = \Date::forge($var);
 		}
 
+		// a format defined for the date, in the form settings?
+		if (isset($settings['form']['format']))
+		{
+			$var->set_pattern($settings['form']['format']);
+		}
+
 		return $var;
 	}
 }
