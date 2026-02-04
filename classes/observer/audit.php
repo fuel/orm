@@ -132,7 +132,7 @@ class Observer_Audit extends Observer
 			\DB::start_transaction();
 
 			// see if we already have an audit record
-			$result = \DB::select('id')->from($this->table)->as_object()->execute();
+			$result = \DB::select('id')->from($this->table)->where('key', '=', $key)->as_object()->execute();
 
 			// found it
 			if (count($result))
@@ -146,7 +146,7 @@ class Observer_Audit extends Observer
 			else
 			{
 				// insert a new audit record
-				list($id, $rows) = \DB::insert($this->table)->set(array('key' => $key, 'user' => $user_id, 'ip' => \Input::real_ip(), 'first' => time(), 'last' => time()))->execute();
+				list($id, $rows) = \DB::insert($this->table)->set(array('key' => $key, 'user_id' => $user_id, 'ip' => \Input::real_ip(), 'first' => time(), 'last' => time()))->execute();
 			}
 
 			// add the audit diff record
