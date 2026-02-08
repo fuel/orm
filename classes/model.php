@@ -1876,12 +1876,13 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	 *
 	 * @param   string|array $property
 	 * @param   bool $observe
+	 * @param   bool $recurse, check is_changed() on related objects too
 	 *
 	 * @throws \OutOfBoundsException
 	 *
 	 * @return  bool
 	 */
-	public function is_changed($property = null, $observe = false)
+	public function is_changed($property = null, $observe = false, $recurse = false)
 	{
 		$properties = static::properties();
 		$relations = static::relations();
@@ -1959,6 +1960,11 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 					foreach ($this->{$p} as $rk => $r)
 					{
 						if ( ! in_array($r->implode_pk($r), $orig_rels))
+						{
+							$changed = true;
+							break;
+						}
+						elseif ($recurse and $r->is_changed(null, $observe, $recurse))
 						{
 							$changed = true;
 							break;
