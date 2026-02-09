@@ -1533,7 +1533,7 @@ class Query
 					$column = $model['columns'][$column];
 
 					// is it a (part of a) primary key?
-					if (in_array($column, $model['pk']))
+					if ( ! is_null($value) and in_array($column, $model['pk']))
 					{
 						// typecast the pk value
 						$value = Observer_Typing::typecast($column, $value, call_user_func($model['model'].'::property', $column));
