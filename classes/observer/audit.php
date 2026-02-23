@@ -120,7 +120,7 @@ class Observer_Audit extends Observer
 	protected function write_audit_log($type, $model)
 	{
 		// only if enabled
-		if ($this->enabled)
+		if ($this->enabled and \Session::active())
 		{
 			// get the unique identifier for this session
 			$key = empty($this->session_key) ? \Session::key() : \Session::get($this->session_key,\Session::key());
