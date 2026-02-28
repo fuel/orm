@@ -1994,9 +1994,11 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	 * the current unsaved model.
 	 * Note: relations are given as single or array of imploded pks
 	 *
+	 * @param   bool $related  whether or not to include related objects in the diff
+	 *
 	 * @return  array
 	 */
-	public function get_diff()
+	public function get_diff($related = false)
 	{
 		$diff = array(0 => array(), 1 => array());
 		foreach ($this->_data as $key => $val)
@@ -2007,43 +2009,46 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 				$diff[1][$key] = $val;
 			}
 		}
-		foreach ($this->_data_relations as $key => $val)
+		if ($related)
 		{
-			$rel = static::relations($key);
-			if ($rel->singular)
+			foreach ($this->_data_relations as $key => $val)
 			{
-				$new_pk = empty($val) ? null : $val->implode_pk($val);
-				if (empty($this->_original_relations[$key]) !== empty($val)
-					or ( ! empty($this->_original_relations[$key]) and ! empty($val)
-						and $this->_original_relations[$key] !== $new_pk
-					))
+				$rel = static::relations($key);
+				if ($rel->singular)
 				{
-
-					$diff[0][$key] = isset($this->_original_relations[$key]) ? $this->_original_relations[$key] : null;
-					$diff[1][$key] = isset($val) ? $new_pk : null;
-				}
-			}
-			else
-			{
-				$original_pks = empty($this->_original_relations[$key]) ? array() : $this->_original_relations[$key];
-				$new_pks = array();
-				if ($val)
-				{
-					foreach ($val as $v)
+					$new_pk = empty($val) ? null : $val->implode_pk($val);
+					if (empty($this->_original_relations[$key]) !== empty($val)
+						or ( ! empty($this->_original_relations[$key]) and ! empty($val)
+							and $this->_original_relations[$key] !== $new_pk
+						))
 					{
-						if ( ! in_array(($new_pk = $v->implode_pk($v)), $original_pks))
-						{
-							$new_pks[] = $new_pk;
-						}
-						else
-						{
-							$original_pks = array_diff($original_pks, array($new_pk));
-						}
+
+						$diff[0][$key] = isset($this->_original_relations[$key]) ? $this->_original_relations[$key] : null;
+						$diff[1][$key] = isset($val) ? $new_pk : null;
 					}
 				}
-				if ( ! empty($original_pks) or ! empty($new_pks)) {
-					$diff[0][$key] = empty($original_pks) ? null : $original_pks;
-					$diff[1][$key] = empty($new_pks) ? null : $new_pks;
+				else
+				{
+					$original_pks = empty($this->_original_relations[$key]) ? array() : $this->_original_relations[$key];
+					$new_pks = array();
+					if ($val)
+					{
+						foreach ($val as $v)
+						{
+							if ( ! in_array(($new_pk = $v->implode_pk($v)), $original_pks))
+							{
+								$new_pks[] = $new_pk;
+							}
+							else
+							{
+								$original_pks = array_diff($original_pks, array($new_pk));
+							}
+						}
+					}
+					if ( ! empty($original_pks) or ! empty($new_pks)) {
+						$diff[0][$key] = empty($original_pks) ? null : $original_pks;
+						$diff[1][$key] = empty($new_pks) ? null : $new_pks;
+					}
 				}
 			}
 		}
@@ -2366,12 +2371,13 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	 * @param bool $custom
 	 * @param bool $recurse
 	 * @param bool $eav
+	 * @param bool $related
 	 *
 	 * @internal param \Orm\whether $bool or not to include the custom data array
 	 *
 	 * @return  array
 	 */
-	public function to_array($custom = false, $recurse = false, $eav = false)
+	public function to_array($custom = false, $recurse = false, $eav = false, $related = true)
 	{
 		// storage for the result
 		$array = array();

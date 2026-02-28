@@ -59,7 +59,13 @@ class Observer_Audit extends Observer
 		if ($this->enabled)
 		{
 			// store the entire record as a 'to' diff
-			$this->diff = array(0 => array(), 1 => $obj->to_array());
+			$this->diff = array(0 => array(), 1 => $obj->to_array(false, false, false, false));
+
+			// there are no 'from' values
+			foreach ($this->diff[1] as $key => $unused)
+			{
+				$this->diff[0][$key] = null;
+			}
 		}
 	}
 
@@ -72,7 +78,7 @@ class Observer_Audit extends Observer
 		if ($this->enabled)
 		{
 			// get a pre-delete diff of the changes
-			$this->diff = $obj->get_diff();
+			$this->diff = $obj->get_diff(false);
 		}
 	}
 
@@ -85,7 +91,13 @@ class Observer_Audit extends Observer
 		if ($this->enabled)
 		{
 			// store the entire record as a 'from' diff
-			$this->diff = array(0 => $obj->to_array(), 1 => array());
+			$this->diff = array(0 => $obj->to_array(false, false, false, false), 1 => array());
+
+			// there are no 'to' values
+			foreach ($this->diff[0] as $key => $unused)
+			{
+				$this->diff[1][$key] = null;
+			}
 		}
 	}
 
