@@ -1998,7 +1998,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	 *
 	 * @return  array
 	 */
-	public function get_diff($related = false)
+	public function get_diff($related = true)
 	{
 		$diff = array(0 => array(), 1 => array());
 		foreach ($this->_data as $key => $val)
