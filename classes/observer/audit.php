@@ -55,7 +55,12 @@ class Observer_Audit extends Observer
 	 */
 	public function before_insert(Model $obj)
 	{
-		$this->make_diff($obj);
+		// only if enabled
+		if ($this->enabled)
+		{
+			// store the entire record as a 'to' diff
+			$this->diff = array(0 => array(), 1 => $obj->to_array());
+		}
 	}
 
 	/**
@@ -63,7 +68,12 @@ class Observer_Audit extends Observer
 	 */
 	public function before_update(Model $obj)
 	{
-		$this->make_diff($obj);
+		// only if enabled
+		if ($this->enabled)
+		{
+			// get a pre-delete diff of the changes
+			$this->diff = $obj->get_diff();
+		}
 	}
 
 	/**
@@ -71,8 +81,12 @@ class Observer_Audit extends Observer
 	 */
 	public function before_delete(Model $obj)
 	{
-		// store the entire record as a diff
-		$this->diff = $obj->to_array();
+		// only if enabled
+		if ($this->enabled)
+		{
+			// store the entire record as a 'from' diff
+			$this->diff = array(0 => $obj->to_array(), 1 => array());
+		}
 	}
 
 	/**
