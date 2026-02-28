@@ -62,10 +62,7 @@ class Observer_Audit extends Observer
 			$this->diff = array(0 => array(), 1 => $obj->to_array(false, false, false, false));
 
 			// there are no 'from' values
-			foreach ($this->diff[1] as $key => $unused)
-			{
-				$this->diff[0][$key] = null;
-			}
+			$this->diff[0] = array_fill_keys(array_keys($this->diff[1]), null);
 		}
 	}
 
@@ -91,13 +88,10 @@ class Observer_Audit extends Observer
 		if ($this->enabled)
 		{
 			// store the entire record as a 'from' diff
-			$this->diff = array(0 => $obj->to_array(false, false, false, false), 1 => array());
+			$this->diff = array(0 => $obj->to_array(false, false, false, false));
 
 			// there are no 'to' values
-			foreach ($this->diff[0] as $key => $unused)
-			{
-				$this->diff[1][$key] = null;
-			}
+			$this->diff[1] = array_fill_keys(array_keys($this->diff[0]), null);
 		}
 	}
 
