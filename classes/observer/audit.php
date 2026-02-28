@@ -128,19 +128,6 @@ class Observer_Audit extends Observer
 	// ----------------------[ internal methods ]----------------------
 
 	/**
-	 * Make a diff from the object
-	 */
-	protected function make_diff($obj)
-	{
-		// only if enabled
-		if ($this->enabled)
-		{
-			// get a pre-delete diff of the changes
-			$this->diff = $obj->get_diff();
-		}
-	}
-
-	/**
 	 * write the diff to the audit log
 	 */
 	protected function write_audit_log($type, $model)
