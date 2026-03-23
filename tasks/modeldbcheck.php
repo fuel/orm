@@ -23,8 +23,8 @@ class ModelDbCheck
 	/**
 	 * task runner
 	 */
-    public function run()
-    {
+	public function run()
+	{
 		\Cli::write('Enumerate application models', 'white');
 
 		// get all possible model class paths
@@ -110,9 +110,16 @@ class ModelDbCheck
 						}
 
 						// skip models that extend the ORM model or a model class already loaded
-						if ($reflection->getParentClass()->getName() == 'Orm\\Model' or in_array($reflection->getParentClass()->getName(), $loaded))
+						$parent = $reflection->getParentClass()->getName();
+						if ($parent != 'Orm\\Model')
 						{
-							continue;
+							// maybe an ORM base class?
+							$reflection = new \ReflectionClass($parent);
+							$parent  = $reflection->getParentClass()->getName();
+							if ( ! $reflection->getParentClass() or $reflection->getParentClass()->getName() != 'Orm\\Model')
+							{
+								continue;
+							}
 						}
 
 						// call the static init, if defined, as it's not called outside autoload
@@ -194,7 +201,7 @@ class ModelDbCheck
 			$obj = $model::forge();
 		}
 
-    }
+	}
 
 	/************************[ internal methods ]************************/
 }
