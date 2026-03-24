@@ -109,7 +109,7 @@ class ModelDbCheck
 							continue;
 						}
 
-						// skip models that extend the ORM model or a model class already loaded
+						// skip models that do not extend the ORM model
 						$parent = $reflection->getParentClass()->getName();
 						if ($parent != 'Orm\\Model')
 						{
@@ -123,6 +123,8 @@ class ModelDbCheck
 						}
 
 						// call the static init, if defined, as it's not called outside autoload
+						// we need to do this because it could be used to dynamically determine 
+						// the model table name, for example from config
 						if (method_exists($model, '_init'))
 						{
 							$model::_init();
