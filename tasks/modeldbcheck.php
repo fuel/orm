@@ -115,7 +115,6 @@ class ModelDbCheck
 						{
 							// maybe an ORM base class?
 							$reflection = new \ReflectionClass($parent);
-							$parent  = $reflection->getParentClass()->getName();
 							if ( ! $reflection->getParentClass() or $reflection->getParentClass()->getName() != 'Orm\\Model')
 							{
 								continue;
@@ -123,7 +122,7 @@ class ModelDbCheck
 						}
 
 						// call the static init, if defined, as it's not called outside autoload
-						// we need to do this because it could be used to dynamically determine 
+						// we need to do this because it could be used to dynamically determine
 						// the model table name, for example from config
 						if (method_exists($model, '_init'))
 						{
