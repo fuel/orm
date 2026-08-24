@@ -154,6 +154,12 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	{
 		// Ensure the orm's config is loaded
 		\Config::load('orm', true);
+
+		// validate defined primary keys
+		if ( ! empty($diff = array_diff(static::$_primary_key, array_keys(static::properties()))))
+		{
+			throw new \FuelException(sprintf('Defined primary key(s) "%s" for model "%s"are not defined as properties!', implode(', ', $diff) , static::$_table_name));
+		}
 	}
 
 	/**
