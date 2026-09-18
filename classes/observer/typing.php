@@ -515,7 +515,20 @@ class Observer_Typing
 	 */
 	public static function type_unserialize($var)
 	{
-		return empty($var) ? array() : unserialize($var);
+		try
+		{
+			return empty($var) ? array() : unserialize($var);
+		}
+
+		// handle offet errors due to escaped responses
+		catch (\PhpErrorException $e)
+		{
+			if ( ! str_starts_with($e->getMessage(), 'unserialize(): Error at offset'))
+			{
+				throw $e;
+			}
+			return unserialize(preg_replace_callback('!s:(\d+):"(.*?)";!s', function($m) {return 's:'.strlen($m[2]).':"'.$m[2].'";';}, $var));
+		}
 	}
 
 	/**
