@@ -44,6 +44,11 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	// protected static $_table_name;
 
 	/**
+	 * @var  bool  table name is a table view
+	 */
+	protected static $_table_is_view = false;
+
+	/**
 	 * @var  array  array of object properties
 	 */
 	// protected static $_properties;
@@ -56,7 +61,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	/**
 	 * @var  array  array of views with additional properties
 	 */
-	// protected static $_views;
+	protected static $_views = array();
 
 	/**
 	 * @var  array  array of observer classes to use
@@ -154,6 +159,13 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	{
 		// Ensure the orm's config is loaded
 		\Config::load('orm', true);
+
+		// if this is a model on a view
+		if (static::$_table_is_view)
+		{
+			// define the view based on the properties
+			static::$_views = array(static::$_table_name => array('columns' => array_keys(static::properties())));
+		}
 
 		// validate defined primary keys
 		if ( ! empty($diff = array_diff(static::$_primary_key, array_keys(static::properties()))))
@@ -726,7 +738,8 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	 */
 	public static function query($options = array())
 	{
-		return Query::forge(get_called_class(), array(static::connection(), static::connection(true)), $options);
+		$obj = Query::forge(get_called_class(), array(static::connection(), static::connection(true)), $options);
+		return static::$_table_is_view ? $obj->use_view(static::$_table_name) : $obj;
 	}
 
 	/**
